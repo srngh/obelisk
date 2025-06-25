@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<!DOCTYPE cambalache-project SYSTEM "cambalache-project.dtd">
+<!-- Created with Cambalache 0.97.2 -->
+<cambalache-project version="0.96.0" target_tk="gtk-4.0">
+  <ui template-class="ObeliskWindow" filename="window.ui" sha256="69acdf4ffd851b347f5a54b4d6c682ea5a598f30db10aeb1d8d0e78380209468"/>
+  <ui template-class="PreferencesDialog" filename="gtk/preferences.ui" sha256="9640c58aaaf89a39460dc93b5b589086f1b7cf8dade973a666b65f9a05f4deda"/>
+</cambalache-project>

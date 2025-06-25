@@ -1,0 +1,6 @@
+data/org.gnome.obelisk.desktop.in
+data/org.gnome.obelisk.metainfo.xml.in
+data/org.gnome.obelisk.gschema.xml
+src/main.py
+src/window.py
+src/window.ui

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/org/gnome/obelisk">
+    <!-- UI files -->
+    <file preprocess="xml-stripblanks">window.ui</file>
+    <file preprocess="xml-stripblanks">gtk/help-overlay.ui</file>
+    <file preprocess="xml-stripblanks">gtk/preferences.ui</file>
+
+    <!-- Icons -->
+    <file preprocess="xml-stripblanks">icons/scalable/actions/starred.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/search.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/dock-left-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/add.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/document-properties.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/application-menu-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/network-transmit-receive-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/xapp-use-regex-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/org.gnome.Terminal-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/package-x-generic-symbolic.svg</file>
+  </gresource>
+</gresources>

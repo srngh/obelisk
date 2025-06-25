@@ -1,0 +1,133 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ObeliskWindow: Adw.ApplicationWindow {
+  default-height: 400;
+  default-width: 600;
+
+  Adw.OverlaySplitView split_view {
+    content: Adw.ToolbarView {
+      content: Adw.ToolbarView tab_container {
+        content: Adw.TabView tab_view {};
+
+        reveal-bottom-bars: false;
+
+        [top]
+        Adw.TabBar tab_bar {
+          start-action-widget: Adw.TabButton {
+            view: tab_view;
+          };
+
+          view: tab_view;
+        }
+      };
+
+      reveal-bottom-bars: false;
+
+      [top]
+      Adw.HeaderBar show_sidebar_btn {
+        show-title: false;
+
+        [start]
+        ToggleButton toggle_sidebar_btn {
+          icon-name: 'dock-left-symbolic';
+          tooltip-text: 'Show/hide sidebar';
+        }
+
+        [end]
+        MenuButton menu_btn {
+          icon-name: 'document-properties';
+          menu-model: primary_menu;
+        }
+
+        [end]
+        Button add_tab_btn {
+          has-frame: false;
+          icon-name: 'add';
+          receives-default: false;
+          tooltip-text: 'Add a new tab';
+          clicked => $on_tab_add_btn_clicked();
+        }
+      }
+    };
+
+    max-sidebar-width: 350.0;
+    show-sidebar: bind toggle_sidebar_btn.active no-sync-create;
+
+    sidebar: Adw.ToolbarView {
+      content: ScrolledWindow {
+        child: Viewport {
+          child: ListBox sidebar {};
+        };
+      };
+
+      focusable: true;
+      hexpand: true;
+
+      [top]
+      Adw.HeaderBar {
+        title-widget: Label {
+          label: 'Obelisk';
+        };
+
+        [start]
+        ToggleButton show_search_btn {
+          icon-name: 'search';
+          tooltip-text: 'Show/hide searchbar';
+          activate => $show_search_btn();
+        }
+
+        [end]
+        MenuButton fav_btn {
+          icon-name: 'starred';
+
+          popover: Popover {
+            child: Adw.ViewStack fav_stack {
+              visible: true;
+              width-request: 300;
+
+              Adw.ViewStackPage empty {
+                child: Adw.StatusPage {
+                  description: 'Add your favorite Connections here by clicking the star button beside the title';
+                  icon-name: 'starred';
+                  title: 'No Connections';
+                };
+              }
+            };
+          };
+        }
+      }
+
+      [top]
+      SearchBar search_bar {
+        child: SearchEntry _search_entry {
+          placeholder-text: 'Search Connections…';
+        };
+
+        search-mode-enabled: bind show_search_btn.active no-sync-create;
+      }
+    };
+
+    sidebar-width-fraction: 0.27;
+    sidebar-width-unit: px;
+  }
+}
+
+menu primary_menu {
+  section {
+    item {
+      action: 'app.preferences';
+      label: '_Preferences';
+    }
+
+    item {
+      action: 'win.show-help-overlay';
+      label: '_Keyboard Shortcuts';
+    }
+
+    item {
+      action: 'app.about';
+      label: '_About Tutorial';
+    }
+  }
+}

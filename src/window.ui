@@ -1,0 +1,154 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Created with Cambalache 0.97.2 -->
+<interface>
+  <!-- interface-name gui-testing.ui -->
+  <requires lib="gio" version="2.0"/>
+  <requires lib="gtk" version="4.18"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <template class="ObeliskWindow" parent="AdwApplicationWindow">
+    <property name="default-height">400</property>
+    <property name="default-width">600</property>
+    <child>
+      <object class="AdwOverlaySplitView" id="split_view">
+        <property name="content">
+          <object class="AdwToolbarView">
+            <property name="content">
+              <object class="AdwToolbarView" id="tab_container">
+                <property name="content">
+                  <object class="AdwTabView" id="tab_view"/>
+                </property>
+                <property name="reveal-bottom-bars">False</property>
+                <child type="top">
+                  <object class="AdwTabBar" id="tab_bar">
+                    <property name="start-action-widget">
+                      <object class="AdwTabButton">
+                        <property name="view">tab_view</property>
+                      </object>
+                    </property>
+                    <property name="view">tab_view</property>
+                  </object>
+                </child>
+              </object>
+            </property>
+            <property name="reveal-bottom-bars">False</property>
+            <child type="top">
+              <object class="AdwHeaderBar" id="show_sidebar_btn">
+                <property name="show-title">False</property>
+                <child type="start">
+                  <object class="GtkToggleButton" id="toggle_sidebar_btn">
+                    <property name="icon-name">dock-left-symbolic</property>
+                    <property name="tooltip-text">Show/hide sidebar</property>
+                  </object>
+                </child>
+                <child type="end">
+                  <object class="GtkMenuButton" id="menu_btn">
+                    <property name="icon-name">document-properties</property>
+                    <property name="menu-model">primary_menu</property>
+                  </object>
+                </child>
+                <child type="end">
+                  <object class="GtkButton" id="add_tab_btn">
+                    <property name="has-frame">False</property>
+                    <property name="icon-name">add</property>
+                    <property name="receives-default">False</property>
+                    <property name="tooltip-text">Add a new tab</property>
+                    <signal name="clicked" handler="on_tab_add_btn_clicked"/>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </property>
+        <property name="max-sidebar-width">350.0</property>
+        <property name="show-sidebar" bind-source="toggle_sidebar_btn" bind-property="active">True</property>
+        <property name="sidebar">
+          <object class="AdwToolbarView">
+            <property name="content">
+              <object class="GtkScrolledWindow">
+                <property name="child">
+                  <object class="GtkViewport">
+                    <property name="child">
+                      <object class="GtkListBox" id="sidebar"/>
+                    </property>
+                  </object>
+                </property>
+              </object>
+            </property>
+            <property name="hexpand">True</property>
+            <property name="hexpand-set">True</property>
+            <child type="top">
+              <object class="AdwHeaderBar">
+                <property name="title-widget">
+                  <object class="GtkLabel">
+                    <property name="label">Obelisk</property>
+                  </object>
+                </property>
+                <child type="start">
+                  <object class="GtkToggleButton" id="show_search_btn">
+                    <property name="icon-name">search</property>
+                    <property name="tooltip-text">Show/hide searchbar</property>
+                    <signal name="activate" handler="show_search_btn"/>
+                  </object>
+                </child>
+                <child type="end">
+                  <object class="GtkMenuButton" id="fav_btn">
+                    <property name="icon-name">starred</property>
+                    <property name="popover">
+                      <object class="GtkPopover">
+                        <property name="child">
+                          <object class="AdwViewStack" id="fav_stack">
+                            <property name="visible">True</property>
+                            <property name="width-request">300</property>
+                            <child>
+                              <object class="AdwViewStackPage" id="empty">
+                                <property name="child">
+                                  <object class="AdwStatusPage">
+                                    <property name="description">Add your favorite Connections here by clicking the star button beside the title</property>
+                                    <property name="icon-name">starred</property>
+                                    <property name="title">No Connections</property>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+                          </object>
+                        </property>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child type="top">
+              <object class="GtkSearchBar" id="search_bar">
+                <property name="child">
+                  <object class="GtkSearchEntry" id="_search_entry">
+                    <property name="placeholder-text">Search Connections…</property>
+                  </object>
+                </property>
+                <property name="search-mode-enabled" bind-source="show_search_btn" bind-property="active">True</property>
+              </object>
+            </child>
+          </object>
+        </property>
+        <property name="sidebar-width-fraction">0.27</property>
+        <property name="sidebar-width-unit">px</property>
+      </object>
+    </child>
+  </template>
+  <menu id="primary_menu">
+    <section>
+      <item>
+        <attribute name="action">app.preferences</attribute>
+        <attribute name="label">_Preferences</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.show-help-overlay</attribute>
+        <attribute name="label">_Keyboard Shortcuts</attribute>
+      </item>
+      <item>
+        <attribute name="action">app.about</attribute>
+        <attribute name="label">_About Tutorial</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>

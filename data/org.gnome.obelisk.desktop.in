@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=obelisk
+Exec=obelisk
+Icon=org.gnome.obelisk
+Terminal=false
+Type=Application
+Categories=GTK;
+StartupNotify=true

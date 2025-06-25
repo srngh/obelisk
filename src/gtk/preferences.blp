@@ -1,0 +1,95 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $PreferencesDialog: Adw.PreferencesDialog {
+  content-height: 800;
+  search-enabled: true;
+
+  Adw.PreferencesPage general_settings_page {
+    icon-name: 'application-menu-symbolic';
+    name: 'general';
+    title: 'General';
+
+    Adw.PreferencesGroup general_set_1 {
+      description: 'Config file containing connections';
+      title: 'Config Files';
+
+      Adw.PreferencesRow {
+        Adw.ActionRow file_path {
+          subtitle: 'file path';
+        }
+      }
+    }
+  }
+
+  Adw.PreferencesPage ssh_settings_page {
+    icon-name: 'network-transmit-receive-symbolic';
+    name: 'ssh';
+    title: 'SSH';
+
+    Adw.PreferencesGroup {
+      description: 'User for new SSH Sessions';
+      title: 'Username';
+
+      Adw.PreferencesRow {
+        title: 'username';
+
+        Adw.ActionRow {
+          subtitle: 'username';
+        }
+      }
+    }
+
+    Adw.PreferencesGroup {
+      description: 'Password for interactive SSH Sessions';
+      title: 'Password';
+
+      Adw.PreferencesRow {
+        title: 'password';
+
+        Adw.PasswordEntryRow {
+          text: 'samplepassword';
+          title: 'password';
+        }
+      }
+    }
+
+    Adw.PreferencesGroup {
+      description: 'Public key to use for SSH Sessions';
+      title: 'SSH Public Keys';
+
+      Adw.PreferencesRow {
+        title: 'pub keys';
+
+        Adw.ActionRow {
+          subtitle: 'public key file name';
+        }
+      }
+    }
+  }
+
+  Adw.PreferencesPage regex_settings_page {
+    icon-name: 'xapp-use-regex-symbolic';
+    name: 'regex';
+    title: 'Regex';
+
+    Adw.PreferencesGroup {
+      description: 'Define and alter regex definitions';
+      title: 'Regex Definitions';
+
+      Adw.PreferencesRow {
+        ListBox {
+          selection-mode: multiple;
+
+          ListBoxRow {}
+        }
+      }
+    }
+  }
+
+  Adw.PreferencesPage terminal_settings_page {
+    icon-name: 'org.gnome.Terminal-symbolic';
+    name: 'terminal';
+    title: 'Terminal';
+  }
+}

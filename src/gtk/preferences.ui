@@ -1,0 +1,121 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Created with Cambalache 0.97.2 -->
+<interface>
+  <!-- interface-name preferences.ui -->
+  <requires lib="gtk" version="4.6"/>
+  <requires lib="libadwaita" version="1.5"/>
+  <template class="PreferencesDialog" parent="AdwPreferencesDialog">
+    <property name="content-height">800</property>
+    <property name="search-enabled">True</property>
+    <child>
+      <object class="AdwPreferencesPage" id="general_settings_page">
+        <property name="icon-name">application-menu-symbolic</property>
+        <property name="name">general</property>
+        <property name="title">General</property>
+        <child>
+          <object class="AdwPreferencesGroup" id="general_set_1">
+            <property name="description">Config file containing connections</property>
+            <property name="title">Config Files</property>
+            <child>
+              <object class="AdwPreferencesRow">
+                <child>
+                  <object class="AdwActionRow" id="file_path">
+                    <property name="subtitle">file path</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="AdwPreferencesPage" id="ssh_settings_page">
+        <property name="icon-name">network-transmit-receive-symbolic</property>
+        <property name="name">ssh</property>
+        <property name="title">SSH</property>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="description">User for new SSH Sessions</property>
+            <property name="title">Username</property>
+            <child>
+              <object class="AdwPreferencesRow">
+                <property name="title">username</property>
+                <child>
+                  <object class="AdwActionRow">
+                    <property name="subtitle">username</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="description">Password for interactive SSH Sessions</property>
+            <property name="title">Password</property>
+            <child>
+              <object class="AdwPreferencesRow">
+                <property name="title">password</property>
+                <child>
+                  <object class="AdwPasswordEntryRow">
+                    <property name="text">samplepassword</property>
+                    <property name="title">password</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="description">Public key to use for SSH Sessions</property>
+            <property name="title">SSH Public Keys</property>
+            <child>
+              <object class="AdwPreferencesRow">
+                <property name="title">pub keys</property>
+                <child>
+                  <object class="AdwActionRow">
+                    <property name="subtitle">public key file name</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="AdwPreferencesPage" id="regex_settings_page">
+        <property name="icon-name">xapp-use-regex-symbolic</property>
+        <property name="name">regex</property>
+        <property name="title">Regex</property>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="description">Define and alter regex definitions</property>
+            <property name="title">Regex Definitions</property>
+            <child>
+              <object class="AdwPreferencesRow">
+                <child>
+                  <object class="GtkListBox">
+                    <property name="selection-mode">multiple</property>
+                    <child>
+                      <object class="GtkListBoxRow"/>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="AdwPreferencesPage" id="terminal_settings_page">
+        <property name="icon-name">org.gnome.Terminal-symbolic</property>
+        <property name="name">terminal</property>
+        <property name="title">Terminal</property>
+      </object>
+    </child>
+  </template>
+</interface>
