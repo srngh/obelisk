@@ -10,6 +10,7 @@ sources = [
   'preferences.py',
   'sidebar_item.py',
   'obelisk_term.py',
+  'theme_switcher.py',
 ]
 
 install_data(sources, install_dir: widgetsdir)

@@ -10,5 +10,9 @@
     <key name="window-maximized" type="b">
       <default>false</default>
     </key>
+	  <!-- Settings -->
+	  <key name="style-scheme" type="s">
+	    <default>"auto"</default>
+	  </key>
 	</schema>
 </schemalist>

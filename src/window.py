@@ -21,6 +21,8 @@ from gi.repository import Adw
 from gi.repository import Gtk, Gio, Vte
 
 from .widgets.sidebar_item import SidebarItem
+from .widgets.theme_switcher import ThemeSwitcher
+
 from .widgets.obelisk_term import ObeliskTerm
 
 @Gtk.Template(resource_path='/org/gnome/obelisk/window.ui')
@@ -48,6 +50,10 @@ class ObeliskWindow(Adw.ApplicationWindow):
     # _settings = Gio.Settings(schema_id="me.iepure.devtoolbox")
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
+        self.menu_btn.get_popover().add_child(ThemeSwitcher(), "themeswitcher")
+        print(self.menu_btn.get_popover())
 
         # Restore last state
         self.settings.bind("window-width", self,

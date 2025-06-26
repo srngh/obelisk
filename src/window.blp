@@ -115,7 +115,10 @@ template $ObeliskWindow: Adw.ApplicationWindow {
 
 menu primary_menu {
   section {
-    item {
+      item {
+        custom: "themeswitcher";
+    }
+      item {
       action: 'app.preferences';
       label: '_Preferences';
     }

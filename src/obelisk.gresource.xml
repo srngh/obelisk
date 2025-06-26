@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/org/gnome/obelisk">
+    <!-- Stylesheets -->
+    <file alias="style.css">css/style.css</file>
+    <file alias="style-hc.css">css/style-hc.css</file>
+    <file alias="style-dark.css">css/style-dark.css</file>
+    <file alias="style-dark-hc.css">css/style-dark-hc.css</file>
+
     <!-- UI files -->
     <file preprocess="xml-stripblanks">window.ui</file>
     <file preprocess="xml-stripblanks">gtk/help-overlay.ui</file>
     <file preprocess="xml-stripblanks">gtk/preferences.ui</file>
+    <file preprocess="xml-stripblanks">gtk/theme_switcher.ui</file>
 
     <!-- Icons -->
     <file preprocess="xml-stripblanks">icons/scalable/actions/starred.svg</file>
