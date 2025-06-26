@@ -21,6 +21,7 @@ from gi.repository import Adw
 from gi.repository import Gtk, Gio, Vte
 
 from .widgets.sidebar_item import SidebarItem
+from .widgets.obelisk_term import ObeliskTerm
 
 @Gtk.Template(resource_path='/org/gnome/obelisk/window.ui')
 class ObeliskWindow(Adw.ApplicationWindow):
@@ -44,17 +45,17 @@ class ObeliskWindow(Adw.ApplicationWindow):
 
     #GSettings
     settings = Gio.Settings(schema_id="org.gnome.obelisk")
-
+    # _settings = Gio.Settings(schema_id="me.iepure.devtoolbox")
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         # Restore last state
-        #self.settings.bind("window-width", self,
-        #                    "default-width", Gio.SettingsBindFlags.DEFAULT)
-        #self.settings.bind("window-height", self,
-        #                    "default-height", Gio.SettingsBindFlags.DEFAULT)
-        #self.settings.bind("window-maximized", self,
-        #                    "maximized", Gio.SettingsBindFlags.DEFAULT)
+        self.settings.bind("window-width", self,
+                            "default-width", Gio.SettingsBindFlags.DEFAULT)
+        self.settings.bind("window-height", self,
+                            "default-height", Gio.SettingsBindFlags.DEFAULT)
+        self.settings.bind("window-maximized", self,
+                            "maximized", Gio.SettingsBindFlags.DEFAULT)
 
         self.items = {
             "1234-00": {
@@ -81,16 +82,14 @@ class ObeliskWindow(Adw.ApplicationWindow):
                 item_description=self.items[i]["item_description"],
                 icon_name=self.items[i]["icon_name"])
             )
-            #self._content_stack.add_named(self._tools[t]["child"], t)
+            # self._content_stack.add_named(self._tools[t]["child"], t)
 
         self.sidebar.connect('row-activated', self.on_sidebar_item_activated)
 
     def on_sidebar_item_activated(self, sidebar, sidebar_item):
         print(f"activated {sidebar_item.get_item_title()}")
-        #page = Gtk.Box()
-        #term = Vte.Terminal()
-        #page.append(term)
-        #sel_page = self.tab_view.add_page(page).set_title(sidebar_item.get_item_title())
+        term = ObeliskTerm()
+        sel_page = self.tab_view.add_page(term).set_title(sidebar_item.get_item_title())
 
         """
         item_uuid = GObject.Property(type=str, default="")

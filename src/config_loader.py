@@ -1,4 +1,4 @@
-# obelisk_term.py
+# window.py
 #
 # Copyright 2025 simhof
 #
@@ -17,13 +17,20 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import Gtk, Vte
+import yml
 
-class ObeliskTerm(Vte.Terminal):
-    __gtype_name__ = "ObeliskTerm"
+class ConfigLoader():
+    def __init__(self, file_name: str, description: str):
+        self.file_name = file_name
+        self.description = description
+    
+    def set_uri(self, uri: str):
+        self.uri = uri
 
-    term = Vte.Terminal()
-
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def set_port(sef, port: str):
+        self.port = port
+    
+    def set_name(self, name: str):
+        self.name = name
+    
+    def set_parent(self, parent)

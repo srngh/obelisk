@@ -28,12 +28,14 @@ from gi.repository import Gtk, Gdk, Gio, Adw, Vte
 
 from .window import ObeliskWindow
 from .widgets.preferences import Preferences
+from .widgets.obelisk_term import ObeliskTerm
 
 class ObeliskApplication(Adw.Application):
     """The main application singleton class."""
 
     custom_widgets = [
     Preferences,
+    ObeliskTerm,
     ]
 
     def __init__(self):
