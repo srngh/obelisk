@@ -53,7 +53,6 @@ class ObeliskWindow(Adw.ApplicationWindow):
 
         # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
         self.menu_btn.get_popover().add_child(ThemeSwitcher(), "themeswitcher")
-        print(self.menu_btn.get_popover())
 
         # Restore last state
         self.settings.bind("window-width", self,

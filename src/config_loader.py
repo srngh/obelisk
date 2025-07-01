@@ -19,18 +19,41 @@
 
 import yml
 
-class ConfigLoader():
-    def __init__(self, file_name: str, description: str):
-        self.file_name = file_name
-        self.description = description
-    
-    def set_uri(self, uri: str):
-        self.uri = uri
+class Session:
+    def __init__(self, id: str):
+        self.id = id
 
-    def set_port(sef, port: str):
-        self.port = port
+
+class ConfigLoader():
+    def __init__(self, file_name: str):
+        self.file_name = None
     
-    def set_name(self, name: str):
-        self.name = name
+    def __call__(self, config_type: str):
+        case config_type:
+            match "obelisk":
+                pass
+            match "asbru-cm":
+                pass
+            match "royal-ts":
+                pass
+            match "moba-xterm":
+                pass
+            match "remote-desktop-manager":
+                pass
     
-    def set_parent(self, parent)
+    def load_obelisk_config(self, file_name: str):
+        try:
+            #opening the file
+            # with open(file_name) as file:
+            #   parse_obelisk_config(file)
+            pass
+        except:
+            pass
+            ##
+        pass
+    
+    def parse_obelisk_config(self, config):
+        # yaml syntax
+        pass
+
+

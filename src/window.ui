@@ -36,6 +36,7 @@
                 <property name="show-title">False</property>
                 <child type="start">
                   <object class="GtkToggleButton" id="toggle_sidebar_btn">
+                    <property name="active">True</property>
                     <property name="icon-name">dock-left-symbolic</property>
                     <property name="tooltip-text">Show/hide sidebar</property>
                   </object>
@@ -148,6 +149,9 @@
       <item>
         <attribute name="action">app.about</attribute>
         <attribute name="label">_About Tutorial</attribute>
+      </item>
+      <item>
+        <attribute name="themeswitcher">custom</attribute>
       </item>
     </section>
   </menu>

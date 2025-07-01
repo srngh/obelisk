@@ -17,13 +17,76 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import Gtk, Vte
+
+from gi.repository import Gtk, Vte, GLib, Gio
+import os
 
 class ObeliskTerm(Vte.Terminal):
     __gtype_name__ = "ObeliskTerm"
 
     term = Vte.Terminal()
+    #pty = Vte.Pty.new_sync(Vte.PtyFlags.DEFAULT)
+    #term.set_pty(pty)
 
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.spawn_async(
+            Vte.PtyFlags.DEFAULT,
+            os.environ['HOME'],
+            ["/usr/bin/bash"],
+            None,
+            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            None,
+            None,
+            -1,
+            None,
+            None,
+            None
+        )
+
+"""
+vte_pty_spawn_async (
+  VtePty* pty,
+  const char* working_directory,
+  char** argv,
+  char** envv,
+  GSpawnFlags spawn_flags,
+  GSpawnChildSetupFunc child_setup,
+  gpointer child_setup_data,
+  GDestroyNotify child_setup_data_destroy,
+  int timeout,
+  GCancellable* cancellable,
+  GAsyncReadyCallback callback,
+  gpointer user_data
+)
+
+        self.pty.spawn_async(
+            None,
+            ["/bin/python"],
+            None,
+            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            None,
+            None,
+            -1,
+            None,
+            None,
+            None,
+            None,
+            )
+
+        self.pty.spawn_async(
+            os.environ['HOME'],
+            ["/bin/sh"],
+            None,
+            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            None,
+            None,
+            -1,
+            None,
+            None,
+            None,
+            None
+        )
+
+"""
