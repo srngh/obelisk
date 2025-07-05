@@ -25,6 +25,8 @@ from .widgets.theme_switcher import ThemeSwitcher
 
 from .widgets.obelisk_term import ObeliskTerm
 
+from .config_loaders.config_loader import ConfigLoaderFactory
+
 @Gtk.Template(resource_path='/org/gnome/obelisk/window.ui')
 class ObeliskWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'ObeliskWindow'
@@ -62,6 +64,17 @@ class ObeliskWindow(Adw.ApplicationWindow):
         self.settings.bind("window-maximized", self,
                             "maximized", Gio.SettingsBindFlags.DEFAULT)
 
+        # Load a sample config
+        defaultLoader = ConfigLoaderFactory().create_loader("obelisk")
+        defaultLoader.load_config("/home/simhof/.config/obelisk/obelisk.yaml")
+
+        self.items = defaultLoader.to_str()
+
+        self.config = Gio.ListStore()
+
+        for i in self.items:
+            self.config.append
+        """
         self.items = {
             "1234-00": {
                 "item_title": "server-1",
@@ -76,6 +89,8 @@ class ObeliskWindow(Adw.ApplicationWindow):
                 "icon_name": "package-x-generic-symbolic",
             },
         }
+        """
+
 
         # Populate sidebar
 
@@ -87,10 +102,10 @@ class ObeliskWindow(Adw.ApplicationWindow):
                 item_description=self.items[i]["item_description"],
                 icon_name=self.items[i]["icon_name"])
             )
-            # self._content_stack.add_named(self._tools[t]["child"], t)
 
         self.sidebar.connect('row-activated', self.on_sidebar_item_activated)
 
+    # Spawn a Terminal
     def on_sidebar_item_activated(self, sidebar, sidebar_item):
         print(f"activated {sidebar_item.get_item_title()}")
         term = ObeliskTerm()

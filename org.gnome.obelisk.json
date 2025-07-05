@@ -26,7 +26,8 @@
         "*.a"
     ],
     "modules" : [
-                {
+    	"python3-requirements.json",
+    	{
             "name" : "fast_float",
             "buildsystem" : "cmake-ninja",
             "sources" : [

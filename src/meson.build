@@ -39,11 +39,13 @@ configure_file(
 )
 
 subdir('widgets')
+subdir('config_loaders')
 
 obelisk_sources = [
   '__init__.py',
   'main.py',
   'window.py',
+  'config.yaml',
 ]
 
 install_data(obelisk_sources, install_dir: moduledir)
