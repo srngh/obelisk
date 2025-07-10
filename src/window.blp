@@ -53,7 +53,7 @@ template $ObeliskWindow: Adw.ApplicationWindow {
     };
 
     max-sidebar-width: 350.0;
-    show-sidebar: bind toggle_sidebar_btn.active no-sync-create;
+    show-sidebar: bind-property toggle_sidebar_btn.active no-sync-create;
 
     sidebar: Adw.ToolbarView {
       content: ScrolledWindow {
@@ -62,8 +62,8 @@ template $ObeliskWindow: Adw.ApplicationWindow {
         };
       };
 
-      focusable: true;
       hexpand: true;
+      hexpand-set: true;
 
       [top]
       Adw.HeaderBar {
@@ -105,7 +105,7 @@ template $ObeliskWindow: Adw.ApplicationWindow {
           placeholder-text: 'Search Connections…';
         };
 
-        search-mode-enabled: bind show_search_btn.active no-sync-create;
+        search-mode-enabled: bind-property show_search_btn.active no-sync-create;
       }
     };
 
@@ -117,9 +117,11 @@ template $ObeliskWindow: Adw.ApplicationWindow {
 menu primary_menu {
   section {
       item {
-        custom: "themeswitcher";
+      custom: 'themeswitcher';
+      }
     }
-      item {
+  section {
+    item {
       action: 'app.preferences';
       label: '_Preferences';
     }
@@ -133,5 +135,7 @@ menu primary_menu {
       action: 'app.about';
       label: '_About Tutorial';
     }
+
+
   }
 }

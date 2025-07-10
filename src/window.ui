@@ -139,6 +139,11 @@
   <menu id="primary_menu">
     <section>
       <item>
+        <attribute name="custom">themeswitcher</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
         <attribute name="action">app.preferences</attribute>
         <attribute name="label">_Preferences</attribute>
       </item>
@@ -149,9 +154,6 @@
       <item>
         <attribute name="action">app.about</attribute>
         <attribute name="label">_About Tutorial</attribute>
-      </item>
-      <item>
-        <attribute name="themeswitcher">custom</attribute>
       </item>
     </section>
   </menu>
