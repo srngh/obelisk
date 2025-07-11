@@ -58,7 +58,7 @@ class ObeliskApplication(Adw.Application):
 
     def on_about_action(self, widget, _):
         """Callback for the app.about action."""
-        about = Adw.AboutDialog(application_name='obelisk',
+        about = Adw.AboutDialog(application_name='Obelisk',
                                 application_icon='org.gnome.obelisk',
                                 developer_name='simhof',
                                 version='0.0.1',

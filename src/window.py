@@ -36,9 +36,10 @@ class ObeliskWindow(Adw.ApplicationWindow):
     show_search_btn = Gtk.Template.Child()
     fav_btn = Gtk.Template.Child()
     fav_stack = Gtk.Template.Child()
-    #favorites = Gtk.Template.Child()
     search_bar = Gtk.Template.Child()
-    #content_view = Gtk.Template.Child()
+
+    # favorites = Gtk.Template.Child()
+    # content_view = Gtk.Template.Child()
     toggle_sidebar_btn = Gtk.Template.Child()
     menu_btn = Gtk.Template.Child()
     tab_container = Gtk.Template.Child()

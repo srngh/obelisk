@@ -24,9 +24,47 @@ import os
 class ObeliskTerm(Vte.Terminal):
     __gtype_name__ = "ObeliskTerm"
 
-    term = Vte.Terminal()
+    #term = Vte.Terminal()
     #pty = Vte.Pty.new_sync(Vte.PtyFlags.DEFAULT)
     #term.set_pty(pty)
+
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.spawn_async(
+            Vte.PtyFlags.DEFAULT,
+            os.environ['HOME'],
+            ["/app/bin/host-spawn", "bash"],
+            None,
+            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            None,
+            None,
+            -1,
+            None,
+            None,
+            None
+        )
+
+"""
+            #["/app/bin/host-spawn"],
+            #["bash"],
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.spawn_async(
+            Vte.PtyFlags.DEFAULT,
+            os.environ['HOME'],
+            ["/app/bin/host-spawn", "bash"],
+            None,
+            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            None,
+            None,
+            -1,
+            None,
+            None,
+            None
+        )
+
 
 
     def __init__(self, **kwargs):
@@ -45,7 +83,6 @@ class ObeliskTerm(Vte.Terminal):
             None
         )
 
-"""
 vte_pty_spawn_async (
   VtePty* pty,
   const char* working_directory,
@@ -60,33 +97,5 @@ vte_pty_spawn_async (
   GAsyncReadyCallback callback,
   gpointer user_data
 )
-
-        self.pty.spawn_async(
-            None,
-            ["/bin/python"],
-            None,
-            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-            None,
-            None,
-            -1,
-            None,
-            None,
-            None,
-            None,
-            )
-
-        self.pty.spawn_async(
-            os.environ['HOME'],
-            ["/bin/sh"],
-            None,
-            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-            None,
-            None,
-            -1,
-            None,
-            None,
-            None,
-            None
-        )
 
 """
