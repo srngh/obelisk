@@ -26,6 +26,7 @@ from .widgets.theme_switcher import ThemeSwitcher
 from .widgets.obelisk_term import ObeliskTerm
 
 from .config_loaders.config_loader import ConfigLoaderFactory
+# from .obeliskSSH import ObeliskSSHClient, open_shell
 
 @Gtk.Template(resource_path='/org/gnome/obelisk/window.ui')
 class ObeliskWindow(Adw.ApplicationWindow):
@@ -110,8 +111,17 @@ class ObeliskWindow(Adw.ApplicationWindow):
     def on_sidebar_item_activated(self, sidebar, sidebar_item):
         print(f"activated {sidebar_item.get_item_title()}")
         term = ObeliskTerm()
-        sel_page = self.tab_view.add_page(term).set_title(sidebar_item.get_item_title())
 
+        sel_page = self.tab_view.add_page(term).set_title(sidebar_item.get_item_title())
+        term.spawn_sh()
+
+        #con = ObeliskSSHClient()
+        #con.load_system_host_keys()
+        # IP =
+        # user =
+        # pw =
+        #con.connect(IP, username=user, password=pw)
+        #term.spawn_ssh(open_shell(con))
         """
         item_uuid = GObject.Property(type=str, default="")
         item_title = GObject.Property(type=str, default="")

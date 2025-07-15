@@ -31,6 +31,9 @@ class ObeliskTerm(Vte.Terminal):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+    def spawn_bash(self):
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
@@ -45,16 +48,11 @@ class ObeliskTerm(Vte.Terminal):
             None
         )
 
-"""
-            #["/app/bin/host-spawn"],
-            #["bash"],
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def spawn_sh(self):
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
-            ["/app/bin/host-spawn", "bash"],
+            ["/bin/sh"],
             None,
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
@@ -65,14 +63,11 @@ class ObeliskTerm(Vte.Terminal):
             None
         )
 
-
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def spawn_ssh(self, func):
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
-            ["/usr/bin/bash"],
+            [func],
             None,
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
@@ -82,20 +77,3 @@ class ObeliskTerm(Vte.Terminal):
             None,
             None
         )
-
-vte_pty_spawn_async (
-  VtePty* pty,
-  const char* working_directory,
-  char** argv,
-  char** envv,
-  GSpawnFlags spawn_flags,
-  GSpawnChildSetupFunc child_setup,
-  gpointer child_setup_data,
-  GDestroyNotify child_setup_data_destroy,
-  int timeout,
-  GCancellable* cancellable,
-  GAsyncReadyCallback callback,
-  gpointer user_data
-)
-
-"""
