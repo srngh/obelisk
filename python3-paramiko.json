@@ -22,13 +22,24 @@
         },
         {
             "type": "file",
-            "url": "https://files.pythonhosted.org/packages/95/1e/49527ac611af559665f71cbb8f92b332b5ec9c6fbc4e88b0f8e92f5e85df/cryptography-45.0.5.tar.gz",
-            "sha256": "72e76caa004ab63accdf26023fccd1d087f6d90ec6048ff33ad0445abf7f605a"
+            "url": "https://files.pythonhosted.org/packages/05/2b/aaf0adb845d5dabb43480f18f7ca72e94f92c280aa983ddbd0bcd6ecd037/cryptography-45.0.5-cp37-abi3-manylinux_2_34_x86_64.whl",
+            "sha256": "7760c1c2e1a7084153a0f68fab76e754083b126a47d0117c9ed15e69e2103492",
+            "only-arches": [
+                "x86_64"
+            ]
         },
         {
             "type": "file",
-            "url": "https://files.pythonhosted.org/packages/15/f8/c7bd0ef12954a81a1d3cea60a13946bd9a49a0036a5927770c461eade7ae/paramiko-3.5.1-py3-none-any.whl",
-            "sha256": "43b9a0501fc2b5e70680388d9346cf252cfb7d00b0667c39e80eb43a408b8f61"
+            "url": "https://files.pythonhosted.org/packages/c9/d8/0749f7d39f53f8258e5c18a93131919ac465ee1f9dccaf1b3f420235e0b5/cryptography-45.0.5-cp311-abi3-manylinux_2_34_x86_64.whl",
+            "sha256": "ad0caded895a00261a5b4aa9af828baede54638754b51955a0ac75576b831b27",
+            "only-arches": [
+                "x86_64"
+            ]
+        },
+        {
+            "type": "file",
+            "url": "https://files.pythonhosted.org/packages/7d/15/ad6ce226e8138315f2451c2aeea985bf35ee910afb477bae7477dc3a8f3b/paramiko-3.5.1.tar.gz",
+            "sha256": "b2c665bc45b2b215bd7d7f039901b14b067da00f3a11e6640995fd58f2664822"
         },
         {
             "type": "file",
