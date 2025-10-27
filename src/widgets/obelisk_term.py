@@ -62,12 +62,14 @@ class ObeliskTerm(Vte.Terminal):
             None,
             None
         )
+        pty = self.get_pty()
+        pid = pty.spawn(finish)
 
-    def spawn_ssh(self, func):
+    def spawn_ssh(self):
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
-            [func],
+            ['/usr/bin/python3', '/app/share/obelisk/obelisk/widgets/shell.py'],
             None,
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
@@ -77,3 +79,4 @@ class ObeliskTerm(Vte.Terminal):
             None,
             None
         )
+

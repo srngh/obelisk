@@ -1,4 +1,4 @@
-# obelisk_tree_expander.py
+# obelisk_tree_widget.py
 #
 # Copyright 2025 simhof
 #
@@ -17,14 +17,21 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import Gtk, GLib
 
-class ObeliskTreeExpander(Gtk.TreeExpander):
-    __gtype_name__ = "ObeliskTreeExpander"
+from gi.repository import GObject, Gtk, Gio
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.parent = None
-        self.label = Gtk.Inscription(hexpand=True)
-        self.set_child(self.label)
-        
+class ObeliskTreeWidget(Gtk.Box):
+    __gtype_name__ = "ObeliskTreeWidget"
+
+    def __init__(self):
+        super().__init__(
+            spacing=6, margin_start=6, margin_end=12, margin_top=4, margin_bottom=4
+        )
+        self.expander = Gtk.TreeExpander.new()
+        self.label = Gtk.Label(halign=Gtk.Align.START)
+        self.icon = Gtk.Image()
+        self.icon.set_from_icon_name("package-x-generic-symbolic")
+
+        self.append(self.expander)
+        self.append(self.icon)
+        self.append(self.label)

@@ -27,7 +27,6 @@
     ],
     "modules" : [
     	"python3-pyyaml.json",
-    	"python3-maturin.json",
     	"python3-paramiko.json",
     	{
             "name" : "fast_float",

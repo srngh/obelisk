@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from __future__ import print_function
 
 import paramiko
@@ -9,13 +11,7 @@ import socket
 import termios
 import tty
 
-class ObeliskSSHClient(paramiko.SSHClient):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
-
-
-# borrowed from github.com/sirosen/paramiko-shell
 def open_shell(connection, remote_name='SSH server'):
     """
     Opens a PTY on a remote server, and allows interactive commands to be run.
@@ -83,13 +79,15 @@ def open_shell(connection, remote_name='SSH server'):
                 # try to do a read from the remote end and print to screen
                 try:
                     out = channel.recv(1024)
+                    #out.decode('utf-8') = channel.recv(1024)
+                    # print(type(out))
 
                     # remote close
                     if len(out) == 0:
                         is_alive = False
                     else:
                         # rely on 'print' to correctly handle encoding
-                        print(out, end='')
+                        print(out.decode('utf-8'), end='')
                         sys.stdout.flush()
 
                 # do nothing on a timeout, as this is an ordinary condition

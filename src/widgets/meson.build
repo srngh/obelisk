@@ -11,6 +11,9 @@ sources = [
   'sidebar_item.py',
   'obelisk_term.py',
   'theme_switcher.py',
+  'interactive_shell.py',
+  'shell.py',
+  'obelisk_tree_widget.py',
 ]
 
 install_data(sources, install_dir: widgetsdir)

@@ -19,10 +19,48 @@
 
 import yaml
 
+# To Do:
+# Demote this to a ObeliskConfigFileHandler
+
 class ObeliskLoader:
-    def load_config(self, filename):
+    def load_connections(self, filename):
         with open(filename) as file:
-            self.config = yaml.safe_load(file)
+            self.connections = yaml.safe_load(file)
 
     def to_str(self):
-        return self.config
+        return self.connections
+
+# To Do:
+# write changes to file
+
+### To be deleted
+'''
+    def to_conf(self):
+        return parse_config(self.connections)
+
+def parse_config(connections: dict):
+    list_items = []
+    for item in connections:
+        match connections[item]['item_type']:
+            case 'connection':
+                connection_item = Item(connections[item]['item_title'])
+                connection_item.ip4_address = connections[item]['ip4_address']
+                connection_item.user = connections[item]['user']
+                connection_item.user = connections[item]['item_description']
+                connection_item.protocol = connections[item]['protocol']
+                connection_item.auth = connections[item]['auth']
+                list_items.append(connection_item)
+            case 'folder':
+                sub_items = connections[item]['connections']
+                folder_item = Item(connections[item]['item_title'], children=parse_config(sub_items))
+                list_items.append(folder_item)
+    return list_items
+
+class Item:
+    def __init__(self, title, children=None):
+        self.title = title
+        self.children = children or []
+
+    def __repr__(self):
+        return f'{self.title}'
+'''

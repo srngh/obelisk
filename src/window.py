@@ -17,6 +17,8 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from pprint import pprint
+
 from gi.repository import Adw
 from gi.repository import Gtk, Gio, Vte
 
@@ -27,6 +29,8 @@ from .widgets.obelisk_term import ObeliskTerm
 
 from .config_loaders.config_loader import ConfigLoaderFactory
 # from .obeliskSSH import ObeliskSSHClient, open_shell
+
+from .obelisk_list_view import ObeliskListView
 
 @Gtk.Template(resource_path='/org/gnome/obelisk/window.ui')
 class ObeliskWindow(Adw.ApplicationWindow):
@@ -39,19 +43,19 @@ class ObeliskWindow(Adw.ApplicationWindow):
     fav_stack = Gtk.Template.Child()
     search_bar = Gtk.Template.Child()
 
-    # favorites = Gtk.Template.Child()
-    # content_view = Gtk.Template.Child()
-    toggle_sidebar_btn = Gtk.Template.Child()
+
     menu_btn = Gtk.Template.Child()
     tab_container = Gtk.Template.Child()
-    sidebar = Gtk.Template.Child()
     tab_bar = Gtk.Template.Child()
     tab_view = Gtk.Template.Child()
     add_tab_btn = Gtk.Template.Child()
 
+    # Sidebar related Widgets
+    toggle_sidebar_btn = Gtk.Template.Child()
+    obelisk_sidebar = Gtk.Template.Child()
+
     #GSettings
-    settings = Gio.Settings(schema_id="org.gnome.obelisk")
-    # _settings = Gio.Settings(schema_id="me.iepure.devtoolbox")
+    _settings = Gio.Settings(schema_id="org.gnome.obelisk")
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -59,23 +63,27 @@ class ObeliskWindow(Adw.ApplicationWindow):
         self.menu_btn.get_popover().add_child(ThemeSwitcher(), "themeswitcher")
 
         # Restore last state
-        self.settings.bind("window-width", self,
+        self._settings.bind("window-width", self,
                             "default-width", Gio.SettingsBindFlags.DEFAULT)
-        self.settings.bind("window-height", self,
+        self._settings.bind("window-height", self,
                             "default-height", Gio.SettingsBindFlags.DEFAULT)
-        self.settings.bind("window-maximized", self,
+        self._settings.bind("window-maximized", self,
                             "maximized", Gio.SettingsBindFlags.DEFAULT)
 
         # Load a sample config
         defaultLoader = ConfigLoaderFactory().create_loader("obelisk")
-        defaultLoader.load_config("/home/simhof/.config/obelisk/obelisk.yaml")
+        defaultLoader.load_connections("/home/soeren/.config/obelisk/obelisk_nested.yaml")
 
         self.items = defaultLoader.to_str()
 
-        self.config = Gio.ListStore()
+        # self.connections = Gio.ListStore()
 
+        '''
         for i in self.items:
-            self.config.append
+            self.connections.append
+        '''
+
+        # pprint(self.items)
         """
         self.items = {
             "1234-00": {
@@ -92,10 +100,13 @@ class ObeliskWindow(Adw.ApplicationWindow):
             },
         }
         """
-
+        obelisk_list_view = ObeliskListView(items=self.items)
+        #obelisk_list_view.set_config(config=self.config)
+        self.obelisk_sidebar.set_content(obelisk_list_view)
 
         # Populate sidebar
 
+        """
         for i in self.items:
             self.sidebar.append(SidebarItem(
                 item_uuid=self.items[i],
@@ -106,14 +117,14 @@ class ObeliskWindow(Adw.ApplicationWindow):
             )
 
         self.sidebar.connect('row-activated', self.on_sidebar_item_activated)
-
+        """
     # Spawn a Terminal
     def on_sidebar_item_activated(self, sidebar, sidebar_item):
         print(f"activated {sidebar_item.get_item_title()}")
         term = ObeliskTerm()
 
         sel_page = self.tab_view.add_page(term).set_title(sidebar_item.get_item_title())
-        term.spawn_sh()
+        term.spawn_ssh()
 
         #con = ObeliskSSHClient()
         #con.load_system_host_keys()
@@ -122,25 +133,17 @@ class ObeliskWindow(Adw.ApplicationWindow):
         # pw =
         #con.connect(IP, username=user, password=pw)
         #term.spawn_ssh(open_shell(con))
-        """
-        item_uuid = GObject.Property(type=str, default="")
-        item_title = GObject.Property(type=str, default="")
-        item_type = GObject.Property(type=str, default="")
-        item_description = GObject.Property(type=str, default="")
-        icon_name = GObject.Property(type=str, default="")
-        """
 
 
     @Gtk.Template.Callback()
     def on_tab_add_btn_clicked(self, Button):
         """
-        This is a limited way to create a new tab with a static title
+        This is a testing button, which spawns a shell inside the flatpak.
+        Mostly for testing and debugging.
         """
         print("clicked tab add button")
-        page = Gtk.Box()
-        label1 = Gtk.Label()
-        label1.set_text("1234")
-        page.append(label1)
-        page.title = "sample"
-        sel_page = self.tab_view.add_page(page).set_title("sample")
+        term = ObeliskTerm()
+        sel_page = self.tab_view.add_page(term).set_title("local shell")
+        term.spawn_sh()
+        term.watch_child()
 
