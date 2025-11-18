@@ -37,7 +37,7 @@ template $ObeliskWindow: Adw.ApplicationWindow {
 
         [end]
         MenuButton menu_btn {
-          icon-name: "document-properties";
+          icon-name: "document-properties-symbolic";
           menu-model: primary_menu;
         }
 
@@ -49,14 +49,19 @@ template $ObeliskWindow: Adw.ApplicationWindow {
           tooltip-text: "Add a new tab";
           clicked => $on_tab_add_btn_clicked();
         }
+
+        MenuButton debug_list_view_btn {
+          direction: right;
+          icon-name: "document-properties-symbolic";
+          menu-model: test_list_view_item_menu;
+        }
       }
     };
 
-    max-sidebar-width: 350.0;
+    max-sidebar-width: 350;
     show-sidebar: bind toggle_sidebar_btn.active no-sync-create;
 
     sidebar: Adw.ToolbarView obelisk_sidebar {
-
       hexpand: true;
       hexpand-set: true;
 
@@ -68,14 +73,14 @@ template $ObeliskWindow: Adw.ApplicationWindow {
 
         [start]
         ToggleButton show_search_btn {
-          icon-name: "search";
+          icon-name: "search-symbolic";
           tooltip-text: "Show/hide searchbar";
           activate => $show_search_btn();
         }
 
         [end]
         MenuButton fav_btn {
-          icon-name: "starred";
+          icon-name: "starred-symbolic";
 
           popover: Popover {
             child: Adw.ViewStack fav_stack {
@@ -85,7 +90,7 @@ template $ObeliskWindow: Adw.ApplicationWindow {
               Adw.ViewStackPage empty {
                 child: Adw.StatusPage {
                   description: "Add your favorite Connections here by clicking the star button beside the title";
-                  icon-name: "starred";
+                  icon-name: "starred-symbolic";
                   title: "No Connections";
                 };
               }
@@ -130,6 +135,39 @@ menu primary_menu {
     item {
       action: "app.about";
       label: "_About Obelisk";
+    }
+  }
+}
+
+menu debug_menu {
+  section {
+    item {
+      action: "win.new_item";
+      label: "_New Item";
+    }
+  }
+}
+
+menu test_list_view_item_menu {
+  section {
+    item {
+      action: "win.new_item";
+      label: "_New Item";
+    }
+
+    item {
+      action: "win.clone_item";
+      label: "_Duplicate Item";
+    }
+
+    item {
+      action: "win.delete_item";
+      label: "_Remove Item";
+    }
+
+    item {
+      action: "win.connect_to_item";
+      label: "_Connect";
     }
   }
 }

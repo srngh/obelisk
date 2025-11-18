@@ -2,6 +2,8 @@
 <!DOCTYPE cambalache-project SYSTEM "cambalache-project.dtd">
 <!-- Created with Cambalache 0.97.8 -->
 <cambalache-project version="0.96.0" target_tk="gtk-4.0">
-  <ui template-class="ObeliskWindow" filename="window.blp"/>
-  <ui template-class="PreferencesDialog" filename="gtk/preferences.ui" sha256="9640c58aaaf89a39460dc93b5b589086f1b7cf8dade973a666b65f9a05f4deda"/>
+  <ui template-class="ObeliskWindow" filename="window.blp" sha256="4ba02552a78de7fd19a393bbdac32253c28ff67bdee255338df8cc7620627aad"/>
+  <ui template-class="PreferencesDialog" filename="gtk/preferences.blp" sha256="3395db18025bf11cae17e0954b11d5b1e5546c7fca71104093a335b099787f06"/>
+  <ui filename="gtk/help-overlay.blp" sha256="2583bfbe7c22221fb369bccd95a9d040d247cfe18135544eb9ba12650ccc3dd5"/>
+  <ui filename="gtk/context-menu.blp" sha256="52fe4420594dc38ee16f4e84e39e2cd62ba383011a092fcb4aafd3b2e3d33598"/>
 </cambalache-project>

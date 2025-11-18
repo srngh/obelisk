@@ -19,7 +19,7 @@
 
 import json
 
-class AsbruLoader:
+class AsbruFileHandler:
     def load_config(self, filename):
         with open(filename) as file:
             self.config = json.dumps(file)

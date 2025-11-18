@@ -12,17 +12,19 @@
     <file preprocess="xml-stripblanks">gtk/help-overlay.ui</file>
     <file preprocess="xml-stripblanks">gtk/preferences.ui</file>
     <file preprocess="xml-stripblanks">gtk/theme_switcher.ui</file>
+    <file preprocess="xml-stripblanks">gtk/context-menu.ui</file>
 
     <!-- Icons -->
-    <file preprocess="xml-stripblanks">icons/scalable/actions/starred.svg</file>
-    <file preprocess="xml-stripblanks">icons/scalable/actions/search.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/starred-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/search-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/dock-left-symbolic.svg</file>
-    <file preprocess="xml-stripblanks">icons/scalable/actions/add.svg</file>
-    <file preprocess="xml-stripblanks">icons/scalable/actions/document-properties.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/add-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/document-properties-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/application-menu-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/network-transmit-receive-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/xapp-use-regex-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/org.gnome.Terminal-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/package-x-generic-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/ssh-symbolic.svg</file>
   </gresource>
 </gresources>

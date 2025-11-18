@@ -22,7 +22,7 @@ import yaml
 # To Do:
 # Demote this to a ObeliskConfigFileHandler
 
-class ObeliskLoader:
+class ObeliskFileHandler:
     def load_connections(self, filename):
         with open(filename) as file:
             self.connections = yaml.safe_load(file)

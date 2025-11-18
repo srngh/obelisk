@@ -22,13 +22,11 @@ from pprint import pprint
 from gi.repository import Adw
 from gi.repository import Gtk, Gio, Vte
 
-from .widgets.sidebar_item import SidebarItem
 from .widgets.theme_switcher import ThemeSwitcher
 
 from .widgets.obelisk_term import ObeliskTerm
 
-from .config_loaders.config_loader import ConfigLoaderFactory
-# from .obeliskSSH import ObeliskSSHClient, open_shell
+from .config_file_handlers.config_file_handler import ConfigFileHandlerFactory
 
 from .obelisk_list_view import ObeliskListView
 
@@ -54,10 +52,31 @@ class ObeliskWindow(Adw.ApplicationWindow):
     toggle_sidebar_btn = Gtk.Template.Child()
     obelisk_sidebar = Gtk.Template.Child()
 
+    def _new_item(self, *args):
+        print("creating new item")
+
+    def _clone_item(self, *args):
+        print("cloning item")
+
+    def _delete_item(self, *args):
+        print("deleting item")
+
+    def _connect(self, *args):
+        print("establishing ssh connection")
+
+    _actions = {
+        ("new_item", _new_item),
+        ("clone_item", _clone_item),
+        ("delete_item", _delete_item),
+        ("connect", _connect)
+    }
+
     #GSettings
     _settings = Gio.Settings(schema_id="org.gnome.obelisk")
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        self.add_action_entries(self._actions, self)
 
         # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
         self.menu_btn.get_popover().add_child(ThemeSwitcher(), "themeswitcher")
@@ -71,79 +90,40 @@ class ObeliskWindow(Adw.ApplicationWindow):
                             "maximized", Gio.SettingsBindFlags.DEFAULT)
 
         # Load a sample config
-        defaultLoader = ConfigLoaderFactory().create_loader("obelisk")
-        defaultLoader.load_connections("/home/soeren/.config/obelisk/obelisk_nested.yaml")
+        default_handler = ConfigFileHandlerFactory().create_handler("obelisk")
+        default_handler.load_connections("/home/soeren/.config/obelisk/obelisk_nested.yaml")
 
-        self.items = defaultLoader.to_str()
+        self.items = default_handler.to_str()
 
-        # self.connections = Gio.ListStore()
-
-        '''
-        for i in self.items:
-            self.connections.append
-        '''
-
-        # pprint(self.items)
-        """
-        self.items = {
-            "1234-00": {
-                "item_title": "server-1",
-                "item_type": "connection",
-                "item_description": "server 1",
-                "icon_name": "package-x-generic-symbolic",
-            },
-            "1234-02": {
-                "item_title": "server-2",
-                "item_type": "connection",
-                "item_description": "server 2",
-                "icon_name": "package-x-generic-symbolic",
-            },
-        }
-        """
         obelisk_list_view = ObeliskListView(items=self.items)
-        #obelisk_list_view.set_config(config=self.config)
         self.obelisk_sidebar.set_content(obelisk_list_view)
+        obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
 
-        # Populate sidebar
 
+
+    def on_sidebar_item_activated(self, list_view, index):
         """
-        for i in self.items:
-            self.sidebar.append(SidebarItem(
-                item_uuid=self.items[i],
-                item_title=self.items[i]["item_title"],
-                item_type=self.items[i]["item_type"],
-                item_description=self.items[i]["item_description"],
-                icon_name=self.items[i]["icon_name"])
-            )
-
-        self.sidebar.connect('row-activated', self.on_sidebar_item_activated)
+        Spawn a SSH Connection
         """
-    # Spawn a Terminal
-    def on_sidebar_item_activated(self, sidebar, sidebar_item):
-        print(f"activated {sidebar_item.get_item_title()}")
+        print(f"activated {index}")
+        print(f"sidebar: {list_view}")
+        model = list_view.get_model()
+        item = list_view.get_model()[index].get_item()
         term = ObeliskTerm()
 
-        sel_page = self.tab_view.add_page(term).set_title(sidebar_item.get_item_title())
+        sel_page = self.tab_view.add_page(term).set_title(item.get_item_title())
         term.spawn_ssh()
-
-        #con = ObeliskSSHClient()
-        #con.load_system_host_keys()
-        # IP =
-        # user =
-        # pw =
-        #con.connect(IP, username=user, password=pw)
-        #term.spawn_ssh(open_shell(con))
 
 
     @Gtk.Template.Callback()
     def on_tab_add_btn_clicked(self, Button):
         """
-        This is a testing button, which spawns a shell inside the flatpak.
+        Spawns a shell inside the flatpak.
         Mostly for testing and debugging.
         """
         print("clicked tab add button")
         term = ObeliskTerm()
         sel_page = self.tab_view.add_page(term).set_title("local shell")
         term.spawn_sh()
-        term.watch_child()
+        #term.watch_child()
 

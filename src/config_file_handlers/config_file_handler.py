@@ -1,4 +1,4 @@
-# config_loader.py
+# config_file_handler.py
 #
 # Copyright 2025 simhof
 #
@@ -17,18 +17,18 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from .obelisk_loader import ObeliskLoader
-from .asbru_loader import AsbruLoader
+from .obelisk_file_handler import ObeliskFileHandler
+from .asbru_file_handler import AsbruFileHandler
 
 # obelisk, asbru-cm, royal-ts, moba-xterm, remote-desktop-manager
 
-class ConfigLoaderFactory():
+class ConfigFileHandlerFactory():
 
     """Factory Method"""
-    loaders = {
-        "obelisk": ObeliskLoader,
-        "asbru-cm": AsbruLoader
+    handlers = {
+        "obelisk": ObeliskFileHandler,
+        "asbru-cm": AsbruFileHandler
     }
 
-    def create_loader(self, format):
-        return self.loaders[format]()
+    def create_handler(self, format):
+        return self.handlers[format]()

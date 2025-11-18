@@ -6,7 +6,7 @@
    version="1.1"
    id="svg2069"
    sodipodi:docname="add.svg"
-   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -25,16 +25,15 @@
      showgrid="false"
      inkscape:zoom="14.75"
      inkscape:cx="8"
-     inkscape:cy="8.0338983"
-     inkscape:window-width="1920"
-     inkscape:window-height="1131"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1"
+     inkscape:cy="8.0677966"
+     inkscape:window-width="1536"
+     inkscape:window-height="1659"
+     inkscape:window-x="20"
+     inkscape:window-y="20"
+     inkscape:window-maximized="0"
      inkscape:current-layer="svg2069" />
   <path
      d="m 7 1 v 6 h -6 v 2 h 6 v 6 h 2 v -6 h 6 v -2 h -6 v -6 z m 0 0"
      fill="#222222"
-     id="path2067"
-     style="fill:#dfdfdf;fill-opacity:1" />
+     id="path2067" />
 </svg>

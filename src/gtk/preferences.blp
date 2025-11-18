@@ -6,76 +6,76 @@ template $PreferencesDialog: Adw.PreferencesDialog {
   search-enabled: true;
 
   Adw.PreferencesPage general_settings_page {
-    icon-name: 'application-menu-symbolic';
-    name: 'general';
-    title: 'General';
+    icon-name: "application-menu-symbolic";
+    name: "general";
+    title: "General";
 
     Adw.PreferencesGroup general_set_1 {
-      description: 'Config file containing connections';
-      title: 'Config Files';
+      description: "Config file containing connections";
+      title: "Config Files";
 
       Adw.PreferencesRow {
         Adw.ActionRow file_path {
-          subtitle: 'file path';
+          subtitle: "file path";
         }
       }
     }
   }
 
   Adw.PreferencesPage ssh_settings_page {
-    icon-name: 'network-transmit-receive-symbolic';
-    name: 'ssh';
-    title: 'SSH';
+    icon-name: "network-transmit-receive-symbolic";
+    name: "ssh";
+    title: "SSH";
 
     Adw.PreferencesGroup {
-      description: 'User for new SSH Sessions';
-      title: 'Username';
+      description: "User for new SSH Sessions";
+      title: "Username";
 
       Adw.PreferencesRow {
-        title: 'username';
+        title: "username";
 
         Adw.ActionRow {
-          subtitle: 'username';
+          subtitle: "username";
         }
       }
     }
 
     Adw.PreferencesGroup {
-      description: 'Password for interactive SSH Sessions';
-      title: 'Password';
+      description: "Password for interactive SSH Sessions";
+      title: "Password";
 
       Adw.PreferencesRow {
-        title: 'password';
+        title: "password";
 
         Adw.PasswordEntryRow {
-          text: 'samplepassword';
-          title: 'password';
+          text: "samplepassword";
+          title: "password";
         }
       }
     }
 
     Adw.PreferencesGroup {
-      description: 'Public key to use for SSH Sessions';
-      title: 'SSH Public Keys';
+      description: "Public key to use for SSH Sessions";
+      title: "SSH Public Keys";
 
       Adw.PreferencesRow {
-        title: 'pub keys';
+        title: "pub keys";
 
         Adw.ActionRow {
-          subtitle: 'public key file name';
+          subtitle: "public key file name";
         }
       }
     }
   }
 
   Adw.PreferencesPage regex_settings_page {
-    icon-name: 'xapp-use-regex-symbolic';
-    name: 'regex';
-    title: 'Regex';
+    icon-name: "xapp-use-regex-symbolic";
+    name: "regex";
+    title: "Regex";
 
     Adw.PreferencesGroup {
-      description: 'Define and alter regex definitions';
-      title: 'Regex Definitions';
+      description: "Define and alter regex definitions";
+      title: "Regex Definitions";
 
       Adw.PreferencesRow {
         ListBox {
@@ -88,8 +88,8 @@ template $PreferencesDialog: Adw.PreferencesDialog {
   }
 
   Adw.PreferencesPage terminal_settings_page {
-    icon-name: 'org.gnome.Terminal-symbolic';
-    name: 'terminal';
-    title: 'Terminal';
+    icon-name: "org.gnome.Terminal-symbolic";
+    name: "terminal";
+    title: "Terminal";
   }
 }

@@ -1,0 +1,32 @@
+using Gtk 4.0;
+
+menu list_view_item_menu {
+  section {
+    item {
+      action: "win.new_item";
+      label: "_New Item";
+    }
+
+    item {
+      action: "win.clone_item";
+      label: "_Duplicate Item";
+    }
+
+    item {
+      action: "win.delete_item";
+      label: "_Remove Item";
+    }
+
+    item {
+      action: "win.connect";
+      label: "_Connect";
+    }
+  }
+}
+
+template ObeliskContextMenu: PopoverMenu  {
+  menu-model: list_view_item_menu;
+  position: right;
+}
+
+
