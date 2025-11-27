@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=obelisk
 Exec=obelisk
-Icon=org.gnome.obelisk
+Icon=io.github.srngh.obelisk
 Terminal=false
 Type=Application
 Categories=GTK;

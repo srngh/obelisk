@@ -20,7 +20,7 @@
 #from gi.repository import Adw
 from gi.repository import Gtk, Gio, Gdk
 
-@Gtk.Template(resource_path='/org/gnome/obelisk/gtk/context-menu.ui')
+@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/context-menu.ui')
 class ObeliskContextMenu(Gtk.PopoverMenu):
     __gtype_name__ = 'ObeliskContextMenu'
     def __init__(self, **kwargs):

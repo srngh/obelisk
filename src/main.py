@@ -40,7 +40,7 @@ class ObeliskApplication(Adw.Application):
     ]
 
     def __init__(self):
-        super().__init__(application_id='org.gnome.obelisk', flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
+        super().__init__(application_id='io.github.srngh.obelisk', flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
         self.create_action('quit', lambda *_: self.quit(), ['<primary>q'])
         self.create_action('about', self.on_about_action)
         self.create_action('preferences', self.on_preferences_action)
@@ -59,7 +59,7 @@ class ObeliskApplication(Adw.Application):
     def on_about_action(self, widget, _):
         """Callback for the app.about action."""
         about = Adw.AboutDialog(application_name='Obelisk',
-                                application_icon='org.gnome.obelisk',
+                                application_icon='io.github.srngh.obelisk',
                                 developer_name='simhof',
                                 version='0.0.1',
                                 developers=['simhof'],

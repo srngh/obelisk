@@ -30,7 +30,7 @@ from .config_file_handlers.config_file_handler import ConfigFileHandlerFactory
 
 from .obelisk_list_view import ObeliskListView
 
-@Gtk.Template(resource_path='/org/gnome/obelisk/window.ui')
+@Gtk.Template(resource_path='/io/github/srngh/obelisk/window.ui')
 class ObeliskWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'ObeliskWindow'
 
@@ -72,7 +72,7 @@ class ObeliskWindow(Adw.ApplicationWindow):
     }
 
     #GSettings
-    _settings = Gio.Settings(schema_id="org.gnome.obelisk")
+    _settings = Gio.Settings(schema_id="io.github.srngh.obelisk")
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

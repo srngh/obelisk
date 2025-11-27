@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="obelisk">
-	<schema id="org.gnome.obelisk" path="/org/gnome/obelisk/">
+	<schema id="io.github.srngh.obelisk" path="/io/github/srngh/obelisk/">
     <key name="window-width" type="i">
       <default>600</default>
     </key>

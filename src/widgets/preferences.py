@@ -20,7 +20,7 @@
 from gi.repository import Adw
 from gi.repository import Gtk, Gio
 
-@Gtk.Template(resource_path='/org/gnome/obelisk/gtk/preferences.ui')
+@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/preferences.ui')
 class Preferences(Adw.PreferencesDialog):
     __gtype_name__ = "PreferencesDialog"
     general_settings_page = Gtk.Template.Child()

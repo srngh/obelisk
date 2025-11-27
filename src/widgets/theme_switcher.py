@@ -13,12 +13,12 @@
 from gi.repository import Adw, Gio, GObject, Gtk, Gdk
 
 
-@Gtk.Template(resource_path='/org/gnome/obelisk/gtk/theme_switcher.ui')
+@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/theme_switcher.ui')
 class ThemeSwitcher(Gtk.Box):
     __gtype_name__ = 'ThemeSwitcher'
 
     # GSettings
-    _settings = Gio.Settings(schema_id="org.gnome.obelisk")
+    _settings = Gio.Settings(schema_id="io.github.srngh.obelisk")
 
     show_system = GObject.property(type=bool, default=True)
     color_scheme = 'light'

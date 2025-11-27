@@ -1,6 +1,6 @@
 desktop_file = i18n.merge_file(
-        input: 'org.gnome.obelisk.desktop.in',
-       output: 'org.gnome.obelisk.desktop',
+        input: 'io.github.srngh.obelisk.desktop.in',
+       output: 'io.github.srngh.obelisk.desktop',
          type: 'desktop',
        po_dir: '../po',
       install: true,
@@ -13,8 +13,8 @@ if desktop_utils.found()
 endif
 
 appstream_file = i18n.merge_file(
-        input: 'org.gnome.obelisk.metainfo.xml.in',
-       output: 'org.gnome.obelisk.metainfo.xml',
+        input: 'io.github.srngh.obelisk.metainfo.xml.in',
+       output: 'io.github.srngh.obelisk.metainfo.xml',
        po_dir: '../po',
       install: true,
   install_dir: get_option('datadir') / 'metainfo'
@@ -24,7 +24,7 @@ appstreamcli = find_program('appstreamcli', required: false, disabler: true)
 test('Validate appstream file', appstreamcli,
      args: ['validate', '--no-net', '--explain', appstream_file])
 
-install_data('org.gnome.obelisk.gschema.xml',
+install_data('io.github.srngh.obelisk.gschema.xml',
   install_dir: get_option('datadir') / 'glib-2.0' / 'schemas'
 )
 
@@ -32,5 +32,15 @@ compile_schemas = find_program('glib-compile-schemas', required: false, disabler
 test('Validate schema file',
      compile_schemas,
      args: ['--strict', '--dry-run', meson.current_source_dir()])
+
+
+service_conf = configuration_data()
+service_conf.set('bindir', get_option('prefix') / get_option('bindir'))
+configure_file(
+  input: 'io.github.srngh.obelisk.service.in',
+  output: 'io.github.srngh.obelisk.service',
+  configuration: service_conf,
+  install_dir: get_option('datadir') / 'dbus-1' / 'services'
+)
 
 subdir('icons')

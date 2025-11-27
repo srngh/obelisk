@@ -177,7 +177,7 @@ class ObeliskTreeNode(GObject.GObject):
         return self.title
 
 '''
-# @Gtk.Template(resource_path='/org/gnome/obelisk/gtk/context-menu.ui')
+# @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/context-menu.ui')
 class ObeliskContextMenu(Gtk.PopoverMenu):
     __gtype_name__ = 'ObeliskContextMenu'
     def __init__(self, **kwargs):
