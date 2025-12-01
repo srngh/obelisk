@@ -22,6 +22,7 @@ from gi.repository import GObject, Gtk, Gio
 
 from .obelisk_context_menu import ObeliskContextMenu
 
+
 class ObeliskTreeWidget(Gtk.Box):
     __gtype_name__ = "ObeliskTreeWidget"
 
@@ -40,7 +41,7 @@ class ObeliskTreeWidget(Gtk.Box):
     def __on_button_press(self, gesture, npress, x, y):
         # This feels impractical
         print(gesture, npress, x, y)
-        expander = self.__get_tree_expander(x,y)
+        expander = self.__get_tree_expander(x, y)
 
         if expander is None or npress != 1:
             return False
@@ -56,3 +57,48 @@ class ObeliskTreeWidget(Gtk.Box):
         print(self)
         return True
 
+
+class ObeliskTreeWidget2(Gtk.TreeExpander):
+    __gtype_name__ = "ObeliskTreeExpander"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.expander = Gtk.TreeExpander.new()
+        self.label = Gtk.Inscription(hexpand=True)
+        self.icon = Gtk.Image()
+
+        # self.append(self.expander)
+        # self.append(self.icon)
+        self.set_child(self.label)
+
+    def update_bind(self):
+        item = self.props.item
+        print(item)
+        print(item.props)
+
+        # Handle label
+        self.__update_label(item)
+
+    def __update_label(self, item):
+        self.label.set_markup(item.title)
+
+    """
+    def __on_button_press(self, gesture, npress, x, y):
+        # This feels impractical
+        print(gesture, npress, x, y)
+        expander = self.__get_tree_expander(x,y)
+
+        if expander is None or npress != 1:
+            return False
+
+        # Select row at x,y
+        list_row = expander.get_list_row()
+        self.model.set_selected(list_row.get_position())
+
+        menu = ObeliskContextMenu()
+        # self.set_child(menu)
+        menu.set_parent(self)
+        menu.popup_at(x, y)
+        print(self)
+        return True
+    """

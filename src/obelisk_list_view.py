@@ -1,4 +1,4 @@
-# obelisk_tree_expander.py
+# obelisk_tree_list_view.py
 #
 # Copyright 2025 simhof
 #
@@ -19,12 +19,11 @@
 
 from pprint import pprint
 
-import yaml
-
 from gi.repository import GObject, Gtk, Gio, Gdk
 
-from .widgets.obelisk_tree_widget import ObeliskTreeWidget
+from .widgets.obelisk_tree_widget import ObeliskTreeWidget2
 from .widgets.obelisk_context_menu import ObeliskContextMenu
+
 
 class ObeliskListView(Gtk.ListView):
     __gtype_name__ = "ObeliskListView"
@@ -37,12 +36,10 @@ class ObeliskListView(Gtk.ListView):
         # print(self.items)
         super().__init__(**kwargs)
 
-
-
         factory = Gtk.SignalListItemFactory()
         factory.connect("setup", self.on_setup)
-        factory.connect("bind", self.on_bind)
-        #factory.connect("pressed", )
+        factory.connect("bind", self.on_bind_2)
+        # factory.connect("pressed", )
         self.set_factory(factory)
 
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
@@ -50,13 +47,12 @@ class ObeliskListView(Gtk.ListView):
         self.add_controller(gesture)
 
         tree_model = parse_items(self.items)
-        tree_list_model = Gtk.TreeListModel.new(tree_model, False, True, self.__tree_model_create_func)
+        tree_list_model = Gtk.TreeListModel.new(
+            tree_model, False, True, self.__tree_model_create_func
+        )
         selection_model = Gtk.SingleSelection(model=tree_list_model)
-        #self.selection_model.connect("notify::selected-item", self.__on_selected_item_notify)
+        # self.selection_model.connect("notify::selected-item", self.__on_selected_item_notify)
         self.set_model(selection_model)
-
-
-
 
     def __tree_model_create_func(self, item):
         if item.children == []:
@@ -66,11 +62,10 @@ class ObeliskListView(Gtk.ListView):
             child_model.append(child)
         return child_model
 
-
     def __on_button_press(self, gesture, npress, x, y):
         # This feels impractical
         print(gesture, npress, x, y)
-        expander = self.__get_tree_expander(x,y)
+        expander = self.__get_tree_expander(x, y)
 
         if expander is None or npress != 1:
             return False
@@ -85,7 +80,6 @@ class ObeliskListView(Gtk.ListView):
         menu.popup_at(x, y)
         print(self)
         return True
-
 
     def __get_tree_expander(self, x, y):
         pick = self.pick(x, y, Gtk.PickFlags.DEFAULT)
@@ -107,12 +101,8 @@ class ObeliskListView(Gtk.ListView):
 
         return None
 
-
-
-
     def on_setup(self, factory, list_item):
-        list_item.set_child(ObeliskTreeWidget())
-
+        list_item.set_child(ObeliskTreeWidget2())
 
     def on_bind(self, factory, list_item):
         list_row = list_item.get_item()
@@ -120,50 +110,57 @@ class ObeliskListView(Gtk.ListView):
         item = list_row.get_item()
 
         match item.item_type:
-            case 'connection':
+            case "connection":
                 widget.icon.set_from_icon_name("ssh-symbolic")
-            case 'folder':
+            case "folder":
                 widget.remove(widget.icon)
 
         widget.expander.set_list_row(list_row)
         widget.label.set_label(item.title)
 
+    def on_bind_2(self, factory, list_item):
+        list_row = list_item.get_item()
+        expander = list_item.get_child()
+        expander.set_list_row(list_row)
+        expander.update_bind()
+
+
 def parse_items(connections: dict):
     tree_model = Gio.ListStore.new(ObeliskTreeNode)
     for item in connections:
-        match connections[item]['item_type']:
-            case 'connection':
+        match connections[item]["item_type"]:
+            case "connection":
                 node = create_tree_node(connections[item])
                 tree_model.append(node)
-            case 'folder':
+            case "folder":
                 node = create_folder_node(connections[item])
                 tree_model.append(node)
     return tree_model
 
 
 def create_tree_node(connection: dict):
-    node = ObeliskTreeNode(connection['item_title'])
-    node.ip4_address = connection['ip4_address']
-    node.item_type = connection['item_type']
-    node.user = connection['user']
-    node.user = connection['item_description']
-    node.protocol = connection['protocol']
-    node.auth = connection['auth']
+    node = ObeliskTreeNode(connection["item_title"])
+    node.ip4_address = connection["ip4_address"]
+    node.item_type = connection["item_type"]
+    node.user = connection["user"]
+    node.user = connection["item_description"]
+    node.protocol = connection["protocol"]
+    node.auth = connection["auth"]
     return node
 
 
 def create_folder_node(folder: dict):
     children = []
-    for item in folder['connections']:
-        match folder['connections'][item]['item_type']:
-            case 'connection':
-                node = create_tree_node(folder['connections'][item])
+    for item in folder["connections"]:
+        match folder["connections"][item]["item_type"]:
+            case "connection":
+                node = create_tree_node(folder["connections"][item])
                 children.append(node)
-            case 'folder':
-                node = create_folder_node(folder['connections'][item])
+            case "folder":
+                node = create_folder_node(folder["connections"][item])
                 children.append(node)
-    node = ObeliskTreeNode(folder['item_title'], _children=children)
-    node.item_type = 'folder'
+    node = ObeliskTreeNode(folder["item_title"], _children=children)
+    node.item_type = "folder"
     return node
 
 
@@ -176,7 +173,8 @@ class ObeliskTreeNode(GObject.GObject):
     def get_item_title(self):
         return self.title
 
-'''
+
+"""
 # @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/context-menu.ui')
 class ObeliskContextMenu(Gtk.PopoverMenu):
     __gtype_name__ = 'ObeliskContextMenu'
@@ -199,5 +197,4 @@ class ObeliskContextMenu(Gtk.PopoverMenu):
         self.set_pointing_to(r)
         self.popup()
         print(self)
-'''
-
+"""
