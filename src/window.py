@@ -30,6 +30,8 @@ from .config_file_handlers.config_file_handler import ConfigFileHandlerFactory
 
 from .obelisk_list_view import ObeliskListView
 
+from .widgets.obelisk_new_item_dialog import ObeliskNewItemDialog
+
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/window.ui')
 class ObeliskWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'ObeliskWindow'
@@ -54,6 +56,9 @@ class ObeliskWindow(Adw.ApplicationWindow):
 
     def _new_item(self, *args):
         print("creating new item")
+        new_item_dialog = ObeliskNewItemDialog()
+        new_item_dialog.present()
+
 
     def _clone_item(self, *args):
         print("cloning item")
@@ -127,3 +132,6 @@ class ObeliskWindow(Adw.ApplicationWindow):
         term.spawn_sh()
         #term.watch_child()
 
+    def on_new_item_action(self):
+        new_item_dialog = ObeliskNewItemDialog()
+        new_item_dialog.present()
