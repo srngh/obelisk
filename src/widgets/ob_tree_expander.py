@@ -36,7 +36,7 @@ class ObTreeWidgetOld(Gtk.Box):
 
     def __on_button_press(self, gesture, npress, x, y):
         # This feels impractical
-        print(gesture, npress, x, y)
+        # print(gesture, npress, x, y)
         expander = self.__get_tree_expander(x, y)
 
         if expander is None or npress != 1:
@@ -50,7 +50,7 @@ class ObTreeWidgetOld(Gtk.Box):
         # self.set_child(menu)
         menu.set_parent(self)
         menu.popup_at(x, y)
-        print(self)
+        # print(self)
         return True
 
 
@@ -67,8 +67,8 @@ class ObTreeExpander(Gtk.TreeExpander):
 
     def update_bind(self):
         item = self.props.item
-        print(item)
-        print(item.props)
+        #print(item)
+        #print(item.props)
 
         # Handle label
         self.__update_label(item)

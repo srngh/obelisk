@@ -54,6 +54,8 @@ class ObWindow(Adw.ApplicationWindow):
     toggle_sidebar_btn = Gtk.Template.Child()
     obelisk_sidebar = Gtk.Template.Child()
 
+    print(f"obelisk_sidebar is at {obelisk_sidebar} and of type {type(obelisk_sidebar)}")
+
     def _new_item(self, *args):
         print("creating new item")
         new_item_dialog = ObNewItemDialog()

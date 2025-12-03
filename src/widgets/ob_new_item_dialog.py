@@ -21,7 +21,14 @@ from gi.repository import Adw
 from gi.repository import Gtk, Gio
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
-class ObNewItemDialog(Gtk.Dialog):
+class ObNewItemDialog(Adw.PreferencesDialog):
     __gtype_name__ = 'ObNewItemDialog'
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        # Template Elements
+        connection_name_input = Gtk.Template.Child()
+
+
+        #print(f"connection_name_input is activatable: {self.connection_name_input.activatable()}")
+        print(f"{self.__dict__}")

@@ -1,44 +1,47 @@
 using Gtk 4.0;
 using Adw 1;
 
-Dialog {
-  default-height: 800;
-  default-width: 640;
-  halign: baseline;
-  hexpand: false;
-  valign: baseline;
-  vexpand: true;
+template $ObNewItemDialog: Adw.PreferencesDialog {
+  Adw.PreferencesPage ssh_settings_page {
+    icon-name: "network-transmit-receive-symbolic";
+    name: "ssh";
+    title: "SSH";
 
-  Adw.PreferencesGroup {
-    margin-start: 0;
-    margin-top: 0;
-    separate-rows: false;
-    title: "Connection Settings";
+    Adw.PreferencesGroup {
+      margin-start: 0;
+      margin-top: 0;
+      separate-rows: false;
+      title: "Connection Settings";
 
-    Adw.ActionRow {
-      subtitle: "Connection Name";
-    }
+      Adw.ActionRow address_input {
+        activatable: true;
+        subtitle: "IP Adress or FQDN";
+      }
 
-    Adw.ActionRow {
-      subtitle: "IP Adress or FQDN";
-    }
+      Adw.ActionRow username_input {
+        activatable: true;
+        subtitle: "Username";
+      }
 
-    Adw.ActionRow {
-      subtitle: "Username";
-    }
+      Adw.ActionRow auth_input {
+        activatable: true;
+        subtitle: "Authentication method";
+      }
 
-    Adw.ActionRow {
-      subtitle: "Authentication method";
-    }
+      Adw.ActionRow jumphost_input {
+        activatable: true;
+        subtitle: "Jump Host";
+      }
 
-    Adw.ActionRow {
-      subtitle: "Jump Host";
-    }
+      Adw.ActionRow proxy_input {
+        activatable: true;
+        subtitle: "Proxy";
+      }
 
-    Adw.ActionRow {
-      subtitle: "Proxy";
+      Adw.ActionRow connection_name_input {
+        activatable: true;
+        subtitle: "Connection Name";
+      }
     }
   }
 }
-
-Adw.PreferencesDialog {}

@@ -64,7 +64,7 @@ class ObListView(Gtk.ListView):
 
     def __on_button_press(self, gesture, npress, x, y):
         # This feels impractical
-        print(gesture, npress, x, y)
+        #print(gesture, npress, x, y)
         expander = self.__get_tree_expander(x, y)
 
         if expander is None or npress != 1:
@@ -78,7 +78,7 @@ class ObListView(Gtk.ListView):
         # self.set_child(menu)
         menu.set_parent(self)
         menu.popup_at(x, y)
-        print(self)
+        #print(self)
         return True
 
     def __get_tree_expander(self, x, y):
