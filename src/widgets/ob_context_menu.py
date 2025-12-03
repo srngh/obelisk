@@ -1,4 +1,4 @@
-# obelisk_context_menu.py
+# ob_context_menu.py
 #
 # Copyright 2025 simhof
 #
@@ -20,20 +20,11 @@
 #from gi.repository import Adw
 from gi.repository import Gtk, Gio, Gdk
 
-@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/context-menu.ui')
-class ObeliskContextMenu(Gtk.PopoverMenu):
-    __gtype_name__ = 'ObeliskContextMenu'
+@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_context_menu.ui')
+class ObContextMenu(Gtk.PopoverMenu):
+    __gtype_name__ = 'ObContextMenu'
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        menu_model = Gio.Menu()
-
-        menu_model.insert(0, "New Item")
-        menu_model.insert(1, "Clone Item")
-        menu_model.insert(2, "Delete Item")
-        menu_model.insert(3, "Connect")
-        #self.set_menu_model(menu_model)
-        #self.set_position(1)
 
     def popup_at(self, x, y):
         r = Gdk.Rectangle()
@@ -42,3 +33,4 @@ class ObeliskContextMenu(Gtk.PopoverMenu):
         self.set_pointing_to(r)
         self.popup()
         print(self)
+

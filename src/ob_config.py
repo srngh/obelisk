@@ -1,4 +1,4 @@
-# new_item_dialog.py
+# obelisk_config.py
 #
 # Copyright 2025 simhof
 #
@@ -17,11 +17,25 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import Adw
-from gi.repository import Gtk, Gio
+from gi.repository import GObject, Gio, Gdk
 
-@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/new_connection.ui')
-class ObeliskNewItemDialog(Gtk.Dialog):
-    __gtype_name__ = 'ObeliskNewItemDialog'
-    def __init__(self, **kwargs):
+from config_file_handlers.config_file_handler import ConfigFileHandlerFactory
+
+class ObConfig(GObject.Object, Gio.ListModel):
+    __gtype_name__ = "ObConfig"
+    "This class holds the configuration of a loaded config file."
+
+    '''
+    __gsignals__ = {
+        "changed": (GObject.SignalFlags.RUN_FIRST, None, ()) <<<<---- what it do?
+        "": asdf
+    }
+    '''
+    def __init__(self, filename=None, **kwargs):
         super().__init__(**kwargs)
+        self.autosave = False
+        self.filename = filename
+        self.config_type = 'obelisk'
+
+
+

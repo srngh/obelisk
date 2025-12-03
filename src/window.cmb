@@ -5,5 +5,6 @@
   <ui template-class="ObeliskWindow" filename="window.blp" sha256="4ba02552a78de7fd19a393bbdac32253c28ff67bdee255338df8cc7620627aad"/>
   <ui template-class="PreferencesDialog" filename="gtk/preferences.blp" sha256="3395db18025bf11cae17e0954b11d5b1e5546c7fca71104093a335b099787f06"/>
   <ui filename="gtk/help-overlay.blp" sha256="2583bfbe7c22221fb369bccd95a9d040d247cfe18135544eb9ba12650ccc3dd5"/>
-  <ui filename="gtk/context-menu.blp" sha256="52fe4420594dc38ee16f4e84e39e2cd62ba383011a092fcb4aafd3b2e3d33598"/>
+  <ui template-class="ObContextMenu" filename="gtk/ob_context_menu.blp" sha256="a980e0e4b1c22a41c3ba77ff9806f1e1abfb6fd6438d3c2f6d2a79119a88edcd"/>
+  <ui filename="gtk/ob_new_item_dialog.blp" sha256="4de61618829de19e5a7264e7a40a1c6ea489804fa0232ea25902be961fe2d30b"/>
 </cambalache-project>

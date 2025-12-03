@@ -1,0 +1,44 @@
+using Gtk 4.0;
+using Adw 1;
+
+Dialog {
+  default-height: 800;
+  default-width: 640;
+  halign: baseline;
+  hexpand: false;
+  valign: baseline;
+  vexpand: true;
+
+  Adw.PreferencesGroup {
+    margin-start: 0;
+    margin-top: 0;
+    separate-rows: false;
+    title: "Connection Settings";
+
+    Adw.ActionRow {
+      subtitle: "Connection Name";
+    }
+
+    Adw.ActionRow {
+      subtitle: "IP Adress or FQDN";
+    }
+
+    Adw.ActionRow {
+      subtitle: "Username";
+    }
+
+    Adw.ActionRow {
+      subtitle: "Authentication method";
+    }
+
+    Adw.ActionRow {
+      subtitle: "Jump Host";
+    }
+
+    Adw.ActionRow {
+      subtitle: "Proxy";
+    }
+  }
+}
+
+Adw.PreferencesDialog {}

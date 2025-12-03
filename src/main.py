@@ -27,16 +27,16 @@ gi.require_version("GLib", "2.0")
 
 from gi.repository import Gtk, Gdk, Gio, Adw, Vte, GLib
 
-from .window import ObeliskWindow
+from .window import ObWindow
 from .widgets.preferences import Preferences
-from .widgets.obelisk_term import ObeliskTerm
+from .widgets.ob_term import ObTerm
 
 class ObeliskApplication(Adw.Application):
     """The main application singleton class."""
 
     custom_widgets = [
     Preferences,
-    ObeliskTerm,
+    ObTerm,
     ]
 
     def __init__(self):
@@ -53,7 +53,7 @@ class ObeliskApplication(Adw.Application):
         """
         win = self.props.active_window
         if not win:
-            win = ObeliskWindow(application=self)
+            win = ObWindow(application=self)
         win.present()
 
     def on_about_action(self, widget, _):

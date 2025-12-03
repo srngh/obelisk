@@ -21,8 +21,8 @@
 from gi.repository import Gtk, Vte, GLib, Gio
 import os
 
-class ObeliskTerm(Vte.Terminal):
-    __gtype_name__ = "ObeliskTerm"
+class ObTerm(Vte.Terminal):
+    __gtype_name__ = "ObTerm"
 
     #term = Vte.Terminal()
     #pty = Vte.Pty.new_sync(Vte.PtyFlags.DEFAULT)

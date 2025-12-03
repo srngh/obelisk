@@ -24,17 +24,17 @@ from gi.repository import Gtk, Gio, Vte
 
 from .widgets.theme_switcher import ThemeSwitcher
 
-from .widgets.obelisk_term import ObeliskTerm
+from .widgets.ob_term import ObTerm
 
 from .config_file_handlers.config_file_handler import ConfigFileHandlerFactory
 
-from .obelisk_list_view import ObeliskListView
+from .ob_list_view import ObListView
 
-from .widgets.obelisk_new_item_dialog import ObeliskNewItemDialog
+from .widgets.ob_new_item_dialog import ObNewItemDialog
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/window.ui')
-class ObeliskWindow(Adw.ApplicationWindow):
-    __gtype_name__ = 'ObeliskWindow'
+class ObWindow(Adw.ApplicationWindow):
+    __gtype_name__ = 'ObWindow'
 
     # Template Elements
     split_view = Gtk.Template.Child()
@@ -56,7 +56,7 @@ class ObeliskWindow(Adw.ApplicationWindow):
 
     def _new_item(self, *args):
         print("creating new item")
-        new_item_dialog = ObeliskNewItemDialog()
+        new_item_dialog = ObNewItemDialog()
         new_item_dialog.present()
 
 
@@ -100,7 +100,7 @@ class ObeliskWindow(Adw.ApplicationWindow):
 
         self.items = default_handler.to_str()
 
-        obelisk_list_view = ObeliskListView(items=self.items)
+        obelisk_list_view = ObListView(items=self.items)
         self.obelisk_sidebar.set_content(obelisk_list_view)
         obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
 
@@ -114,7 +114,7 @@ class ObeliskWindow(Adw.ApplicationWindow):
         print(f"sidebar: {list_view}")
         model = list_view.get_model()
         item = list_view.get_model()[index].get_item()
-        term = ObeliskTerm()
+        term = ObTerm()
 
         sel_page = self.tab_view.add_page(term).set_title(item.get_item_title())
         term.spawn_ssh()
@@ -127,11 +127,11 @@ class ObeliskWindow(Adw.ApplicationWindow):
         Mostly for testing and debugging.
         """
         print("clicked tab add button")
-        term = ObeliskTerm()
+        term = ObTerm()
         sel_page = self.tab_view.add_page(term).set_title("local shell")
         term.spawn_sh()
         #term.watch_child()
 
     def on_new_item_action(self):
-        new_item_dialog = ObeliskNewItemDialog()
+        new_item_dialog = ObNewItemDialog()
         new_item_dialog.present()

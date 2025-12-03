@@ -21,11 +21,11 @@ from pprint import pprint
 
 from gi.repository import GObject, Gtk, Gio, Gdk
 
-from .widgets.obelisk_tree_widget import ObeliskTreeWidget2
-from .widgets.obelisk_context_menu import ObeliskContextMenu
+from .widgets.ob_tree_expander import ObTreeExpander
 
+from .widgets.ob_context_menu import ObContextMenu
 
-class ObeliskListView(Gtk.ListView):
+class ObListView(Gtk.ListView):
     __gtype_name__ = "ObeliskListView"
 
     model = Gtk.SingleSelection()
@@ -57,7 +57,7 @@ class ObeliskListView(Gtk.ListView):
     def __tree_model_create_func(self, item):
         if item.children == []:
             return None
-        child_model = Gio.ListStore.new(ObeliskTreeNode)
+        child_model = Gio.ListStore.new(ObTreeNode)
         for child in item.children:
             child_model.append(child)
         return child_model
@@ -74,7 +74,7 @@ class ObeliskListView(Gtk.ListView):
         list_row = expander.get_list_row()
         self.model.set_selected(list_row.get_position())
 
-        menu = ObeliskContextMenu()
+        menu = ObContextMenu()
         # self.set_child(menu)
         menu.set_parent(self)
         menu.popup_at(x, y)
@@ -102,7 +102,7 @@ class ObeliskListView(Gtk.ListView):
         return None
 
     def on_setup(self, factory, list_item):
-        list_item.set_child(ObeliskTreeWidget2())
+        list_item.set_child(ObTreeExpander())
 
     def on_bind(self, factory, list_item):
         list_row = list_item.get_item()
@@ -126,7 +126,7 @@ class ObeliskListView(Gtk.ListView):
 
 
 def parse_items(connections: dict):
-    tree_model = Gio.ListStore.new(ObeliskTreeNode)
+    tree_model = Gio.ListStore.new(ObTreeNode)
     for item in connections:
         match connections[item]["item_type"]:
             case "connection":
@@ -139,7 +139,7 @@ def parse_items(connections: dict):
 
 
 def create_tree_node(connection: dict):
-    node = ObeliskTreeNode(connection["item_title"])
+    node = ObTreeNode(connection["item_title"])
     node.ip4_address = connection["ip4_address"]
     node.item_type = connection["item_type"]
     node.user = connection["user"]
@@ -159,12 +159,12 @@ def create_folder_node(folder: dict):
             case "folder":
                 node = create_folder_node(folder["connections"][item])
                 children.append(node)
-    node = ObeliskTreeNode(folder["item_title"], _children=children)
+    node = ObTreeNode(folder["item_title"], _children=children)
     node.item_type = "folder"
     return node
 
 
-class ObeliskTreeNode(GObject.GObject):
+class ObTreeNode(GObject.GObject):
     def __init__(self, _title, _children=None):
         super().__init__()
         self.children = _children or []
@@ -173,28 +173,3 @@ class ObeliskTreeNode(GObject.GObject):
     def get_item_title(self):
         return self.title
 
-
-"""
-# @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/context-menu.ui')
-class ObeliskContextMenu(Gtk.PopoverMenu):
-    __gtype_name__ = 'ObeliskContextMenu'
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        menu_model = Gio.Menu()
-
-        menu_model.insert(0, "New Item")
-        menu_model.insert(1, "Clone Item")
-        menu_model.insert(2, "Delete Item")
-        menu_model.insert(3, "Connect")
-        self.set_menu_model(menu_model)
-        self.set_position(1)
-
-    def popup_at(self, x, y):
-        r = Gdk.Rectangle()
-        r.x, r.y = (x, y)
-        r.width = r.height = 0
-        self.set_pointing_to(r)
-        self.popup()
-        print(self)
-"""

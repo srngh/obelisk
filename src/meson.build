@@ -8,7 +8,8 @@ blueprints = custom_target('blueprints',
     'gtk/help-overlay.blp',
     'gtk/preferences.blp',
     'gtk/theme_switcher.blp',
-    'gtk/context-menu.blp',
+    'gtk/ob_context_menu.blp',
+    'gtk/ob_new_item_dialog.blp',
   ),
   output: '.',
   command: [find_program('blueprint-compiler'), 'batch-compile', '@OUTPUT@', '@CURRENT_SOURCE_DIR@', '@INPUT@'],
@@ -46,8 +47,7 @@ obelisk_sources = [
   '__init__.py',
   'main.py',
   'window.py',
-  'config.yaml',
-  'obelisk_list_view.py',
+  'ob_list_view.py',
 ]
 
 install_data(obelisk_sources, install_dir: moduledir)

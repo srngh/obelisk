@@ -7,13 +7,14 @@ widgetsdir = join_paths(pkgdatadir, 'obelisk/widgets')
 
 sources = [
   '__init__.py',
-  'preferences.py',
-  'obelisk_term.py',
-  'theme_switcher.py',
   'interactive_shell.py',
+  'ob_context_menu.py',
+  'ob_new_item_dialog.py',
+  'ob_term.py',
+  'ob_tree_expander.py',
+  'preferences.py',
   'shell.py',
-  'obelisk_tree_widget.py',
-  'obelisk_context_menu.py',
+  'theme_switcher.py',
 ]
 
 install_data(sources, install_dir: widgetsdir)

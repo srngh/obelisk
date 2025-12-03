@@ -12,7 +12,8 @@
     <file preprocess="xml-stripblanks">gtk/help-overlay.ui</file>
     <file preprocess="xml-stripblanks">gtk/preferences.ui</file>
     <file preprocess="xml-stripblanks">gtk/theme_switcher.ui</file>
-    <file preprocess="xml-stripblanks">gtk/context-menu.ui</file>
+    <file preprocess="xml-stripblanks">gtk/ob_context_menu.ui</file>
+    <file preprocess="xml-stripblanks">gtk/ob_new_item_dialog.ui</file>
 
     <!-- Icons -->
     <file preprocess="xml-stripblanks">icons/scalable/actions/starred-symbolic.svg</file>
