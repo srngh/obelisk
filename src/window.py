@@ -17,7 +17,9 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from pprint import pprint
+# from pprint import pprint
+
+from pathlib import Path
 
 from gi.repository import Adw
 from gi.repository import Gtk, Gio, Vte
@@ -97,8 +99,9 @@ class ObWindow(Adw.ApplicationWindow):
                             "maximized", Gio.SettingsBindFlags.DEFAULT)
 
         # Load a sample config
+        home_dir = Path.home()
         default_handler = ConfigFileHandlerFactory().create_handler("obelisk")
-        default_handler.load_connections("/home/soeren/.config/obelisk/obelisk_nested.yaml")
+        default_handler.load_connections(f"{home_dir}/.config/obelisk/obelisk_nested.yaml")
 
         self.items = default_handler.to_str()
 
