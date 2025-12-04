@@ -13,34 +13,28 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
       separate-rows: false;
       title: "Connection Settings";
 
-      Adw.ActionRow address_input {
-        activatable: true;
-        subtitle: "IP Adress or FQDN";
+      Adw.EntryRow connection_name_input {
+        title: "Connection Name";
       }
 
-      Adw.ActionRow username_input {
-        activatable: true;
-        subtitle: "Username";
+      Adw.EntryRow address_input {
+        title: "IP Adress or FQDN";
       }
 
-      Adw.ActionRow auth_input {
-        activatable: true;
-        subtitle: "Authentication method";
+      Adw.EntryRow username_input {
+        title: "Username";
       }
 
-      Adw.ActionRow jumphost_input {
-        activatable: true;
-        subtitle: "Jump Host";
+      Adw.EntryRow auth_input {
+        title: "Authentication method";
       }
 
-      Adw.ActionRow proxy_input {
-        activatable: true;
-        subtitle: "Proxy";
+      Adw.EntryRow jumphost_input {
+        title: "Jump Host";
       }
 
-      Adw.ActionRow connection_name_input {
-        activatable: true;
-        subtitle: "Connection Name";
+      Adw.EntryRow proxy_input {
+        title: "Proxy";
       }
     }
   }
