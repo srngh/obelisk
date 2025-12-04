@@ -27,7 +27,20 @@ class ObNewItemDialog(Adw.PreferencesDialog):
         super().__init__(**kwargs)
 
         # Template Elements
+        address_input = Gtk.Template.Child()
         connection_name_input = Gtk.Template.Child()
+        auth_input = Gtk.Template.Child()
+        jumphost_input = Gtk.Template.Child()
+        proxy_input = Gtk.Template.Child()
+        connection_name_input = Gtk.Template.Child()
+
+        cancel_button = Gtk.Template.Child()
+        confirm_button = Gtk.Template.Child()
+
+        def on_confirm(self):
+            # Do a bunch of user input validation first
+
+
 
 
         #print(f"connection_name_input is activatable: {self.connection_name_input.activatable()}")

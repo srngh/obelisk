@@ -13,28 +13,58 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
       separate-rows: false;
       title: "Connection Settings";
 
-      Adw.EntryRow connection_name_input {
-        title: "Connection Name";
+      Adw.ActionRow address_input {
+        activatable: true;
+        subtitle: "IP Adress or FQDN";
       }
 
-      Adw.EntryRow address_input {
-        title: "IP Adress or FQDN";
+      Adw.ActionRow username_input {
+        activatable: true;
+        subtitle: "Username";
       }
 
-      Adw.EntryRow username_input {
-        title: "Username";
+      Adw.ActionRow auth_input {
+        activatable: true;
+        subtitle: "Authentication method";
       }
 
-      Adw.EntryRow auth_input {
-        title: "Authentication method";
+      Adw.ActionRow jumphost_input {
+        activatable: true;
+        subtitle: "Jump Host";
       }
 
-      Adw.EntryRow jumphost_input {
-        title: "Jump Host";
+      Adw.ActionRow proxy_input {
+        activatable: true;
+        subtitle: "Proxy";
       }
 
-      Adw.EntryRow proxy_input {
-        title: "Proxy";
+      Adw.ActionRow connection_name_input {
+        activatable: true;
+        subtitle: "Connection Name";
+      }
+    }
+
+    Adw.PreferencesGroup {
+      Box {
+        halign: fill;
+
+        Button cancel_button {
+          css-classes: [
+            "destructive-action",
+          ];
+
+          halign: start;
+          height-request: -1;
+          hexpand: true;
+          label: "Cancel";
+        }
+
+        Button confirm_button {
+          halign: end;
+          height-request: -1;
+          hexpand: false;
+          label: "Confirm";
+        }
       }
     }
   }
