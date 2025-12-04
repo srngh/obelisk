@@ -28,6 +28,7 @@
     "modules" : [
         "python3-pyyaml.json",
         "python3-paramiko.json",
+        "python3-netaddr.json",
         {
             "name" : "fast_float",
             "buildsystem" : "cmake-ninja",
