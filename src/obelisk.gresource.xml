@@ -27,5 +27,6 @@
     <file preprocess="xml-stripblanks">icons/scalable/actions/org.gnome.Terminal-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/package-x-generic-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/ssh-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/document-edit-symbolic.svg</file>
   </gresource>
 </gresources>

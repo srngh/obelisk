@@ -2,6 +2,8 @@ using Gtk 4.0;
 using Adw 1;
 
 template $ObNewItemDialog: Adw.PreferencesDialog {
+  title: "Add a new Connection";
+
   Adw.PreferencesPage ssh_settings_page {
     icon-name: "network-transmit-receive-symbolic";
     name: "ssh";
@@ -13,34 +15,47 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
       separate-rows: false;
       title: "Connection Settings";
 
-      Adw.ActionRow address_input {
-        activatable: true;
-        subtitle: "IP Adress or FQDN";
+      Adw.EntryRow hostname_input {
+        title: "Hostname";
       }
 
-      Adw.ActionRow username_input {
-        activatable: true;
-        subtitle: "Username";
+      Adw.EntryRow username_input {
+        title: "Username";
       }
 
-      Adw.ActionRow auth_input {
-        activatable: true;
-        subtitle: "Authentication method";
+      Adw.SpinRow port_input {
+        title: _("Port");
+        numeric: true;
+        adjustment: Gtk.Adjustment {
+                          value: 22;
+                          lower: 1;
+                          upper: 65535;
+                          step-increment: 1;
+                          page-increment: 10;
+                        };
       }
 
-      Adw.ActionRow jumphost_input {
-        activatable: true;
-        subtitle: "Jump Host";
+      Adw.ComboRow auth_method {
+        halign: baseline;
+        height-request: -1;
+        hexpand: false;
+        hexpand-set: false;
+        model: auth_menu;
+        subtitle: "How to Authenticate";
+        title: "Authentication";
+        valign: fill;
       }
 
-      Adw.ActionRow proxy_input {
-        activatable: true;
-        subtitle: "Proxy";
+      Adw.EntryRow jumphost_input {
+        title: "Jump Host";
       }
 
-      Adw.ActionRow connection_name_input {
-        activatable: true;
-        subtitle: "Connection Name";
+      Adw.EntryRow proxy_input {
+        title: "Proxy";
+      }
+
+      Adw.EntryRow connection_name_input {
+        title: "Connection Name";
       }
     }
 
@@ -68,4 +83,12 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
       }
     }
   }
+}
+
+StringList auth_menu {
+  strings [
+    "Keyboard Interactive",
+    "Password Authentication",
+    "Public Key Authentication",
+  ]
 }
