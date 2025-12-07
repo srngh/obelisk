@@ -22,18 +22,14 @@
 from pathlib import Path
 
 from gi.repository import Adw
-from gi.repository import Gtk, Gio, Vte
+from gi.repository import Gio, Gtk
 
+from .ob_config import ObConfig
+from .ob_list_view import ObListView
+from .widgets.ob_new_item_dialog import ObNewItemDialog
+from .widgets.ob_term import ObTerm
 from .widgets.theme_switcher import ThemeSwitcher
 
-from .widgets.ob_term import ObTerm
-
-from .config_file_handlers.config_file_handler import ConfigFileHandlerFactory
-
-from .ob_list_view import ObListView
-from .ob_config import ObConfig
-
-from .widgets.ob_new_item_dialog import ObNewItemDialog
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/window.ui')
 class ObWindow(Adw.ApplicationWindow):
@@ -46,7 +42,6 @@ class ObWindow(Adw.ApplicationWindow):
     fav_stack = Gtk.Template.Child()
     search_bar = Gtk.Template.Child()
 
-
     menu_btn = Gtk.Template.Child()
     tab_container = Gtk.Template.Child()
     tab_bar = Gtk.Template.Child()
@@ -57,71 +52,68 @@ class ObWindow(Adw.ApplicationWindow):
     toggle_sidebar_btn = Gtk.Template.Child()
     obelisk_sidebar = Gtk.Template.Child()
 
-    # print(f"obelisk_sidebar is at {obelisk_sidebar} and of type {type(obelisk_sidebar)}")
+    # print(f'obelisk_sidebar is at {obelisk_sidebar} and of type {type(obelisk_sidebar)}')
 
     def _new_item(self, *args):
-        print("creating new item")
+        print('creating new item')
         new_item_dialog = ObNewItemDialog()
         new_item_dialog.present()
 
-
     def _clone_item(self, *args):
-        print("cloning item")
+        print('cloning item')
 
     def _delete_item(self, *args):
-        print("deleting item")
+        print('deleting item')
 
     def _connect(self, *args):
-        print("establishing ssh connection")
+        print('establishing ssh connection')
 
     _actions = {
-        ("new_item", _new_item),
-        ("clone_item", _clone_item),
-        ("delete_item", _delete_item),
-        ("connect", _connect)
+        ('new_item', _new_item),
+        ('clone_item', _clone_item),
+        ('delete_item', _delete_item),
+        ('connect', _connect)
     }
 
-    #GSettings
-    _settings = Gio.Settings(schema_id="io.github.srngh.obelisk")
+    # GSettings
+    _settings = Gio.Settings(schema_id='io.github.srngh.obelisk')
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.add_action_entries(self._actions, self)
 
         # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
-        self.menu_btn.get_popover().add_child(ThemeSwitcher(), "themeswitcher")
+        self.menu_btn.get_popover().add_child(ThemeSwitcher(), 'themeswitcher')
 
         # Restore last state
-        self._settings.bind("window-width", self,
-                            "default-width", Gio.SettingsBindFlags.DEFAULT)
-        self._settings.bind("window-height", self,
-                            "default-height", Gio.SettingsBindFlags.DEFAULT)
-        self._settings.bind("window-maximized", self,
-                            "maximized", Gio.SettingsBindFlags.DEFAULT)
+        self._settings.bind('window-width', self,
+                            'default-width', Gio.SettingsBindFlags.DEFAULT)
+        self._settings.bind('window-height', self,
+                            'default-height', Gio.SettingsBindFlags.DEFAULT)
+        self._settings.bind('window-maximized', self,
+                            'maximized', Gio.SettingsBindFlags.DEFAULT)
 
         home_dir = Path.home()
-        self.config = ObConfig(filename=f"{home_dir}/.config/obelisk/obelisk_nested.yaml")
+        self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/obelisk_nested.yaml')
 
         obelisk_list_view = ObListView(selection_model=self.config.selection_model)
 
         self.obelisk_sidebar.set_content(obelisk_list_view)
         obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
 
-
-
     def on_sidebar_item_activated(self, list_view, index):
         """
         Spawn a SSH Connection
         """
-        print(f"activated {index}")
-        print(f"sidebar: {list_view}")
-        model = list_view.get_model()
+        print(f'activated {index}')
+        print(f'sidebar: {list_view}')
+        # model = list_view.get_model()
         item = list_view.get_model()[index].get_item()
         term = ObTerm()
 
-        sel_page = self.tab_view.add_page(term).set_title(item.get_item_title())
+        # sel_page = self.tab_view.add_page(term).set_title(item.get_item_title())
         term.spawn_ssh()
-
 
     @Gtk.Template.Callback()
     def on_tab_add_btn_clicked(self, Button):
@@ -129,9 +121,9 @@ class ObWindow(Adw.ApplicationWindow):
         Spawns a shell inside the flatpak.
         Mostly for testing and debugging.
         """
-        print("clicked tab add button")
+        print('clicked tab add button')
         term = ObTerm()
-        sel_page = self.tab_view.add_page(term).set_title("local shell")
+        # sel_page = self.tab_view.add_page(term).set_title('local shell')
         term.spawn_sh()
 
     def on_new_item_action(self):

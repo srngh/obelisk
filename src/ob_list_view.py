@@ -17,16 +17,17 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from pprint import pprint
+# from pprint import pprint
 
-from gi.repository import Gtk, Gio, Gdk
-
-from .widgets.ob_tree_expander import ObTreeExpander
+from gi.repository import Gdk, Gio, Gtk
 
 from .widgets.ob_context_menu import ObContextMenu
+from .widgets.ob_tree_expander import ObTreeExpander
+
 
 class ObListView(Gtk.ListView):
-    __gtype_name__ = "ObeliskListView"
+
+    __gtype_name__ = 'ObeliskListView'
 
     model = Gtk.SingleSelection()
 
@@ -34,12 +35,12 @@ class ObListView(Gtk.ListView):
         super().__init__(**kwargs)
 
         factory = Gtk.SignalListItemFactory()
-        factory.connect("setup", self.on_setup)
-        factory.connect("bind", self.on_bind)
+        factory.connect('setup', self.on_setup)
+        factory.connect('bind', self.on_bind)
         self.set_factory(factory)
 
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
-        gesture.connect("pressed", self.__on_button_press)
+        gesture.connect('pressed', self.__on_button_press)
         self.add_controller(gesture)
         self.set_model(selection_model)
 
@@ -52,7 +53,7 @@ class ObListView(Gtk.ListView):
         return child_model
 
     def __on_button_press(self, gesture, npress, x, y):
-        #print(gesture, npress, x, y)
+        # print(gesture, npress, x, y)
         expander = self.__get_tree_expander(x, y)
 
         if expander is None or npress != 1:

@@ -2,14 +2,15 @@
 
 from __future__ import print_function
 
-import paramiko
-import sys
 import os
-import subprocess
 import select
 import socket
+import subprocess
+import sys
 import termios
 import tty
+
+import paramiko
 
 
 def open_shell(connection, remote_name='SSH server'):
@@ -79,7 +80,7 @@ def open_shell(connection, remote_name='SSH server'):
                 # try to do a read from the remote end and print to screen
                 try:
                     out = channel.recv(1024)
-                    #out.decode('utf-8') = channel.recv(1024)
+                    # out.decode('utf-8') = channel.recv(1024)
                     # print(type(out))
 
                     # remote close

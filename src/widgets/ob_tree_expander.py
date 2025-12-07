@@ -17,10 +17,11 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import GObject, Gtk, Gio
+from gi.repository import Gtk
+
 
 class ObTreeWidgetOld(Gtk.Box):
-    __gtype_name__ = "ObTreeWidgetOld"
+    __gtype_name__ = 'ObTreeWidgetOld'
 
     def __init__(self):
         super().__init__(
@@ -55,7 +56,7 @@ class ObTreeWidgetOld(Gtk.Box):
 
 
 class ObTreeExpander(Gtk.TreeExpander):
-    __gtype_name__ = "ObTreeExpander"
+    __gtype_name__ = 'ObTreeExpander'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -67,8 +68,8 @@ class ObTreeExpander(Gtk.TreeExpander):
 
     def update_bind(self):
         item = self.props.item
-        #print(item)
-        #print(item.props)
+        # print(item)
+        # print(item.props)
 
         # Handle label
         self.__update_label(item)

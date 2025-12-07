@@ -18,15 +18,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from gi.repository import Adw
-from gi.repository import Gtk, Gio
+from gi.repository import Gtk
+
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/preferences.ui')
 class Preferences(Adw.PreferencesDialog):
-    __gtype_name__ = "PreferencesDialog"
+    __gtype_name__ = 'PreferencesDialog'
     general_settings_page = Gtk.Template.Child()
     ssh_settings_page = Gtk.Template.Child()
     regex_settings_page = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+

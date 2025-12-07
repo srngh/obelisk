@@ -1,5 +1,6 @@
-import paramiko
 from interactive_shell import open_shell
+
+import paramiko
 
 client = paramiko.SSHClient()
 client.load_system_host_keys()

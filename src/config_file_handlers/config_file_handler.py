@@ -17,18 +17,20 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from .obelisk_file_handler import ObeliskFileHandler
 from .asbru_file_handler import AsbruFileHandler
+from .obelisk_file_handler import ObeliskFileHandler
 
 # obelisk, asbru-cm, royal-ts, moba-xterm, remote-desktop-manager
+
 
 class ConfigFileHandlerFactory():
 
     """Factory Method"""
     handlers = {
-        "obelisk": ObeliskFileHandler,
-        "asbru-cm": AsbruFileHandler
+        'obelisk': ObeliskFileHandler,
+        'asbru-cm': AsbruFileHandler
     }
 
-    def create_handler(self, format):
-        return self.handlers[format]()
+    def create_handler(self, config_format):
+        return self.handlers[config_format]()
+

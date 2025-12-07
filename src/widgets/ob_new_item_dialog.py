@@ -18,9 +18,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from gi.repository import Adw
-from gi.repository import Gtk, Gio, GLib
+from gi.repository import Gtk
 
 import netaddr
+
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
 class ObNewItemDialog(Adw.PreferencesDialog):
@@ -43,11 +44,11 @@ class ObNewItemDialog(Adw.PreferencesDialog):
 
         self.port_input.set_value(22)
 
-        self.confirm_button.connect("clicked", self.on_confirm)
-        self.cancel_button.connect("clicked", self.on_cancel)
+        self.confirm_button.connect('clicked', self.on_confirm)
+        self.cancel_button.connect('clicked', self.on_cancel)
 
     def on_confirm(self, user_data):
-        #self.set_can_close(False) # Lock the Dialog before the minimum input is correct
+        # self.set_can_close(False) # Lock the Dialog before the minimum input is correct
 
         """
         Validate
@@ -63,21 +64,16 @@ class ObNewItemDialog(Adw.PreferencesDialog):
             ip = netaddr.IPAddress(self.hostname_input.get_text())
             port = self.port_input.get_value()
             title = self.connection_name_input.get_text() or ip
-            print(f"User Input {ip} is an IPv{ip.version} Address")
-            print(f"Title: {title}\
+            print(f'User Input {ip} is an IPv{ip.version} Address')
+            print(f'Title: {title}\
             IP: {ip}\
-            Port: {int(port)}")
+            Port: {int(port)}')
             self.set_can_close(True)
         except netaddr.AddrFormatError as e:
             print(e)
 
-
     def on_cancel(self, user_data):
         self.close()
 
-
-
-
-
-    #print(f"connection_name_input is activatable: {self.connection_name_input.activatable()}")
-    #print(f"{self.__dict__}")
+    # print(f"connection_name_input is activatable: {self.connection_name_input.activatable()}")
+    # print(f"{self.__dict__}")

@@ -10,7 +10,7 @@
 # Code modified from Apostrophe
 # https://github.com/dialect-app/dialect/blob/c0b7ca0580d4c7cfb32ff7ed0a3a08c06bbe40e0/dialect/theme_switcher.py
 
-from gi.repository import Adw, Gio, GObject, Gtk, Gdk
+from gi.repository import Adw, GObject, Gio, Gtk
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/theme_switcher.ui')
@@ -18,7 +18,7 @@ class ThemeSwitcher(Gtk.Box):
     __gtype_name__ = 'ThemeSwitcher'
 
     # GSettings
-    _settings = Gio.Settings(schema_id="io.github.srngh.obelisk")
+    _settings = Gio.Settings(schema_id='io.github.srngh.obelisk')
 
     show_system = GObject.property(type=bool, default=True)
     color_scheme = 'light'
@@ -58,17 +58,16 @@ class ThemeSwitcher(Gtk.Box):
             GObject.BindingFlags.SYNC_CREATE
         )
 
-        self.selected_color_scheme = self._settings.get_string("style-scheme")
-
+        self.selected_color_scheme = self._settings.get_string('style-scheme')
 
     @Gtk.Template.Callback()
     def _on_color_scheme_changed(self, _widget, _paramspec):
         if self.system.get_active():
             self.selected_color_scheme = 'auto'
-            self._settings.set_string("style-scheme", "auto")
+            self._settings.set_string('style-scheme", 'auto')
         if self.light.get_active():
             self.selected_color_scheme = 'light'
-            self._settings.set_string("style-scheme", "light")
+            self._settings.set_string('style-scheme', 'light')
         if self.dark.get_active():
             self.selected_color_scheme = 'dark'
-            self._settings.set_string("style-scheme", "dark")
+            self._settings.set_string('style-scheme', 'dark')

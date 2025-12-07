@@ -17,12 +17,14 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-#from gi.repository import Adw
-from gi.repository import Gtk, Gio, Gdk
+# from gi.repository import Adw
+from gi.repository import Gdk, Gtk
+
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_context_menu.ui')
 class ObContextMenu(Gtk.PopoverMenu):
     __gtype_name__ = 'ObContextMenu'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

@@ -18,18 +18,19 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import sys
+
 import gi
+from gi.repository import Adw, Gio
+
+from .widgets.ob_term import ObTerm
+from .widgets.preferences import Preferences
+from .window import ObWindow
 
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('Vte', '3.91')
-gi.require_version("GLib", "2.0")
+gi.require_version('GLib', '2.0')
 
-from gi.repository import Gtk, Gdk, Gio, Adw, Vte, GLib
-
-from .window import ObWindow
-from .widgets.preferences import Preferences
-from .widgets.ob_term import ObTerm
 
 class ObeliskApplication(Adw.Application):
     """The main application singleton class."""
@@ -68,7 +69,7 @@ class ObeliskApplication(Adw.Application):
 
     def on_preferences_action(self, widget, _):
         """Callback for the app.preferences action."""
-        print("preferences has been clicked")
+        print('preferences has been clicked')
         pref = Preferences()
         pref.present()
 
@@ -82,10 +83,10 @@ class ObeliskApplication(Adw.Application):
             shortcuts: an optional list of accelerators
         """
         action = Gio.SimpleAction.new(name, None)
-        action.connect("activate", callback)
+        action.connect('activate', callback)
         self.add_action(action)
         if shortcuts:
-            self.set_accels_for_action(f"app.{name}", shortcuts)
+            self.set_accels_for_action(f'app.{name}', shortcuts)
 
 
 

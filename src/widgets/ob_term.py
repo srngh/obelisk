@@ -17,27 +17,26 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-
-from gi.repository import Gtk, Vte, GLib, Gio
 import os
 
+from gi.repository import GLib, Vte
+
+
 class ObTerm(Vte.Terminal):
-    __gtype_name__ = "ObTerm"
+    __gtype_name__ = 'ObTerm'
 
-    #term = Vte.Terminal()
-    #pty = Vte.Pty.new_sync(Vte.PtyFlags.DEFAULT)
-    #term.set_pty(pty)
-
+    # term = Vte.Terminal()
+    # pty = Vte.Pty.new_sync(Vte.PtyFlags.DEFAULT)
+    # term.set_pty(pty)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
 
     def spawn_bash(self):
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
-            ["/app/bin/host-spawn", "bash"],
+            ['/app/bin/host-spawn', 'bash'],
             None,
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
@@ -52,7 +51,7 @@ class ObTerm(Vte.Terminal):
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
-            ["/bin/sh"],
+            ['/bin/sh'],
             None,
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
