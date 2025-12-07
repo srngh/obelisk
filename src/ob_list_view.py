@@ -19,7 +19,7 @@
 
 from pprint import pprint
 
-from gi.repository import GObject, Gtk, Gio, Gdk
+from gi.repository import Gtk, Gio, Gdk
 
 from .widgets.ob_tree_expander import ObTreeExpander
 
@@ -30,28 +30,17 @@ class ObListView(Gtk.ListView):
 
     model = Gtk.SingleSelection()
 
-    def __init__(self, items, **kwargs):
-
-        self.items = items
-        # print(self.items)
+    def __init__(self, selection_model, **kwargs):
         super().__init__(**kwargs)
 
         factory = Gtk.SignalListItemFactory()
         factory.connect("setup", self.on_setup)
-        factory.connect("bind", self.on_bind_2)
-        # factory.connect("pressed", )
+        factory.connect("bind", self.on_bind)
         self.set_factory(factory)
 
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
         gesture.connect("pressed", self.__on_button_press)
         self.add_controller(gesture)
-
-        tree_model = parse_items(self.items)
-        tree_list_model = Gtk.TreeListModel.new(
-            tree_model, False, True, self.__tree_model_create_func
-        )
-        selection_model = Gtk.SingleSelection(model=tree_list_model)
-        # self.selection_model.connect("notify::selected-item", self.__on_selected_item_notify)
         self.set_model(selection_model)
 
     def __tree_model_create_func(self, item):
@@ -63,7 +52,6 @@ class ObListView(Gtk.ListView):
         return child_model
 
     def __on_button_press(self, gesture, npress, x, y):
-        # This feels impractical
         #print(gesture, npress, x, y)
         expander = self.__get_tree_expander(x, y)
 
@@ -78,7 +66,6 @@ class ObListView(Gtk.ListView):
         # self.set_child(menu)
         menu.set_parent(self)
         menu.popup_at(x, y)
-        #print(self)
         return True
 
     def __get_tree_expander(self, x, y):
@@ -106,70 +93,7 @@ class ObListView(Gtk.ListView):
 
     def on_bind(self, factory, list_item):
         list_row = list_item.get_item()
-        widget = list_item.get_child()
-        item = list_row.get_item()
-
-        match item.item_type:
-            case "connection":
-                widget.icon.set_from_icon_name("ssh-symbolic")
-            case "folder":
-                widget.remove(widget.icon)
-
-        widget.expander.set_list_row(list_row)
-        widget.label.set_label(item.title)
-
-    def on_bind_2(self, factory, list_item):
-        list_row = list_item.get_item()
         expander = list_item.get_child()
         expander.set_list_row(list_row)
         expander.update_bind()
-
-
-def parse_items(connections: dict):
-    tree_model = Gio.ListStore.new(ObTreeNode)
-    for item in connections:
-        match connections[item]["item_type"]:
-            case "connection":
-                node = create_tree_node(connections[item])
-                tree_model.append(node)
-            case "folder":
-                node = create_folder_node(connections[item])
-                tree_model.append(node)
-    return tree_model
-
-
-def create_tree_node(connection: dict):
-    node = ObTreeNode(connection["item_title"])
-    node.ip4_address = connection["ip4_address"]
-    node.item_type = connection["item_type"]
-    node.user = connection["user"]
-    node.user = connection["item_description"]
-    node.protocol = connection["protocol"]
-    node.auth = connection["auth"]
-    return node
-
-
-def create_folder_node(folder: dict):
-    children = []
-    for item in folder["connections"]:
-        match folder["connections"][item]["item_type"]:
-            case "connection":
-                node = create_tree_node(folder["connections"][item])
-                children.append(node)
-            case "folder":
-                node = create_folder_node(folder["connections"][item])
-                children.append(node)
-    node = ObTreeNode(folder["item_title"], _children=children)
-    node.item_type = "folder"
-    return node
-
-
-class ObTreeNode(GObject.GObject):
-    def __init__(self, _title, _children=None):
-        super().__init__()
-        self.children = _children or []
-        self.title = _title
-
-    def get_item_title(self):
-        return self.title
 

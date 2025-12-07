@@ -18,14 +18,21 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import yaml
+from pathlib import Path
 
 # To Do:
 # Demote this to a ObeliskConfigFileHandler
 
 class ObeliskFileHandler:
+    def __init__(self):
+        home_dir = Path.home()
+        #self.filename = filename or (f"{home_dir}/.config/obelisk/obelisk_nested.yaml")
+
+
     def load_connections(self, filename):
         with open(filename) as file:
             self.connections = yaml.safe_load(file)
+
 
     def to_str(self):
         return self.connections

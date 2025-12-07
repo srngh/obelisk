@@ -31,6 +31,7 @@ from .widgets.ob_term import ObTerm
 from .config_file_handlers.config_file_handler import ConfigFileHandlerFactory
 
 from .ob_list_view import ObListView
+from .ob_config import ObConfig
 
 from .widgets.ob_new_item_dialog import ObNewItemDialog
 
@@ -56,7 +57,7 @@ class ObWindow(Adw.ApplicationWindow):
     toggle_sidebar_btn = Gtk.Template.Child()
     obelisk_sidebar = Gtk.Template.Child()
 
-    print(f"obelisk_sidebar is at {obelisk_sidebar} and of type {type(obelisk_sidebar)}")
+    # print(f"obelisk_sidebar is at {obelisk_sidebar} and of type {type(obelisk_sidebar)}")
 
     def _new_item(self, *args):
         print("creating new item")
@@ -98,14 +99,11 @@ class ObWindow(Adw.ApplicationWindow):
         self._settings.bind("window-maximized", self,
                             "maximized", Gio.SettingsBindFlags.DEFAULT)
 
-        # Load a sample config
         home_dir = Path.home()
-        default_handler = ConfigFileHandlerFactory().create_handler("obelisk")
-        default_handler.load_connections(f"{home_dir}/.config/obelisk/obelisk_nested.yaml")
+        self.config = ObConfig(filename=f"{home_dir}/.config/obelisk/obelisk_nested.yaml")
 
-        self.items = default_handler.to_str()
+        obelisk_list_view = ObListView(selection_model=self.config.selection_model)
 
-        obelisk_list_view = ObListView(items=self.items)
         self.obelisk_sidebar.set_content(obelisk_list_view)
         obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
 
@@ -135,7 +133,6 @@ class ObWindow(Adw.ApplicationWindow):
         term = ObTerm()
         sel_page = self.tab_view.add_page(term).set_title("local shell")
         term.spawn_sh()
-        #term.watch_child()
 
     def on_new_item_action(self):
         new_item_dialog = ObNewItemDialog()
