@@ -20,8 +20,7 @@
 from gi.repository import GObject, Gio, Gtk
 
 from .config_file_handlers.config_file_handler import ConfigFileHandlerFactory
-
-# from .widgets.ob_tree_expander import ObTreeExpander
+from .widgets.ob_tree_node import ObTreeNode
 
 
 class ObConfig(GObject.Object, Gio.ListModel):
@@ -49,6 +48,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
             tree_model, False, True, self.__tree_model_create_func
         )
         self.selection_model = Gtk.SingleSelection(model=tree_list_model)
+        print(tree_list_model.get_model())
 
     def __tree_model_create_func(self, item):
         if item.children == []:
@@ -76,9 +76,10 @@ def create_tree_node(connection: dict):
     node = ObTreeNode(connection['item_title'])
     node.ip4_address = connection['ip4_address']
     node.item_type = connection['item_type']
-    node.user = connection['user']
-    node.user = connection['item_description']
+    node.username = connection['username']
+    node.description = connection['item_description']
     node.protocol = connection['protocol']
+    node.port = connection['port']
     node.auth = connection['auth']
     return node
 
@@ -96,15 +97,4 @@ def create_folder_node(folder: dict):
     node = ObTreeNode(folder['item_title'], _children=children)
     node.item_type = 'folder'
     return node
-
-
-class ObTreeNode(GObject.GObject):
-
-    def __init__(self, _title, _children=None):
-        super().__init__()
-        self.children = _children or []
-        self.title = _title
-
-    def get_item_title(self):
-        return self.title
 

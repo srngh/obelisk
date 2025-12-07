@@ -64,7 +64,7 @@ class ThemeSwitcher(Gtk.Box):
     def _on_color_scheme_changed(self, _widget, _paramspec):
         if self.system.get_active():
             self.selected_color_scheme = 'auto'
-            self._settings.set_string('style-scheme", 'auto')
+            self._settings.set_string('style-scheme', 'auto')
         if self.light.get_active():
             self.selected_color_scheme = 'light'
             self._settings.set_string('style-scheme', 'light')

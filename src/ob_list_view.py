@@ -64,7 +64,6 @@ class ObListView(Gtk.ListView):
         self.model.set_selected(list_row.get_position())
 
         menu = ObContextMenu()
-        # self.set_child(menu)
         menu.set_parent(self)
         menu.popup_at(x, y)
         return True

@@ -1,4 +1,4 @@
-# obelisk_file_handler.py
+# ob_tree_node.py
 #
 # Copyright 2025 simhof
 #
@@ -17,34 +17,15 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-
-# from pathlib import Path
-
-import yaml
-# To Do:
-# Demote this to a ObeliskConfigFileHandler
+from gi.repository import GObject
 
 
-class ObeliskFileHandler:
-    # def __init__(self):
-    # home_dir = Path.home()
-    # self.filename = filename or (f"{home_dir}/.config/obelisk/obelisk_nested.yaml")
+class ObTreeNode(GObject.GObject):
 
-    def load_connections(self, filename):
-        with open(filename) as file:
-            self.connections = yaml.safe_load(file)
+    def __init__(self, _title, _children=None):
+        super().__init__()
+        self.children = _children or []
+        self.title = _title
 
-    def to_str(self):
-        return self.connections
-
-    def to_disk(self, filename, config):
-        try:
-            with open(filename, 'w') as file:
-                yaml.dump(config, filename, default_flow_style=False)
-
-        except:
-            pass
-
-# To Do:
-# write changes to file
-
+    def get_item_title(self):
+        return self.title

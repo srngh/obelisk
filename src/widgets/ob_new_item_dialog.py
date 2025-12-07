@@ -17,10 +17,14 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import os
+
 from gi.repository import Adw
 from gi.repository import Gtk
 
 import netaddr
+
+from .ob_tree_node import ObTreeNode
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
@@ -35,6 +39,7 @@ class ObNewItemDialog(Adw.PreferencesDialog):
     proxy_input = Gtk.Template.Child()
     connection_name_input = Gtk.Template.Child()
     port_input = Gtk.Template.Child()
+    username_input = Gtk.Template.Child()
 
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
@@ -64,11 +69,28 @@ class ObNewItemDialog(Adw.PreferencesDialog):
             ip = netaddr.IPAddress(self.hostname_input.get_text())
             port = self.port_input.get_value()
             title = self.connection_name_input.get_text() or ip
+            username = self.username_input.get_text() or os.getlogin()
+            # print(self.auth_method.get_text())
+
             print(f'User Input {ip} is an IPv{ip.version} Address')
             print(f'Title: {title}\
             IP: {ip}\
-            Port: {int(port)}')
+            Port: {int(port)}\
+            Username: {username}')
+
             self.set_can_close(True)
+            node = ObTreeNode(title)
+            if ip.version == 4:
+                node.ip4_address = str(ip)
+            elif ip.version == 6:
+                node.ip6_address = str(ip)
+            node.username = username
+            node.protocol = 'SSH'
+            node.port = port
+            node.auth = 'pubkey'
+            # return node
+            print(node)
+            self.close()
         except netaddr.AddrFormatError as e:
             print(e)
 

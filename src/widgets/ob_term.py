@@ -19,6 +19,10 @@
 
 import os
 
+import gi
+
+gi.require_version('Vte', '3.91')
+
 from gi.repository import GLib, Vte
 
 
