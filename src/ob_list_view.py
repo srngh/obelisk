@@ -40,7 +40,7 @@ class ObListView(Gtk.ListView):
         self.set_factory(factory)
 
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
-        gesture.connect('pressed', self.__on_button_press)
+        gesture.connect('released', self.__on_button_press)
         self.add_controller(gesture)
         self.set_model(selection_model)
 
@@ -66,6 +66,7 @@ class ObListView(Gtk.ListView):
         menu = ObContextMenu()
         menu.set_parent(self)
         menu.popup_at(x, y)
+        print(f'Popup created at {expander.props.item.uuid}')
         return True
 
     def __get_tree_expander(self, x, y):
