@@ -69,7 +69,6 @@ class ObConfig(GObject.Object, Gio.ListModel):
     def __tree_model_create_func(self, item):
         """
         This builds the Gtk.TreeListModel.
-        It feels like doing the work of parse_items() all over again.
         """
         if isinstance(item, ObTreeNode):
             return None
@@ -81,14 +80,16 @@ class ObConfig(GObject.Object, Gio.ListModel):
 
     def __tree_model_debug_func(self):
         """
-        For viewing the TreeModel
+        This is a debugging / testing method.
+        For viewing the TreeModel.
         """
         list_store = self.selection_model.get_model().get_model()
         debug_ob_store(list_store)
 
     def get_tree_row_index_by_uuid(self, uuid):
         """
-        Probably a hack
+        This is a debugging / testing method.
+        Probably a hack.
         """
         list_store = self.selection_model.get_model()  # Just plain ugly
         for index in range(list_store.get_n_items()):
@@ -99,7 +100,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
     def add_item(self, item, parent_folder):
         parent_folder.append(item)
 
-    def get_item_parent_by_uuid(self, uuid):
+    def get_parent_uuid_by_child_uuid(self, uuid):
         list_store = self.ob_list_store_model
         return get_parent_folder(list_store, uuid)
 
@@ -130,7 +131,8 @@ def get_parent_folder(list_store, uuid):
 
 def debug_ob_store(store):
     """
-    The recursive part of viewing the TreeModel
+    This is a debugging / testing method.
+    The recursive part of viewing the TreeModel.
     """
     for index in range(store.get_n_items()):
         child = store.get_item(index)

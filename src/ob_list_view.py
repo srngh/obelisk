@@ -44,14 +44,6 @@ class ObListView(Gtk.ListView):
         self.add_controller(gesture)
         self.set_model(selection_model)
 
-    def __tree_model_create_func(self, item):
-        if item.children == []:
-            return None
-        child_model = Gio.ListStore.new(ObTreeNode)
-        for child in item.children:
-            child_model.append(child)
-        return child_model
-
     def __on_button_press(self, gesture, npress, x, y):
         # print(gesture, npress, x, y)
         expander = self.__get_tree_expander(x, y)
@@ -67,6 +59,7 @@ class ObListView(Gtk.ListView):
         menu.set_parent(self)
         menu.popup_at(x, y)
         print(f'Popup created at {expander.props.item.uuid}')
+        menu.set_reference(expander.props.item.uuid)
         return True
 
     def __get_tree_expander(self, x, y):

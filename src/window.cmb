@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
 <!DOCTYPE cambalache-project SYSTEM "cambalache-project.dtd">
-<!-- Created with Cambalache 0.99.5 -->
+<!-- Created with Cambalache 0.97.8 -->
 <cambalache-project version="0.96.0" target_tk="gtk-4.0">
-  <ui template-class="ObWindow" filename="window.blp" sha256="91dd149b2c0634613e65641b7ffdf20353c0d8258e16a9125799f4589e1c2985"/>
+  <ui template-class="ObWindow" filename="window.blp" sha256="e725b05d2b7875784935253a09e8252687ac9b69ed552a45e19ae0be4e2ea6e2"/>
   <ui template-class="PreferencesDialog" filename="gtk/preferences.blp" sha256="3395db18025bf11cae17e0954b11d5b1e5546c7fca71104093a335b099787f06"/>
   <ui filename="gtk/help-overlay.blp" sha256="2583bfbe7c22221fb369bccd95a9d040d247cfe18135544eb9ba12650ccc3dd5"/>
-  <ui template-class="ObContextMenu" filename="gtk/ob_context_menu.blp" sha256="229e272581f5a7221347529c4a4b63b46c8eb655693003c88bbe1f111ce0870a"/>
-  <ui template-class="ObNewItemDialog" filename="gtk/ob_new_item_dialog.blp" sha256="2366a81db1c915706963df2063c28fdd5639e7c8f43d73f0283ada489bf73a93"/>
+  <ui template-class="ObContextMenu" filename="gtk/ob_context_menu.blp" sha256="1e50ad45cd955243688dc9c805d01699b106d33cf12b74ffa4e49d30afd82369"/>
+  <ui template-class="ObNewItemDialog" filename="gtk/ob_new_item_dialog.blp" sha256="17c5d4aa036f8a6b625f6bbc5ded896d36db0bfd37840355ecf4fc036799ae67"/>
 </cambalache-project>

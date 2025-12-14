@@ -36,3 +36,6 @@ class ObContextMenu(Gtk.PopoverMenu):
         self.popup()
         print(self)
 
+    def set_reference(self, uuid):
+        self.referenced_item_uuid = uuid
+

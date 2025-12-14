@@ -24,15 +24,16 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
       }
 
       Adw.SpinRow port_input {
-        title: _("Port");
+        adjustment: Adjustment {
+          lower: 1;
+          page-increment: 10;
+          step-increment: 1;
+          upper: 65535;
+          value: 22;
+        };
+
         numeric: true;
-        adjustment: Gtk.Adjustment {
-                          value: 22;
-                          lower: 1;
-                          upper: 65535;
-                          step-increment: 1;
-                          page-increment: 10;
-                        };
+        title: _("Port");
       }
 
       Adw.ComboRow auth_method {
