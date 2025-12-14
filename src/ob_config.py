@@ -43,13 +43,17 @@ class ObConfig(GObject.Object, Gio.ListModel):
         default_handler.load_connections(self.filename)
         self.items = default_handler.to_str()
 
-        ob_list_store_model = parse_items(self.items)
+        self.ob_list_store_model = parse_items(self.items)
+
         tree_list_model = Gtk.TreeListModel.new(
-            ob_list_store_model, False, True, self.__tree_model_create_func
+            self.ob_list_store_model, False, True, self.__tree_model_create_func
         )
         self.selection_model = Gtk.SingleSelection(model=tree_list_model)
 
         # self.__tree_model_debug_func()
+        # print(self.get_tree_row_index_by_uuid('3bf1a021-0e72-47d8-bac1-6ceafd64ab3b'))
+        parent_folder = get_parent_folder(self.selection_model.get_model().get_model(), 'be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
+        print(f'{parent_folder} has UUID {parent_folder.uuid}')
 
     def __tree_model_create_func_old(self, item):
         """
@@ -65,12 +69,12 @@ class ObConfig(GObject.Object, Gio.ListModel):
     def __tree_model_create_func(self, item):
         """
         This builds the Gtk.TreeListModel.
-        This feels like doing the work of parse_items() all over again.
+        It feels like doing the work of parse_items() all over again.
         """
-        if hasattr(item, 'children') and item.children == []:
+        if isinstance(item, ObTreeNode):
             return None
         else:
-            child_model = ObListStore(ObTreeNode, uuid=item.uuid, item_title=item.title)
+            child_model = ObListStore(title=item.title, uuid=item.uuid)
             for index in range(item.get_n_items()):
                 child_model.append(item.get_item(index))
             return child_model
@@ -82,6 +86,47 @@ class ObConfig(GObject.Object, Gio.ListModel):
         list_store = self.selection_model.get_model().get_model()
         debug_ob_store(list_store)
 
+    def get_tree_row_index_by_uuid(self, uuid):
+        """
+        Probably a hack
+        """
+        list_store = self.selection_model.get_model()  # Just plain ugly
+        for index in range(list_store.get_n_items()):
+            print(f'Index {index}\
+            {list_store.get_item(index).get_item().title}\
+            {list_store.get_item(index).get_item().uuid}')
+
+    def add_item(self, item, parent_folder):
+        parent_folder.append(item)
+
+    def get_item_parent_by_uuid(self, uuid):
+        list_store = self.ob_list_store_model
+        return get_parent_folder(list_store, uuid)
+
+
+def resolve_uuid(store, uuid):
+    """
+    The recursive part of resolving the index of a connection items by uuid
+    """
+    for index in range(store.get_n_items()):
+        child = store.get_item(index)
+        if child.uuid == uuid:
+            return index
+        elif child.item_type == 'folder':
+            resolve_uuid(child, uuid)
+
+
+def get_parent_folder(list_store, uuid):
+    """
+    returns the parent folder of an items UUID
+    """
+    for index in range(list_store.get_n_items()):
+        child = list_store.get_item(index)
+        if child.uuid == uuid:
+            return list_store
+        elif isinstance(child, ObListStore):
+            return get_parent_folder(child, uuid)
+
 
 def debug_ob_store(store):
     """
@@ -90,7 +135,7 @@ def debug_ob_store(store):
     for index in range(store.get_n_items()):
         child = store.get_item(index)
         print(f'Object {child.title} has {index} items, has uuid {child.uuid} and is type {child.item_type}')
-        if child.item_type == 'folder':
+        if isinstance(child, ObListStore):
             debug_ob_store(child)
 
 
@@ -101,7 +146,10 @@ def parse_items(connections: dict):
     ObTreeNodes will never have child objects.
     ObTreeNodes may be empty.
     """
-    ob_list_store_model = ObListStore(ObTreeNode, uuid='00000000-0000-0000-0000-000000000000', item_title='root')
+    ob_list_store_model = ObListStore(
+        'root',
+        '00000000-0000-0000-0000-000000000000'
+    )
     for uuid in connections:
         match connections[uuid]['item_type']:
             case 'connection':
@@ -117,8 +165,7 @@ def create_tree_node(uuid, connection: dict):
     """
     Create a single ObTreeNode, containing all neccessary data
     """
-    node = ObTreeNode(connection['item_title'])
-    node.uuid = uuid
+    node = ObTreeNode(connection['item_title'], uuid)
     node.ip4_address = connection['ip4_address']
     node.item_type = connection['item_type']
     node.username = connection['username']
@@ -129,39 +176,21 @@ def create_tree_node(uuid, connection: dict):
     return node
 
 
-def create_folder_node(uuid, folder: dict):
-    """
-    Old
-    """
-    children = []
-    for uuid in folder['connections']:
-        match folder['connections'][uuid]['item_type']:
-            case 'connection':
-                node = create_tree_node(uuid, folder['connections'][uuid])
-                children.append(node)
-            case 'folder':
-                node = create_folder_node(uuid, folder['connections'][uuid])
-                children.append(node)
-    node = ObTreeNode(folder['item_title'], _children=children)
-    node.item_type = 'folder'
-    node.uuid = uuid
-    return node
-
-
 def create_folder_store(uuid, item_title, folder: dict):
     """
     Create a single ObListStore, creating all child ObListStores and ObTreeNodes
     """
-    store = ObListStore(ObTreeNode, uuid=uuid, item_title=item_title)
+    store = ObListStore(title=item_title, uuid=uuid)
     for uuid in folder['connections']:
         match folder['connections'][uuid]['item_type']:
             case 'connection':
                 node = create_tree_node(uuid, folder['connections'][uuid])
                 store.append(node)
             case 'folder':
-                substore = create_folder_store(uuid,\
-                folder['connections'][uuid]['item_title'],\
-                folder['connections'][uuid])
+                substore = create_folder_store(
+                    uuid,
+                    folder['connections'][uuid]['item_title'],
+                    folder['connections'][uuid])
                 store.append(substore)
     return store
 
@@ -173,12 +202,18 @@ class ObListStore(Gio.ListStore):
     A ListStore for organizing the TreeListStore
     """
 
-    def __init__(self, item_type, **kwargs):
-        self.item_type = 'folder'
-        self.title = kwargs['item_title']
-        self.uuid = kwargs['uuid']
+    def __init__(self, title: str, uuid: str):
+        self.item_type = ObTreeNode
+        self._title = title
+        self._uuid = uuid
 
         super().__init__()
 
+    @GObject.Property(type=str)
+    def title(self) -> str:
+        return self._title
 
+    @GObject.Property(type=str)
+    def uuid(self) -> str:
+        return self._uuid
 

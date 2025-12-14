@@ -21,11 +21,18 @@ from gi.repository import GObject
 
 
 class ObTreeNode(GObject.GObject):
+    __gtype_name__ = 'ObTreeNode'
 
-    def __init__(self, _title, _children=None):
+    def __init__(self, title: str, uuid: str):
         super().__init__()
-        self.children = _children or []
-        self.title = _title
+        self._title = title
+        self._uuid = uuid
 
-    def get_item_title(self):
-        return self.title
+    @GObject.Property(type=str)
+    def title(self) -> str:
+        return self._title
+
+    @GObject.Property(type=str)
+    def uuid(self) -> str:
+        return self._uuid
+

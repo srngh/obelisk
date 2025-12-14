@@ -65,8 +65,8 @@ class ObTerm(Vte.Terminal):
             None,
             None
         )
-        pty = self.get_pty()
-        pid = pty.spawn(finish)
+        # pty = self.get_pty()
+        # pid = pty.spawn(finish)
 
     def spawn_ssh(self):
         self.spawn_async(

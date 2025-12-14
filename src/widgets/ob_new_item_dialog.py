@@ -18,6 +18,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
+import uuid
 
 from gi.repository import Adw
 from gi.repository import Gtk
@@ -80,6 +81,7 @@ class ObNewItemDialog(Adw.PreferencesDialog):
 
             self.set_can_close(True)
             node = ObTreeNode(title)
+            node.uuid = uuid.uuid4()
             if ip.version == 4:
                 node.ip4_address = str(ip)
             elif ip.version == 6:
@@ -89,6 +91,7 @@ class ObNewItemDialog(Adw.PreferencesDialog):
             node.port = port
             node.auth = 'pubkey'
             # return node
+
             print(node)
             self.close()
         except netaddr.AddrFormatError as e:

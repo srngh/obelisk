@@ -19,6 +19,7 @@
 
 # from pprint import pprint
 
+import uuid
 from pathlib import Path
 
 from gi.repository import Adw
@@ -28,7 +29,9 @@ from .ob_config import ObConfig
 from .ob_list_view import ObListView
 from .widgets.ob_new_item_dialog import ObNewItemDialog
 from .widgets.ob_term import ObTerm
+from .widgets.ob_tree_node import ObTreeNode
 from .widgets.theme_switcher import ThemeSwitcher
+
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/window.ui')
@@ -72,7 +75,8 @@ class ObWindow(Adw.ApplicationWindow):
         ('new_item', _new_item),
         ('clone_item', _clone_item),
         ('delete_item', _delete_item),
-        ('connect', _connect)
+        ('connect', _connect),
+        ('add_item', ObConfig.add_item)
     }
 
     # GSettings
@@ -112,19 +116,40 @@ class ObWindow(Adw.ApplicationWindow):
         item = list_view.get_model()[index].get_item()
         term = ObTerm()
 
-        # sel_page = self.tab_view.add_page(term).set_title(item.get_item_title())
+        sel_page = self.tab_view.add_page(term).set_title(item.get_item_title())
         term.spawn_ssh()
 
     @Gtk.Template.Callback()
-    def on_tab_add_btn_clicked(self, Button):
+    def on_add_tab_btn_clicked(self, Button):
         """
         Spawns a shell inside the flatpak.
         Mostly for testing and debugging.
         """
         print('clicked tab add button')
         term = ObTerm()
-        # sel_page = self.tab_view.add_page(term).set_title('local shell')
+        sel_page = self.tab_view.add_page(term).set_title('local shell')
         term.spawn_sh()
+
+    @Gtk.Template.Callback()
+    def on_add_item_btn_clicked(self, Button):
+        """
+        Creates a new new in the sidebar
+        Mostly for testing and debugging.
+        """
+        print('clicked item add button')
+        list_store = self.config.selection_model.get_model().get_model()
+        node = ObTreeNode('testconnection', uuid = uuid.uuid4())
+        node.item_type = 'connection'
+        node.username = 'bob'
+        node.ip4_address = '10.1.1.1'
+        node.item_description = 'added via the debug button'
+        node.port = 22
+        node.protocol = 'SSH'
+        node.auth = 'pubkey'
+
+        parent = self.config.get_item_parent_by_uuid('563840e6-5a1d-49b8-a530-32311034967f')
+        self.config.add_item(node, parent)
+
 
     def on_new_item_action(self):
         new_item_dialog = ObNewItemDialog()

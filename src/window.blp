@@ -47,7 +47,16 @@ template $ObWindow: Adw.ApplicationWindow {
           icon-name: "add";
           receives-default: false;
           tooltip-text: "Add a new tab";
-          clicked => $on_tab_add_btn_clicked();
+          clicked => $on_add_tab_btn_clicked();
+        }
+
+        [end]
+        Button add_item_btn {
+          has-frame: false;
+          icon-name: "add";
+          receives-default: false;
+          tooltip-text: "Add a new tab";
+          clicked => $on_add_item_btn_clicked();
         }
 
         MenuButton debug_btn {
