@@ -25,14 +25,14 @@ from .widgets.ob_tree_node import ObTreeNode
 
 class ObConfig(GObject.Object, Gio.ListModel):
     __gtype_name__ = 'ObConfig'
-    'This class holds the configuration of a loaded config file.'
+    """
+    This class holds the configuration of a loaded config file.
+    """
 
-    """
     __gsignals__ = {
-        'changed': (GObject.SignalFlags.RUN_FIRST, None, ()) <<<<---- what it do?
-        '': asdf
+        'item-added': (GObject.SignalFlags.RUN_FIRST, None, (ObTreeNode,)),
     }
-    """
+
     def __init__(self, filename=None, **kwargs):
         super().__init__(**kwargs)
         self.autosave = False
@@ -52,8 +52,8 @@ class ObConfig(GObject.Object, Gio.ListModel):
 
         # self.__tree_model_debug_func()
         # print(self.get_tree_row_index_by_uuid('3bf1a021-0e72-47d8-bac1-6ceafd64ab3b'))
-        parent_folder = get_parent_folder(self.selection_model.get_model().get_model(), 'be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
-        print(f'{parent_folder} has UUID {parent_folder.uuid}')
+        list_store = get_liststore_uuid_by_node_uuid(self.selection_model.get_model().get_model(), 'be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
+        print(f'{list_store} has UUID {list_store.uuid}')
 
     def __tree_model_create_func_old(self, item):
         """
@@ -97,15 +97,31 @@ class ObConfig(GObject.Object, Gio.ListModel):
             {list_store.get_item(index).get_item().title}\
             {list_store.get_item(index).get_item().uuid}')
 
-    def add_item(self, item, parent_folder):
-        parent_folder.append(item)
+    def add_item(self, node, parent_uuid):
+        """
+        Pass an ObTreeNode and the parents UUID
+        """
+        list_store = self.__get_liststore_by_uuid(parent_uuid)
+        list_store.append(node)
 
-    def get_parent_uuid_by_child_uuid(self, uuid):
+    def __get_node_by_uuid(self, uuid):
         list_store = self.ob_list_store_model
-        return get_parent_folder(list_store, uuid)
+        return get_node_by_uuid(list_store, uuid)
+
+    def __get_liststore_by_uuid(self, uuid):
+        list_store = self.ob_list_store_model
+        return get_liststore_by_uuid(list_store, uuid)
+
+    def __get_liststore_by_node_uuid(self, uuid):
+        list_store = self.ob_list_store_model
+        return get_liststore_by_node_uuid(list_store, uuid)
+
+    def __get_liststore_uuid_by_node_uuid(self, uuid):
+        list_store = self.ob_list_store_model
+        return get_liststore_uuid_by_node_uuid(list_store, uuid)
 
 
-def resolve_uuid(store, uuid):
+def get_node_by_uuid(store, uuid):
     """
     The recursive part of resolving the index of a connection items by uuid
     """
@@ -113,26 +129,45 @@ def resolve_uuid(store, uuid):
         child = store.get_item(index)
         if child.uuid == uuid:
             return index
-        elif child.item_type == 'folder':
-            resolve_uuid(child, uuid)
+        elif isinstance(child, ObListStore):
+            return get_node_by_uuid(child, uuid)
 
 
-def get_parent_folder(list_store, uuid):
+def get_liststore_by_uuid(list_store, uuid):
     """
-    returns the parent folder of an items UUID
+    Returns a folder by its UUID
+    """
+    if list_store.uuid == uuid:
+        return list_store
+    else:
+        for index in range(list_store.get_n_items()):
+            child = list_store.get_item(index)
+            if isinstance(child, ObListStore) and child.uuid == uuid:
+                return child
+            elif isinstance(child, ObListStore):
+                return get_liststore_by_uuid(child, uuid)
+
+
+def get_liststore_by_node_uuid(list_store, uuid):
+    pass
+
+
+def get_liststore_uuid_by_node_uuid(list_store, uuid):
+    """
+    Returns the parent folder of an items UUID
     """
     for index in range(list_store.get_n_items()):
         child = list_store.get_item(index)
         if child.uuid == uuid:
             return list_store
         elif isinstance(child, ObListStore):
-            return get_parent_folder(child, uuid)
+            return get_liststore_uuid_by_node_uuid(child, uuid)
 
 
 def debug_ob_store(store):
     """
     This is a debugging / testing method.
-    The recursive part of viewing the TreeModel.
+    The recursive part of parent_list_storeviewing the TreeModel.
     """
     for index in range(store.get_n_items()):
         child = store.get_item(index)

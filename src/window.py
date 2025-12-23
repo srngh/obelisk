@@ -33,7 +33,6 @@ from .widgets.ob_tree_node import ObTreeNode
 from .widgets.theme_switcher import ThemeSwitcher
 
 
-
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/window.ui')
 class ObWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'ObWindow'
@@ -147,7 +146,7 @@ class ObWindow(Adw.ApplicationWindow):
         node.protocol = 'SSH'
         node.auth = 'pubkey'
 
-        parent = self.config.get_parent_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
+        parent = self.config.get_liststore_uuid_by_node_uuid('563840e6-5a1d-49b8-a530-32311034967f')
         self.config.add_item(node, parent)
 
 

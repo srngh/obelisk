@@ -19,7 +19,7 @@
 
 # from pprint import pprint
 
-from gi.repository import Gdk, Gio, Gtk
+from gi.repository import GObject, Gdk, Gtk
 
 from .widgets.ob_context_menu import ObContextMenu
 from .widgets.ob_tree_expander import ObTreeExpander
