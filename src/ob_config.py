@@ -51,7 +51,6 @@ class ObConfig(GObject.Object, Gio.ListModel):
         self.selection_model = Gtk.SingleSelection(model=tree_list_model)
 
         # self.__tree_model_debug_func()
-        # print(self.get_tree_row_index_by_uuid('3bf1a021-0e72-47d8-bac1-6ceafd64ab3b'))
         list_store = get_liststore_uuid_by_node_uuid(self.selection_model.get_model().get_model(), 'be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
         print(f'{list_store} has UUID {list_store.uuid}')
 
@@ -135,7 +134,7 @@ def get_node_by_uuid(store, uuid):
 
 def get_liststore_by_uuid(list_store, uuid):
     """
-    Returns a folder by its UUID
+    Returns an ObListStore by its UUID
     """
     if list_store.uuid == uuid:
         return list_store
@@ -149,17 +148,25 @@ def get_liststore_by_uuid(list_store, uuid):
 
 
 def get_liststore_by_node_uuid(list_store, uuid):
-    pass
-
-
-def get_liststore_uuid_by_node_uuid(list_store, uuid):
     """
-    Returns the parent folder of an items UUID
+    Returns the parent ObListStore by a child ObTreeNodes UUID
     """
     for index in range(list_store.get_n_items()):
         child = list_store.get_item(index)
         if child.uuid == uuid:
             return list_store
+        elif isinstance(child, ObListStore):
+            return get_liststore_by_node_uuid(child, uuid)
+
+
+def get_liststore_uuid_by_node_uuid(list_store, uuid):
+    """
+    Returns the parent ObListStore UUID by a child ObTreeNodes UUID
+    """
+    for index in range(list_store.get_n_items()):
+        child = list_store.get_item(index)
+        if child.uuid == uuid:
+            return list_store.uuid()
         elif isinstance(child, ObListStore):
             return get_liststore_uuid_by_node_uuid(child, uuid)
 

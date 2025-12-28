@@ -1,3 +1,5 @@
-# .buildconfig
+.buildconfig
+builddir
 
-# Python build files, I will track them, once they are cleaned up
+subprojects
+
