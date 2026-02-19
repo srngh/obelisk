@@ -239,10 +239,10 @@ def create_folder_store(folder: Folder):
     store = ObListStore(name=folder.name, uuid=folder.uuid)
     for item in folder.connections:
         if isinstance(item, Item):
-            node = create_tree_node_new(item)
+            node = create_tree_node(item)
             store.append(node)
         if isinstance(item, Folder):
-            substore = create_folder_store_new(
+            substore = create_folder_store(
                 item)
             store.append(substore)
     return store
