@@ -30,6 +30,12 @@ def item_representer(dumper: yaml.SafeDumper, item: Item) -> yaml.nodes.MappingN
     return dumper.represent_mapping('!Item', {
         'name': item.name,
         'uuid': item.uuid,
+        'username': item.username,
+        'ip4_address': item.ip4_address,
+        'description': item.description,
+        'protocol': item.protocol,
+        'port': item.port,
+        'auth': item.auth
     })
 
 

@@ -42,7 +42,7 @@ class ObeliskFileHandler:
             self.connections = yaml.load(file, Loader=get_loader())
 
     def write_config(self):
-        with open(self.file_name, 'w') as file:
+        with open(self.filename, 'w') as file:
             yaml.dump(self.connections, file, sort_keys=False, Dumper=get_dumper())
 
 
