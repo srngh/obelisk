@@ -20,41 +20,6 @@
 from gi.repository import Gtk
 
 
-class ObTreeWidgetOld(Gtk.Box):
-    __gtype_name__ = 'ObTreeWidgetOld'
-
-    def __init__(self):
-        super().__init__(
-            spacing=6, margin_start=6, margin_end=12, margin_top=4, margin_bottom=4
-        )
-        self.expander = Gtk.TreeExpander.new()
-        self.label = Gtk.Label(halign=Gtk.Align.START)
-        self.icon = Gtk.Image()
-
-        self.append(self.expander)
-        self.append(self.icon)
-        self.append(self.label)
-
-    def __on_button_press(self, gesture, npress, x, y):
-        # This feels impractical
-        # print(gesture, npress, x, y)
-        expander = self.__get_tree_expander(x, y)
-
-        if expander is None or npress != 1:
-            return False
-
-        # Select row at x,y
-        list_row = expander.get_list_row()
-        self.model.set_selected(list_row.get_position())
-
-        menu = ObeliskContextMenu()
-        # self.set_child(menu)
-        menu.set_parent(self)
-        menu.popup_at(x, y)
-        # print(self)
-        return True
-
-
 class ObTreeExpander(Gtk.TreeExpander):
     __gtype_name__ = 'ObTreeExpander'
 
@@ -68,12 +33,10 @@ class ObTreeExpander(Gtk.TreeExpander):
 
     def update_bind(self):
         item = self.props.item
-        # print(item)
-        # print(item.props)
 
         # Handle label
         self.__update_label(item)
 
     def __update_label(self, item):
-        self.label.set_markup(item.title)
+        self.label.set_markup(item.name)
 

@@ -1,4 +1,4 @@
-# ob_tree_node.py
+# ob_list_store.py
 #
 # Copyright 2025 simhof
 #
@@ -17,35 +17,25 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import GObject
+from gi.repository import GObject, Gio
 
 import yaml
 
+from .ob_tree_node import ObTreeNode
 
-class ObTreeNode(GObject.GObject):
-    __gtype_name__ = 'ObTreeNode'
 
-    username: str
+class ObListStore(Gio.ListStore):
+    __gtype_name__ = 'ObListStore'
 
-    def __init__(self,
-        name: str,
-        uuid: str,
-        username: str,
-        ip4_address: str,
-        description: str,
-        protocol: str,
-        port: int,
-        auth: str
-    ):
-        super().__init__()
+    """
+    A ListStore for organizing the TreeListStore
+    """
+
+    def __init__(self, name: str, uuid: str):
         self._name = name
         self._uuid = uuid
-        self.username: str
-        self.ip4_address: str
-        self.description: str
-        self.protocol: str
-        self.port: int
-        self.auth: str
+
+        super().__init__()
 
     @GObject.Property(type=str)
     def name(self) -> str:
@@ -56,16 +46,14 @@ class ObTreeNode(GObject.GObject):
         return self._uuid
 
 
-def ob_tree_node_representer(dumper: yaml.SafeDumper, ob_tree_node: ObTreeNode) -> yaml.nodes.MappingNode:
-    return dumper.represent_mapping('!Item', {
-        'name': ob_tree_node.name,
-        'uuid': ob_tree_node.uuid,
-        'username': ob_tree_node.username,
-        'ip4_address': ob_tree_node.ip4_address,
-        'description': ob_tree_node.description,
-    })
+def ob_list_store_representer(dumper: yaml.SafeDumper, ob_list_store: ObListStore) -> yaml.nodes.MappingNode:
+    return dumper.represent_mapping('!Folder', {
+        'name': ob_list_store.name,
+        'uuid': ob_list_store.uuid,
+        'connections': ob_list_store.connections,
+  })
 
 
-def ob_tree_node_constructor(loader, node):
+def ob_list_store_constructor(loader, node):
     values = loader.construct_mapping(node)
-    return ObTreeNode(**values)
+    return ObListStore(**values)

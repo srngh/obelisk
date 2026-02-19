@@ -5,6 +5,8 @@
 pkgdatadir = join_paths(get_option('prefix'), get_option('datadir'), meson.project_name())
 filehandlerdir = join_paths(pkgdatadir, 'obelisk/config_file_handlers')
 
+subdir('connection_types')
+
 sources = [
   '__init__.py',
   'config_file_handler.py',
