@@ -49,6 +49,7 @@ class ObWindow(Adw.ApplicationWindow):
     tab_bar = Gtk.Template.Child()
     tab_view = Gtk.Template.Child()
     add_tab_btn = Gtk.Template.Child()
+    save_btn = Gtk.Template.Child()
 
     # Sidebar related Widgets
     toggle_sidebar_btn = Gtk.Template.Child()
@@ -98,7 +99,7 @@ class ObWindow(Adw.ApplicationWindow):
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
 
         home_dir = Path.home()
-        self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/obelisk_nested.yaml')
+        self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/obelisk_2.yaml')
 
         obelisk_list_view = ObListView(selection_model=self.config.selection_model)
 
@@ -132,7 +133,7 @@ class ObWindow(Adw.ApplicationWindow):
     @Gtk.Template.Callback()
     def on_add_item_btn_clicked(self, Button):
         """
-        Creates a new new in the sidebar
+        Creates a new item in the sidebar
         Mostly for testing and debugging.
         """
         print('clicked item add button')
@@ -149,6 +150,13 @@ class ObWindow(Adw.ApplicationWindow):
         parent = self.config.get_liststore_uuid_by_node_uuid('563840e6-5a1d-49b8-a530-32311034967f')
         self.config.add_item(node, parent)
 
+    @Gtk.Template.Callback()
+    def on_save_btn_clicked(self, Button):
+        """
+        Writes the current configuration to a yaml file
+        """
+        # self.
+        pass
 
     def on_new_item_action(self):
         # parent = None
