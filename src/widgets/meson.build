@@ -16,6 +16,7 @@ sources = [
   'shell.py',
   'theme_switcher.py',
   'ob_tree_node.py',
+  'ob_list_store.py',
 ]
 
 install_data(sources, install_dir: widgetsdir)
