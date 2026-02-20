@@ -147,23 +147,14 @@ class ObWindow(Adw.ApplicationWindow):
         node.protocol = 'SSH'
         node.auth = 'pubkey'
 
-        parent = self.config.get_liststore_uuid_by_node_uuid('563840e6-5a1d-49b8-a530-32311034967f')
+        parent = self.config.get_liststore_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
         self.config.add_item(node, parent)
+        self.config.save()
 
     @Gtk.Template.Callback()
     def on_save_btn_clicked(self, Button):
         """
         Writes the current configuration to a yaml file
         """
-        # self.
-        pass
+        self.config.save()
 
-    def on_new_item_action(self):
-        # parent = None
-        # child = self.config.get_node_by_uuid(uuid)
-        # if isinstance(child, ObTreeNode):
-        #   parent = self.config.get_parent_uuid_by_child_uuid(uuid)
-        # elif isinstance(child, ObListStore):
-        #   parent = self.config.get_liststore_by_uuid(uuid)
-        new_item_dialog = ObNewItemDialog()
-        new_item_dialog.present()
