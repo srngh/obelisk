@@ -18,7 +18,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
-import uuid
+from uuid import uuid4
 
 from gi.repository import Adw
 from gi.repository import Gtk
@@ -69,19 +69,21 @@ class ObNewItemDialog(Adw.PreferencesDialog):
         try:
             ip = netaddr.IPAddress(self.hostname_input.get_text())
             port = self.port_input.get_value()
-            title = self.connection_name_input.get_text() or ip
+            name = self.connection_name_input.get_text() or ip
             username = self.username_input.get_text() or os.getlogin()
             # print(self.auth_method.get_text())
 
             print(f'User Input {ip} is an IPv{ip.version} Address')
-            print(f'Title: {title}\
+            print(f'Title: {name}\
             IP: {ip}\
             Port: {int(port)}\
             Username: {username}')
 
             self.set_can_close(True)
-            node = ObTreeNode(title)
-            node.uuid = uuid.uuid4()
+            node = ObTreeNode(
+                name=name,
+                uuid=uuid4()
+            )
             if ip.version == 4:
                 node.ip4_address = str(ip)
             elif ip.version == 6:
@@ -90,9 +92,9 @@ class ObNewItemDialog(Adw.PreferencesDialog):
             node.protocol = 'SSH'
             node.port = port
             node.auth = 'pubkey'
-            # return node
+            # add_item(node)
 
-            print(node)
+            # print(node)
             self.close()
         except netaddr.AddrFormatError as e:
             print(e)
