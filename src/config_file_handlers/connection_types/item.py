@@ -3,7 +3,8 @@ import yaml
 
 class Item(yaml.YAMLObject):
 
-    def __init__(self,
+    def __init__(
+        self,
         name: str,
         uuid: str,
         username: str,
