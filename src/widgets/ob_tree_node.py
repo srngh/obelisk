@@ -19,33 +19,21 @@
 
 from gi.repository import GObject
 
-import yaml
-
 
 class ObTreeNode(GObject.GObject):
     __gtype_name__ = 'ObTreeNode'
 
-    username: str
+    username: str = ''
+    ip4_address: str
+    description: str = ''
+    protocol: str = 'ssh'
+    port: int = 22
+    auth: str = ''
 
-    def __init__(self,
-        name: str,
-        uuid: str,
-        username: str,
-        ip4_address: str,
-        description: str,
-        protocol: str,
-        port: int,
-        auth: str
-    ):
+    def __init__(self, name: str, uuid: str):
         super().__init__()
         self._name = name
         self._uuid = uuid
-        self.username: str
-        self.ip4_address: str
-        self.description: str
-        self.protocol: str
-        self.port: int
-        self.auth: str
 
     @GObject.Property(type=str)
     def name(self) -> str:
@@ -55,17 +43,3 @@ class ObTreeNode(GObject.GObject):
     def uuid(self) -> str:
         return self._uuid
 
-
-def ob_tree_node_representer(dumper: yaml.SafeDumper, ob_tree_node: ObTreeNode) -> yaml.nodes.MappingNode:
-    return dumper.represent_mapping('!Item', {
-        'name': ob_tree_node.name,
-        'uuid': ob_tree_node.uuid,
-        'username': ob_tree_node.username,
-        'ip4_address': ob_tree_node.ip4_address,
-        'description': ob_tree_node.description,
-    })
-
-
-def ob_tree_node_constructor(loader, node):
-    values = loader.construct_mapping(node)
-    return ObTreeNode(**values)

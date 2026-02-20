@@ -19,13 +19,17 @@
 
 from gi.repository import GObject, Gio
 
-import yaml
-
-from .ob_tree_node import ObTreeNode
-
 
 class ObListStore(Gio.ListStore):
     __gtype_name__ = 'ObListStore'
+
+    username: str
+    ip4_address: str
+    ip6_address: str
+    description: str
+    protocol: str
+    port: int
+    auth: str
 
     """
     A ListStore for organizing the TreeListStore
@@ -45,15 +49,3 @@ class ObListStore(Gio.ListStore):
     def uuid(self) -> str:
         return self._uuid
 
-
-def ob_list_store_representer(dumper: yaml.SafeDumper, ob_list_store: ObListStore) -> yaml.nodes.MappingNode:
-    return dumper.represent_mapping('!Folder', {
-        'name': ob_list_store.name,
-        'uuid': ob_list_store.uuid,
-        'connections': ob_list_store.connections,
-  })
-
-
-def ob_list_store_constructor(loader, node):
-    values = loader.construct_mapping(node)
-    return ObListStore(**values)
