@@ -9,7 +9,7 @@ sources = [
   '__init__.py',
   'interactive_shell.py',
   'ob_context_menu.py',
-  'ob_new_item_dialog.py',
+  'ob_edit_item_dialog.py',
   'ob_term.py',
   'ob_tree_expander.py',
   'preferences.py',

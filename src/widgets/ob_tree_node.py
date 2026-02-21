@@ -43,3 +43,6 @@ class ObTreeNode(GObject.GObject):
     def uuid(self) -> str:
         return self._uuid
 
+    def __repr__(self):
+        return f'{self.name}, {self.uuid}, {self.ip4_address}, {self.description}, {self.protocol}, {self.port}, {self.auth}'
+

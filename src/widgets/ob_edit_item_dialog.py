@@ -20,8 +20,7 @@
 import os
 from uuid import uuid4
 
-from gi.repository import Adw
-from gi.repository import Gtk
+from gi.repository import Adw, GObject, Gtk
 
 import netaddr
 
@@ -29,8 +28,12 @@ from .ob_tree_node import ObTreeNode
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
-class ObNewItemDialog(Adw.PreferencesDialog):
+class ObEditItemDialog(Adw.PreferencesDialog):
     __gtype_name__ = 'ObNewItemDialog'
+
+    __gsignals__ = {
+        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode,)),
+    }
 
     # Template Elements
     hostname_input = Gtk.Template.Child()
@@ -71,36 +74,35 @@ class ObNewItemDialog(Adw.PreferencesDialog):
             port = self.port_input.get_value()
             name = self.connection_name_input.get_text() or ip
             username = self.username_input.get_text() or os.getlogin()
-            # print(self.auth_method.get_text())
 
-            print(f'User Input {ip} is an IPv{ip.version} Address')
-            print(f'Title: {name}\
-            IP: {ip}\
-            Port: {int(port)}\
-            Username: {username}')
+            # print(f'User Input {ip} is an IPv{ip.version} Address')
+            # print(f'Title: {name}\
+            # IP: {ip}\
+            # Port: {int(port)}\
+            # Username: {username}')
 
             self.set_can_close(True)
             node = ObTreeNode(
                 name=name,
-                uuid=uuid4()
+                uuid=str(uuid4())
             )
             if ip.version == 4:
                 node.ip4_address = str(ip)
             elif ip.version == 6:
                 node.ip6_address = str(ip)
             node.username = username
-            node.protocol = 'SSH'
+            node.protocol = 'ssh'
             node.port = port
             node.auth = 'pubkey'
-            # add_item(node)
+            try:
+                print(type(node), node)
+                self.emit('node_submitted', node)
+            finally:
+                self.close()
 
-            # print(node)
-            self.close()
         except netaddr.AddrFormatError as e:
             print(e)
 
     def on_cancel(self, user_data):
         self.close()
 
-    # print(f"connection_name_input is activatable: {self.connection_name_input.activatable()}")
-    # print(f"{self.__dict__}")

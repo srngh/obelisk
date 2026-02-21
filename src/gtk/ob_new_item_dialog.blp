@@ -15,6 +15,10 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
       separate-rows: false;
       title: "Connection Settings";
 
+      Adw.EntryRow connection_name_input {
+        title: "Connection Name";
+      }
+
       Adw.EntryRow hostname_input {
         title: "Hostname";
       }
@@ -53,10 +57,6 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
 
       Adw.EntryRow proxy_input {
         title: "Proxy";
-      }
-
-      Adw.EntryRow connection_name_input {
-        title: "Connection Name";
       }
     }
 

@@ -24,7 +24,7 @@ class Item(yaml.YAMLObject):
         self.auth: str = auth
 
     def __repr__(self):
-        return f'{self.name}'
+        return f'{self.name}-{self.uuid}-{self.username}-{self.ip4_address}-{self.description}-{self.protocol}-{self.port}-{self.auth}'
 
 
 def item_representer(dumper: yaml.SafeDumper, item: Item) -> yaml.nodes.MappingNode:

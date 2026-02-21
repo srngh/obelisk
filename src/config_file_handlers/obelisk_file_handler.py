@@ -35,7 +35,7 @@ class ObeliskFileHandler:
 
     def __init__(self, filename: str):
         self.filename = filename
-        self.connections: dict
+        self.connections: list
 
     def load_config(self):
         with open(self.filename) as file:
