@@ -25,7 +25,6 @@ class ObTreeExpander(Gtk.TreeExpander):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.expander = Gtk.TreeExpander.new()
         self.label = Gtk.Inscription(hexpand=True)
         self.icon = Gtk.Image()
 
