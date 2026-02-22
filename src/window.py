@@ -19,6 +19,7 @@
 
 # from pprint import pprint
 
+import os
 import uuid
 from pathlib import Path
 
@@ -76,8 +77,6 @@ class ObWindow(Adw.ApplicationWindow):
             self.actions[action] = gaction
             self.add_action(gaction)
 
-        # self.add_action_entries(self._actions)
-
         # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
         self.menu_btn.get_popover().add_child(ThemeSwitcher(), 'themeswitcher')
 
@@ -90,22 +89,27 @@ class ObWindow(Adw.ApplicationWindow):
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
 
         home_dir = Path.home()
-        self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/obelisk_3_write_test.yaml')
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        print(dir_path)
+        # self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/obelisk_3_write_test.yaml')
+        self.config = ObConfig(filename='/app/share/obelisk/obelisk/config.yaml')
 
-        obelisk_list_view = ObListView(selection_model=self.config.selection_model)
+        self.obelisk_list_view = ObListView(selection_model=self.config.selection_model)
 
-        self.obelisk_sidebar.set_content(obelisk_list_view)
-        obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
+        self.obelisk_sidebar.set_content(self.obelisk_list_view)
+        self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
 
     def _on_new_item_activate(self, *args):
+        # print(args)
         self.item_dialog = ObEditItemDialog()
         self.item_dialog.connect('node_submitted', self.__on_new_item_create)
-        self.item_dialog.present(self)
+        self.item_dialog.present()
 
     def __on_new_item_create(self, dialog, node):
         del dialog
         parent = self.config.get_liststore_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
         self.config.add_item(node, parent)
+        self.obelisk_sidebar.set_content(self.obelisk_list_view)
 
     def _on_clone_item_activate(action, *args):
         print('cloning item')
@@ -169,11 +173,5 @@ class ObWindow(Adw.ApplicationWindow):
         """
         self.config.save()
 
-    def on_add(self, node):
-        """
-        Receives a newly created node and passes it to ObConfig to sort it into the tree
-        """
-        parent = self.config.get_liststore_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
-        self.config.add_item(node, parent)
 
 
