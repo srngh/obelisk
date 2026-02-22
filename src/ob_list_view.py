@@ -48,19 +48,30 @@ class ObListView(Gtk.ListView):
         # print(gesture, npress, x, y)
         expander = self.__get_tree_expander(x, y)
 
-        if expander is None or npress != 1:
-            return False
-
-        # Select row at x,y
-        list_row = expander.get_list_row()
-        self.model.set_selected(list_row.get_position())
-
         menu = ObContextMenu()
         menu.set_parent(self)
-        menu.popup_at(x, y)
-        print(f'Popup created at {expander.props.item.uuid}')
-        menu.set_reference(expander.props.item.uuid)
-        return True
+
+        if npress != 1:
+            return False
+        elif expander is None:
+            """
+            When clicking on any empty part of the ListView
+            """
+            menu.popup_at(x, y)
+            menu.set_reference('00000000-0000-0000-0000-000000000000')
+            print('Popup created at 00000000-0000-0000-0000-000000000000')
+            return True
+        else:
+            """
+            When clicking on an item of the ListView
+            """
+            list_row = expander.get_list_row()
+            self.model.set_selected(list_row.get_position())
+
+            menu.popup_at(x, y)
+            print(f'Popup created at {expander.props.item.uuid}')
+            menu.set_reference(expander.props.item.uuid)
+            return True
 
     def __get_tree_expander(self, x, y):
         pick = self.pick(x, y, Gtk.PickFlags.DEFAULT)
