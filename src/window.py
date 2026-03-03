@@ -19,19 +19,20 @@
 
 # from pprint import pprint
 
+import os
 import uuid
 from pathlib import Path
 
 from gi.repository import Adw
-from gi.repository import Gio, Gtk
+from gi.repository import Gio, GLib, Gtk
 
 from .ob_config import ObConfig
 from .ob_list_view import ObListView
-from .widgets.ob_new_item_dialog import ObNewItemDialog
+from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_term import ObTerm
 from .widgets.ob_tree_node import ObTreeNode
+from .widgets.ob_list_store import ObListStore
 from .widgets.theme_switcher import ThemeSwitcher
-
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/window.ui')
@@ -50,34 +51,12 @@ class ObWindow(Adw.ApplicationWindow):
     tab_bar = Gtk.Template.Child()
     tab_view = Gtk.Template.Child()
     add_tab_btn = Gtk.Template.Child()
+    save_btn = Gtk.Template.Child()
 
     # Sidebar related Widgets
     toggle_sidebar_btn = Gtk.Template.Child()
     obelisk_sidebar = Gtk.Template.Child()
 
-    # print(f'obelisk_sidebar is at {obelisk_sidebar} and of type {type(obelisk_sidebar)}')
-
-    def _new_item(self, *args):
-        print('creating new item')
-        new_item_dialog = ObNewItemDialog()
-        new_item_dialog.present()
-
-    def _clone_item(self, *args):
-        print('cloning item')
-
-    def _delete_item(self, *args):
-        print('deleting item')
-
-    def _connect(self, *args):
-        print('establishing ssh connection')
-
-    _actions = {
-        ('new_item', _new_item),
-        ('clone_item', _clone_item),
-        ('delete_item', _delete_item),
-        ('connect', _connect),
-        ('add_item', ObConfig.add_item)
-    }
 
     # GSettings
     _settings = Gio.Settings(schema_id='io.github.srngh.obelisk')
@@ -85,7 +64,19 @@ class ObWindow(Adw.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.add_action_entries(self._actions, self)
+        self.actions = {}
+
+        for action in [
+            'new_item',
+            'clone_item',
+            'delete_item',
+            'connect',
+
+        ]:
+            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('s'))
+            gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
+            self.actions[action] = gaction
+            self.add_action(gaction)
 
         # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
         self.menu_btn.get_popover().add_child(ThemeSwitcher(), 'themeswitcher')
@@ -98,13 +89,59 @@ class ObWindow(Adw.ApplicationWindow):
         self._settings.bind('window-maximized', self,
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
 
-        home_dir = Path.home()
-        self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/obelisk_nested.yaml')
+        # home_dir = Path.home()
+        # dir_path = os.path.dirname(os.path.realpath(__file__))
+        # print(dir_path)
+        # self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/obelisk_3_write_test.yaml')
+        self.config = ObConfig(filename='/app/share/obelisk/obelisk/config.yaml')
 
-        obelisk_list_view = ObListView(selection_model=self.config.selection_model)
+        # self.obelisk_list_view = ObListView(selection_model=self.config.selection_model)
+        self.obelisk_list_view = ObListView(config=self.config)
 
-        self.obelisk_sidebar.set_content(obelisk_list_view)
-        obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
+        self.obelisk_sidebar.set_content(self.obelisk_list_view)
+        self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
+
+    def _on_new_item_activate(self, action, param):
+        # print(param)
+        # print(param.get_string())
+        if param is not None:
+            uuid = param.get_string()
+            # print(uuid)
+            # Moved parent lookup to ListView, here we always receive a ListStores UUID
+            folder = self.config.get_node_by_uuid(uuid)
+            # print(item.name)
+            """
+            if isinstance(item, ObTreeNode):
+                # Get Parent Folder
+                folder = self.config.get_liststore_by_node_uuid(item.uuid)
+            elif isinstance(item, ObListStore):
+                folder = item
+            """
+
+            if folder is not None:
+                self.item_dialog = ObEditItemDialog(folder)
+                self.item_dialog.connect('node_submitted', self.__on_new_item_create)
+                self.item_dialog.present(self)
+
+
+    def __on_new_item_create(self, dialog, node, parent_node):
+        # del self.obelisk_list_view.context_menu
+        del dialog
+        # parent = self.config.get_liststore_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
+        # print(node)
+        # print(parent_node)
+        print(parent_node.name, node.name)
+        self.config.add_item(node, parent_node)
+        self.obelisk_sidebar.set_content(self.obelisk_list_view)
+
+    def _on_clone_item_activate(action, *args):
+        print('cloning item')
+
+    def _on_delete_item_activate(action, *args):
+        print('deleting item')
+
+    def _on_connect_activate(action, *args):
+        print('establishing ssh connection')
 
     def on_sidebar_item_activated(self, list_view, index):
         """
@@ -133,24 +170,31 @@ class ObWindow(Adw.ApplicationWindow):
     @Gtk.Template.Callback()
     def on_add_item_btn_clicked(self, Button):
         """
-        Creates a new new in the sidebar
+        Creates a new item in the sidebar
         Mostly for testing and debugging.
         """
         print('clicked item add button')
-        list_store = self.config.selection_model.get_model().get_model()
-        node = ObTreeNode('testconnection', uuid = uuid.uuid4())
-        node.item_type = 'connection'
+        # list_store = self.config.selection_model.get_model().get_model()
+        node = ObTreeNode(name='testconnection', uuid=str(uuid.uuid4()))
         node.username = 'bob'
         node.ip4_address = '10.1.1.1'
-        node.item_description = 'added via the debug button'
+        node.description = 'added via the debug button'
         node.port = 22
-        node.protocol = 'SSH'
+        node.protocol = 'ssh'
         node.auth = 'pubkey'
 
-        parent = self.config.get_item_parent_by_uuid('563840e6-5a1d-49b8-a530-32311034967f')
+        parent = self.config.get_liststore_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
         self.config.add_item(node, parent)
+        print(node)
+
+        # self.config.save()
+
+    @Gtk.Template.Callback()
+    def on_save_btn_clicked(self, Button):
+        """
+        Writes the current configuration to a yaml file
+        """
+        self.config.save()
 
 
-    def on_new_item_action(self):
-        new_item_dialog = ObNewItemDialog()
-        new_item_dialog.present()
+

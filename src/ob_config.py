@@ -17,203 +17,322 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from pathlib import Path
+
 from gi.repository import GObject, Gio, Gtk
 
 from .config_file_handlers.config_file_handler import ConfigFileHandlerFactory
+from .config_file_handlers.connection_types.folder import Folder
+from .config_file_handlers.connection_types.item import Item
+from .widgets.ob_list_store import ObListStore
 from .widgets.ob_tree_node import ObTreeNode
 
 
 class ObConfig(GObject.Object, Gio.ListModel):
     __gtype_name__ = 'ObConfig'
-    'This class holds the configuration of a loaded config file.'
+    """
+    This class holds the configuration of a loaded config file.
+    """
 
-    """
-    __gsignals__ = {
-        'changed': (GObject.SignalFlags.RUN_FIRST, None, ()) <<<<---- what it do?
-        '': asdf
-    }
-    """
     def __init__(self, filename=None, **kwargs):
         super().__init__(**kwargs)
         self.autosave = False
         self.filename = filename
         self.config_type = 'obelisk'
-        print(self.filename)
-        default_handler = ConfigFileHandlerFactory().create_handler('obelisk')
-        default_handler.load_connections(self.filename)
-        self.items = default_handler.to_str()
 
-        self.ob_list_store_model = parse_items(self.items)
+        self.default_handler = ConfigFileHandlerFactory().create_handler('obelisk', self.filename)
 
-        tree_list_model = Gtk.TreeListModel.new(
+        self.default_handler.load_config()
+
+        # print(default_handler.connections)
+        self.ob_list_store_model = merge_configs(self.default_handler.connections)
+
+        self.tree_list_model = Gtk.TreeListModel.new(
             self.ob_list_store_model, False, True, self.__tree_model_create_func
         )
-        self.selection_model = Gtk.SingleSelection(model=tree_list_model)
+        self.selection_model = Gtk.SingleSelection(model=self.tree_list_model)
 
-        # self.__tree_model_debug_func()
-        # print(self.get_tree_row_index_by_uuid('3bf1a021-0e72-47d8-bac1-6ceafd64ab3b'))
-        parent_folder = get_parent_folder(self.selection_model.get_model().get_model(), 'be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
-        print(f'{parent_folder} has UUID {parent_folder.uuid}')
+    def save(self):
+        """
+        Write Config to file
 
-    def __tree_model_create_func_old(self, item):
+        TO DO:
+        - Error handling
         """
-        Old
-        """
-        if item.children == []:
-            return None
-        child_model = Gio.ListStore.new(ObTreeNode)
-        for child in item.children:
-            child_model.append(child)
-        return child_model
+        self.prepare_config()
+        # home_dir = Path.home()
+        # self.default_handler.filename = f'{home_dir}/.config/obelisk/obelisk_3_write_test.yaml'
+        self.default_handler.filename = 'config.yaml'
+        self.default_handler.write_config()
 
     def __tree_model_create_func(self, item):
         """
         This builds the Gtk.TreeListModel.
-        It feels like doing the work of parse_items() all over again.
         """
         if isinstance(item, ObTreeNode):
             return None
         else:
-            child_model = ObListStore(title=item.title, uuid=item.uuid)
+            child_model = ObListStore(name=item.name, uuid=item.uuid)
             for index in range(item.get_n_items()):
                 child_model.append(item.get_item(index))
             return child_model
 
     def __tree_model_debug_func(self):
         """
-        For viewing the TreeModel
+        This is a debugging / testing method.
+        For viewing the TreeModel.
         """
         list_store = self.selection_model.get_model().get_model()
         debug_ob_store(list_store)
 
+    def prepare_config(self):
+        """
+        Return the TreeListModel to a data structure for default_handler to write to a file
+
+        TO DO:
+        loop over the treelistmodel and build up the nested list of folders and items
+        """
+        list_store = self.ob_list_store_model
+        connections = prepare_sub_tree(list_store)
+        self.default_handler.connections = connections
+
     def get_tree_row_index_by_uuid(self, uuid):
         """
-        Probably a hack
+        This is a debugging / testing method.
+        Probably a hack.
         """
-        list_store = self.selection_model.get_model()  # Just plain ugly
-        for index in range(list_store.get_n_items()):
-            print(f'Index {index}\
-            {list_store.get_item(index).get_item().title}\
-            {list_store.get_item(index).get_item().uuid}')
+        list_store = self.tree_list_model
+        for index in range(self.tree_list_model.get_n_items()):
+            # print(f'Index {index}\
+            # {list_store.get_item(index).get_item().name}\
+            # {list_store.get_item(index).get_item().uuid}')
+            if uuid == list_store.get_item(index):
+                return index
 
-    def add_item(self, item, parent_folder):
-        parent_folder.append(item)
+    def add_item(self, node, parent):
+        """
+        Pass an ObTreeNode and the parents UUID
+        """
+        # list_store = self.get_liststore_by_uuid(parent_uuid)
+        # list_store.insert(3, node)
 
-    def get_item_parent_by_uuid(self, uuid):
+        parent.append(node)
+
+
+        # print(node.uuid)
+        # index = self.get_tree_row_index_by_uuid(node.uuid)
+        # print(index)
+
+        # arow = self.tree_list_model.get_row(index)
+        # arow.props()
+        # arow.set_expanded(False)
+        # row.set_expanded(True)
+        # print(row.get_expanded())
+
+        # index = list_store.get_position(node)
+        # print(index)
+        # list_store.items_changed(index, 0, 1)
+
+    def get_node_by_uuid(self, uuid):
         list_store = self.ob_list_store_model
-        return get_parent_folder(list_store, uuid)
+        return get_node_by_uuid(list_store, uuid)
+
+    def get_liststore_by_uuid(self, uuid):
+        list_store = self.ob_list_store_model
+        return get_liststore_by_uuid(list_store, uuid)
+
+    def get_liststore_by_node_uuid(self, uuid):
+        list_store = self.ob_list_store_model
+        return get_liststore_by_node_uuid(list_store, uuid)
+
+    def get_liststore_uuid_by_child_uuid(self, uuid):
+        list_store = self.ob_list_store_model
+        return get_liststore_uuid_by_child_uuid(list_store, uuid)
+
+    def tests(self):
+        # These are tests and will be removed once the datamodel functions properly
+        # Tests if a ObTreeNode can be accessed via its UUID
+        # Should return item server-3
+        print('===== Test 1 =====')
+        uuid_1 = '4283d28d-f301-4935-9112-e42f3819d53e'
+        test_node_1 = self.get_node_by_uuid(uuid_1)
+        print(f'Searched {uuid_1}, got Node {test_node_1.name} with UUID {test_node_1.uuid}')
+
+        # Tests if a ObListStore can be accessed via its UUID
+        # Should return folder us-east-2
+        print('===== Test 2 =====')
+        uuid_2 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
+        test_list_store_1 = self.get_liststore_by_uuid(uuid_2)
+        print(f'Searched {uuid_2}, got {type(test_list_store_1)} {test_list_store_1.name} with UUID {test_list_store_1.uuid}')
+
+        # Tests if a ObListStore can be accessed via a child nodes UUID
+        # Should return folder us-east-3a, child uuid is of item router-us-east-3a
+        print('===== Test 3 =====')
+        uuid_3 = '4283d28d-f301-4935-9112-e42f3819d53e'
+        test_list_store_2 = self.get_liststore_by_node_uuid(uuid_3)
+        print(f'Searched {uuid_3}, got {test_list_store_2.name} with UUID {test_list_store_2.uuid}')
+
+        # Tests if a ObListStores UUID can be resolved from a child nodes UUID
+        # Should return folder us-east-3, child uuid is of folder us-east-3a
+        print('===== Test 4 =====')
+        uuid_4 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
+        test_list_store_uuid = self.get_liststore_uuid_by_child_uuid(uuid_4)
+        print(f'Searched {uuid_4}, got parent UUID {test_list_store_uuid}')
 
 
-def resolve_uuid(store, uuid):
+def prepare_sub_tree(list_store):
+    """
+    The iterative part of prepare_config
+    Returns a list of all items contained in a ObListStore as a List
+    """
+    connections = []
+    for index in range(list_store.get_n_items()):
+        child = list_store.get_item(index)
+        if isinstance(child, ObTreeNode):
+            item = Item(
+                name=child.name,
+                uuid=child.uuid,
+                username=child.username,
+                ip4_address=child.ip4_address,
+                description=child.description,
+                protocol=child.protocol,
+                port=child.port,
+                auth=child.auth
+            )
+            connections.append(item)
+        elif isinstance(child, ObListStore):
+            folder = Folder(
+                name=child.name,
+                uuid=child.uuid,
+                connections=prepare_sub_tree(child)
+            )
+            connections.append(folder)
+    return connections
+
+
+def get_node_by_uuid(list_store, uuid):
     """
     The recursive part of resolving the index of a connection items by uuid
-    """
-    for index in range(store.get_n_items()):
-        child = store.get_item(index)
-        if child.uuid == uuid:
-            return index
-        elif child.item_type == 'folder':
-            resolve_uuid(child, uuid)
-
-
-def get_parent_folder(list_store, uuid):
-    """
-    returns the parent folder of an items UUID
+    This will return either a ObTreeNode or ObListStore.
     """
     for index in range(list_store.get_n_items()):
         child = list_store.get_item(index)
         if child.uuid == uuid:
-            return list_store
+            return child
         elif isinstance(child, ObListStore):
-            return get_parent_folder(child, uuid)
+            result = get_node_by_uuid(child, uuid)
+            if result is not None:
+                return result
+    return None
+
+
+def get_liststore_by_uuid(list_store, uuid):
+    """
+    Returns an ObListStore by its UUID
+    """
+    if list_store.uuid == uuid:
+        return list_store
+    else:
+        for index in range(list_store.get_n_items()):
+            child = list_store.get_item(index)
+            if isinstance(child, ObListStore):
+                result = get_liststore_by_uuid(child, uuid)
+                if result is not None:
+                    return result
+            elif isinstance(child, ObListStore) and child.uuid == uuid:
+                return child
+    return None
+
+
+def get_liststore_by_node_uuid(list_store, uuid):
+    """
+    Returns the parent ObListStore by a child ObTreeNodes UUID
+    """
+    for index in range(list_store.get_n_items()):
+        child = list_store.get_item(index)
+        if isinstance(child, ObListStore):
+            result = get_liststore_by_node_uuid(child, uuid)
+            if result is not None:
+                return result
+        elif child.uuid == uuid:
+            return list_store
+    return None
+
+
+def get_liststore_uuid_by_child_uuid(list_store, uuid):
+    """
+    Returns the parent ObListStore UUID by a child ObTreeNodes or ObListStores UUID
+    """
+    for index in range(list_store.get_n_items()):
+        child = list_store.get_item(index)
+        if child.uuid == uuid:
+            return list_store.uuid
+        elif isinstance(child, ObListStore):
+            result = get_liststore_uuid_by_child_uuid(child, uuid)
+            if result is not None:
+                return result
+    return None
 
 
 def debug_ob_store(store):
     """
-    The recursive part of viewing the TreeModel
+    This is a debugging / testing method.
+    The recursive part of parent_list_storeviewing the TreeModel.
     """
     for index in range(store.get_n_items()):
         child = store.get_item(index)
-        print(f'Object {child.title} has {index} items, has uuid {child.uuid} and is type {child.item_type}')
         if isinstance(child, ObListStore):
             debug_ob_store(child)
 
 
-def parse_items(connections: dict):
+def merge_configs(connections):
     """
     Create a ObListStore, each containing either more ObListStores or ObTreeNodes.
     Only ObListStores can contain ObTreeNodes.
     ObTreeNodes will never have child objects.
-    ObTreeNodes may be empty.
     """
     ob_list_store_model = ObListStore(
         'root',
         '00000000-0000-0000-0000-000000000000'
     )
-    for uuid in connections:
-        match connections[uuid]['item_type']:
-            case 'connection':
-                node = create_tree_node(uuid, connections[uuid])
-                ob_list_store_model.append(node)
-            case 'folder':
-                substore = create_folder_store(uuid, connections[uuid]['item_title'], connections[uuid])
-                ob_list_store_model.append(substore)
+    for item in connections:
+        if isinstance(item, Item):
+            node = create_tree_node(item)
+            ob_list_store_model.append(node)
+        if isinstance(item, Folder):
+            substore = create_folder_store(
+                item)
+            ob_list_store_model.append(substore)
     return ob_list_store_model
 
 
-def create_tree_node(uuid, connection: dict):
+def create_tree_node(item: Item):
     """
     Create a single ObTreeNode, containing all neccessary data
     """
-    node = ObTreeNode(connection['item_title'], uuid)
-    node.ip4_address = connection['ip4_address']
-    node.item_type = connection['item_type']
-    node.username = connection['username']
-    node.description = connection['item_description']
-    node.protocol = connection['protocol']
-    node.port = connection['port']
-    node.auth = connection['auth']
+    node = ObTreeNode(name=item.name, uuid=item.uuid)
+    node.ip4_address = item.ip4_address
+    node.username = item.username
+    node.description = item.description
+    node.protocol = item.protocol
+    node.port = item.port
+    node.auth = item.auth
     return node
 
 
-def create_folder_store(uuid, item_title, folder: dict):
+def create_folder_store(folder: Folder):
     """
     Create a single ObListStore, creating all child ObListStores and ObTreeNodes
     """
-    store = ObListStore(title=item_title, uuid=uuid)
-    for uuid in folder['connections']:
-        match folder['connections'][uuid]['item_type']:
-            case 'connection':
-                node = create_tree_node(uuid, folder['connections'][uuid])
-                store.append(node)
-            case 'folder':
-                substore = create_folder_store(
-                    uuid,
-                    folder['connections'][uuid]['item_title'],
-                    folder['connections'][uuid])
-                store.append(substore)
+    store = ObListStore(name=folder.name, uuid=folder.uuid)
+    for item in folder.connections:
+        if isinstance(item, Item):
+            node = create_tree_node(item)
+            store.append(node)
+        if isinstance(item, Folder):
+            substore = create_folder_store(
+                item)
+            store.append(substore)
     return store
 
-
-class ObListStore(Gio.ListStore):
-    __gtype_name__ = 'ObListStore'
-
-    """
-    A ListStore for organizing the TreeListStore
-    """
-
-    def __init__(self, title: str, uuid: str):
-        self.item_type = ObTreeNode
-        self._title = title
-        self._uuid = uuid
-
-        super().__init__()
-
-    @GObject.Property(type=str)
-    def title(self) -> str:
-        return self._title
-
-    @GObject.Property(type=str)
-    def uuid(self) -> str:
-        return self._uuid
 

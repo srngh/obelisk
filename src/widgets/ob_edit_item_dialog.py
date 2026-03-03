@@ -18,19 +18,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
-import uuid
+from uuid import uuid4
 
-from gi.repository import Adw
-from gi.repository import Gtk
+from gi.repository import Adw, GObject, Gtk
 
 import netaddr
 
 from .ob_tree_node import ObTreeNode
+from .ob_list_store import ObListStore
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
-class ObNewItemDialog(Adw.PreferencesDialog):
+class ObEditItemDialog(Adw.PreferencesDialog):
     __gtype_name__ = 'ObNewItemDialog'
+
+    __gsignals__ = {
+        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObListStore)),
+    }
 
     # Template Elements
     hostname_input = Gtk.Template.Child()
@@ -45,8 +49,9 @@ class ObNewItemDialog(Adw.PreferencesDialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
-    def __init__(self, **kwargs):
+    def __init__(self, parent_node, **kwargs):
         super().__init__(**kwargs)
+        self.parent_node = parent_node
 
         self.port_input.set_value(22)
 
@@ -69,36 +74,38 @@ class ObNewItemDialog(Adw.PreferencesDialog):
         try:
             ip = netaddr.IPAddress(self.hostname_input.get_text())
             port = self.port_input.get_value()
-            title = self.connection_name_input.get_text() or ip
+            name = self.connection_name_input.get_text() or ip
             username = self.username_input.get_text() or os.getlogin()
-            # print(self.auth_method.get_text())
 
-            print(f'User Input {ip} is an IPv{ip.version} Address')
-            print(f'Title: {title}\
-            IP: {ip}\
-            Port: {int(port)}\
-            Username: {username}')
+            # print(f'User Input {ip} is an IPv{ip.version} Address')
+            # print(f'Title: {name}\
+            # IP: {ip}\
+            # Port: {int(port)}\
+            # Username: {username}')
 
             self.set_can_close(True)
-            node = ObTreeNode(title)
-            node.uuid = uuid.uuid4()
+            node = ObTreeNode(
+                name=name,
+                uuid=str(uuid4())
+            )
             if ip.version == 4:
                 node.ip4_address = str(ip)
             elif ip.version == 6:
                 node.ip6_address = str(ip)
             node.username = username
-            node.protocol = 'SSH'
+            node.protocol = 'ssh'
             node.port = port
             node.auth = 'pubkey'
-            # return node
+            try:
+                # print(type(node), node)
+                print(self.parent_node)
+                self.emit('node_submitted', node, self.parent_node)
+            finally:
+                self.close()
 
-            print(node)
-            self.close()
         except netaddr.AddrFormatError as e:
             print(e)
 
     def on_cancel(self, user_data):
         self.close()
 
-    # print(f"connection_name_input is activatable: {self.connection_name_input.activatable()}")
-    # print(f"{self.__dict__}")

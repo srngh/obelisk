@@ -24,27 +24,39 @@ import yaml
 # To Do:
 # Demote this to a ObeliskConfigFileHandler
 
+from .connection_types.folder import Folder, folder_constructor, folder_representer
+from .connection_types.item import Item, item_constructor, item_representer
+
 
 class ObeliskFileHandler:
-    # def __init__(self):
-    # home_dir = Path.home()
-    # self.filename = filename or (f"{home_dir}/.config/obelisk/obelisk_nested.yaml")
+    """
+    The default file handler for Obelisk
+    """
 
-    def load_connections(self, filename):
-        with open(filename) as file:
-            self.connections = yaml.safe_load(file)
+    def __init__(self, filename: str):
+        self.filename = filename
+        self.connections: list
 
-    def to_str(self):
-        return self.connections
+    def load_config(self):
+        with open(self.filename) as file:
+            self.connections = yaml.load(file, Loader=get_loader())
 
-    def to_disk(self, filename, config):
-        try:
-            with open(filename, 'w') as file:
-                yaml.dump(config, filename, default_flow_style=False)
+    def write_config(self):
+        with open(self.filename, 'w') as file:
+            yaml.dump(self.connections, file, sort_keys=False, Dumper=get_dumper())
 
-        except:
-            pass
 
-# To Do:
-# write changes to file
+def get_loader():
+    loader = yaml.SafeLoader
+    loader.add_constructor('!Folder', folder_constructor)
+    loader.add_constructor('!Item', item_constructor)
+    return loader
+
+
+def get_dumper():
+    safe_dumper = yaml.SafeDumper
+    safe_dumper.add_representer(Folder, folder_representer)
+    safe_dumper.add_representer(Item, item_representer)
+    return safe_dumper
+
 

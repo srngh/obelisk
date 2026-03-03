@@ -2,6 +2,7 @@ using Gtk 4.0;
 using Adw 1;
 
 template $ObNewItemDialog: Adw.PreferencesDialog {
+  presentation-mode: bottom_sheet;
   title: "Add a new Connection";
 
   Adw.PreferencesPage ssh_settings_page {
@@ -15,6 +16,10 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
       separate-rows: false;
       title: "Connection Settings";
 
+      Adw.EntryRow connection_name_input {
+        title: "Connection Name";
+      }
+
       Adw.EntryRow hostname_input {
         title: "Hostname";
       }
@@ -24,15 +29,16 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
       }
 
       Adw.SpinRow port_input {
-        title: _("Port");
+        adjustment: Adjustment {
+          lower: 1;
+          page-increment: 10;
+          step-increment: 1;
+          upper: 65535;
+          value: 22;
+        };
+
         numeric: true;
-        adjustment: Gtk.Adjustment {
-                          value: 22;
-                          lower: 1;
-                          upper: 65535;
-                          step-increment: 1;
-                          page-increment: 10;
-                        };
+        title: _("Port");
       }
 
       Adw.ComboRow auth_method {
@@ -52,10 +58,6 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
 
       Adw.EntryRow proxy_input {
         title: "Proxy";
-      }
-
-      Adw.EntryRow connection_name_input {
-        title: "Connection Name";
       }
     }
 

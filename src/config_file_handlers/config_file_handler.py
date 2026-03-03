@@ -31,6 +31,6 @@ class ConfigFileHandlerFactory():
         'asbru-cm': AsbruFileHandler
     }
 
-    def create_handler(self, config_format):
-        return self.handlers[config_format]()
+    def create_handler(self, config_format, config_file):
+        return self.handlers[config_format](config_file)
 

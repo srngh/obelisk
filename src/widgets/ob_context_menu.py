@@ -18,21 +18,49 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # from gi.repository import Adw
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, Gio, GLib, Gtk
 
 
-@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_context_menu.ui')
+# @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_context_menu.ui')
 class ObContextMenu(Gtk.PopoverMenu):
     __gtype_name__ = 'ObContextMenu'
 
-    def __init__(self, **kwargs):
+    def __init__(self, uuid, **kwargs):
         super().__init__(**kwargs)
+        self.referenced_item_uuid = uuid
+
+        model = Gio.Menu.new()
+
+        section_1 = Gio.Menu.new()
+
+        item_1 = Gio.MenuItem.new('_New Item', 'win.new_item')
+        item_1.set_action_and_target_value('win.new_item', GLib.Variant.new_string(self.referenced_item_uuid))
+        section_1.append_item(item_1)
+        section_1.append('_Duplicate Item', 'win.clone_item')
+        section_1.append('_Remove Item', 'win.delete_item')
+        model.append_section(None, section_1)
+
+        section_2 = Gio.Menu.new()
+        section_2.append('_Edit Item', 'win.edit_item')
+        section_2.append('_Connect', 'win.connect')
+        section_2.append('_Rename', 'win.rename')
+        model.append_section(None, section_2)
+
+        self.set_menu_model(model)
+        self.set_position(1)
 
     def popup_at(self, x, y):
         r = Gdk.Rectangle()
         r.x, r.y = (x, y)
         r.width = r.height = 0
         self.set_pointing_to(r)
+        print(self.get_menu_model())
+        # model = self.get_menu_model()
+        # for index in range(model.get_n_items()):
+        #     print(index, range(model.get_n_items()))
+        #     print(model.get_item(index))
         self.popup()
-        print(self)
+
+    def set_reference(self, uuid):
+        self.referenced_item_uuid = uuid
 

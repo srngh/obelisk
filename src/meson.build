@@ -49,6 +49,7 @@ obelisk_sources = [
   'window.py',
   'ob_list_view.py',
   'ob_config.py',
+  'config.yaml',
 ]
 
 install_data(obelisk_sources, install_dir: moduledir)

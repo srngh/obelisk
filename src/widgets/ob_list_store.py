@@ -1,4 +1,4 @@
-# ob_tree_node.py
+# ob_list_store.py
 #
 # Copyright 2025 simhof
 #
@@ -17,23 +17,29 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import GObject
+from gi.repository import GObject, Gio
 
 
-class ObTreeNode(GObject.GObject):
-    __gtype_name__ = 'ObTreeNode'
+class ObListStore(Gio.ListStore):
+    __gtype_name__ = 'ObListStore'
 
-    username: str = ''
+    username: str
     ip4_address: str
-    description: str = ''
-    protocol: str = 'ssh'
-    port: int = 22
-    auth: str = ''
+    ip6_address: str
+    description: str
+    protocol: str
+    port: int
+    auth: str
+
+    """
+    A ListStore for organizing the TreeListStore
+    """
 
     def __init__(self, name: str, uuid: str):
-        super().__init__()
         self._name = name
         self._uuid = uuid
+
+        super().__init__()
 
     @GObject.Property(type=str)
     def name(self) -> str:
@@ -43,6 +49,9 @@ class ObTreeNode(GObject.GObject):
     def uuid(self) -> str:
         return self._uuid
 
-    def __repr__(self):
-        return f'{self.name}, {self.uuid}, {self.ip4_address}, {self.description}, {self.protocol}, {self.port}, {self.auth}'
+    def get_position(self, node):
+        for index in range(self.get_n_items()):
+            print(node.uuid, self.get_item(index).uuid)
+            if node.uuid == self.get_item(index).uuid:
+                return index
 

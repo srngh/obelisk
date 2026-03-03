@@ -1,0 +1,88 @@
+- !Item
+  name: server-1
+  uuid: 42c8c64f-f8df-4dea-92fe-1e0b8347f017
+  username: bob
+  ip4_address: 10.0.10.11
+  description: server 1
+  protocol: ssh
+  port: 22
+  auth: pubkey
+- !Item
+  name: server-2
+  uuid: 0b7fd8c4-1bdd-456e-960f-5838b56d215b
+  username: bob
+  ip4_address: 10.0.10.12
+  description: server 2
+  protocol: ssh
+  port: 22
+  auth: pubkey
+- !Item
+  name: server-3
+  uuid: 9f7bfcbc-93e0-47cc-ad56-28a59de8927e
+  username: bob
+  ip4_address: 10.0.10.13
+  description: server 2
+  protocol: ssh
+  port: 22
+  auth: pubkey
+- !Item
+  name: server-4
+  uuid: be43f3a3-ba58-4a65-b924-25846cfdce22
+  username: bob
+  ip4_address: 10.0.10.14
+  description: server 2
+  protocol: ssh
+  port: 22
+  auth: pubkey
+- !Folder
+  name: us-east-1
+  uuid: feee19a6-af8c-42de-b07a-3d3c57bd2476
+  connections:
+  - !Item
+    name: router-1
+    uuid: 89c103d5-133a-4ee6-83c5-4e7c0558479a
+    username: bob
+    ip4_address: 10.0.10.11
+    description: Router 1
+    protocol: ssh
+    port: 22
+    auth: pubkey
+  - !Item
+    name: router-2
+    uuid: 563840e6-5a1d-49b8-a530-32311034967f
+    username: bob
+    ip4_address: 10.0.10.11
+    description: Router 2
+    protocol: ssh
+    port: 22
+    auth: pubkey
+  - !Item
+    name: router-3
+    uuid: 88ce8fc2-bfa8-403f-a881-fabb7540b956
+    username: bob2
+    ip4_address: 1.1.1.1
+    description: ''
+    protocol: ssh
+    port: 22.0
+    auth: pubkey
+- !Folder
+  name: us-east-2
+  uuid: 3bf1a021-0e72-47d8-bac1-6ceafd64ab3b
+  connections: []
+- !Folder
+  name: us-east-3
+  uuid: be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5
+  connections:
+  - !Folder
+    name: us-east-3a
+    uuid: 3e8639e7-abc6-4012-8500-32a8c61eb42f
+    connections:
+    - !Item
+      name: router-us-east-3a
+      uuid: 4283d28d-f301-4935-9112-e42f3819d53e
+      username: bob
+      ip4_address: 10.0.10.11
+      description: Router us east 3a
+      protocol: ssh
+      port: 22
+      auth: pubkey
