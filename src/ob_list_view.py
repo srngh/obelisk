@@ -23,6 +23,8 @@ from gi.repository import GObject, Gdk, Gtk
 
 from .widgets.ob_context_menu import ObContextMenu
 from .widgets.ob_tree_expander import ObTreeExpander
+from .widgets.ob_tree_node import ObTreeNode
+from .widgets.ob_list_store import ObListStore
 
 
 class ObListView(Gtk.ListView):
@@ -31,47 +33,65 @@ class ObListView(Gtk.ListView):
 
     model = Gtk.SingleSelection()
 
-    def __init__(self, selection_model, **kwargs):
+    def __init__(self, config, **kwargs):
+    #def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.config = config
 
         factory = Gtk.SignalListItemFactory()
         factory.connect('setup', self.on_setup)
         factory.connect('bind', self.on_bind)
+        factory.connect('unbind', self.on_unbind)
         self.set_factory(factory)
 
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
         gesture.connect('released', self.__on_button_press)
         self.add_controller(gesture)
-        self.set_model(selection_model)
+        self.set_model(config.selection_model)
 
     def __on_button_press(self, gesture, npress, x, y):
         # print(gesture, npress, x, y)
         expander = self.__get_tree_expander(x, y)
-
-        menu = ObContextMenu()
-        menu.set_parent(self)
-
         if npress != 1:
             return False
         elif expander is None:
             """
             When clicking on any empty part of the ListView
             """
-            menu.popup_at(x, y)
-            menu.set_reference('00000000-0000-0000-0000-000000000000')
-            print('Popup created at 00000000-0000-0000-0000-000000000000')
+            context_menu = ObContextMenu('00000000-0000-0000-0000-000000000000')
+            context_menu.set_parent(self)
+            context_menu.popup_at(x, y)
+            # self.context_menu.set_reference('00000000-0000-0000-0000-000000000000')
+            # print('Popup created at 00000000-0000-0000-0000-000000000000')
             return True
         else:
             """
             When clicking on an item of the ListView
             """
-            list_row = expander.get_list_row()
-            self.model.set_selected(list_row.get_position())
+            item = expander.props.item
+            parent_folder = None
+            if isinstance(item, ObTreeNode):
+                parent_folder = self.config.get_liststore_by_node_uuid(item.uuid)
+            elif isinstance(item, ObListStore):
+                parent_folder = item
 
-            menu.popup_at(x, y)
-            print(f'Popup created at {expander.props.item.uuid}')
-            menu.set_reference(expander.props.item.uuid)
-            return True
+            if parent_folder is not None:
+                """
+                print(f'clicked on {item.name}')
+                if parent_folder.uuid == item.uuid:
+                    print(f'this is a folder')
+                else:
+                    print(f'resolved parent to {parent_folder.name}')
+                """
+                context_menu = ObContextMenu(parent_folder.uuid)
+                context_menu.set_parent(self)
+                list_row = expander.get_list_row()
+                self.model.set_selected(list_row.get_position())
+
+                context_menu.popup_at(x, y)
+                # print(f'Popup created at {expander.props.item.uuid}')
+                # self.context_menu.set_reference(expander.props.item.uuid)
+                return True
 
     def __get_tree_expander(self, x, y):
         pick = self.pick(x, y, Gtk.PickFlags.DEFAULT)
@@ -101,4 +121,8 @@ class ObListView(Gtk.ListView):
         expander = list_item.get_child()
         expander.set_list_row(list_row)
         expander.update_bind()
+
+    def on_unbind(self, factory, list_item):
+        expander = list_item.get_child()
+        expander.clear_bind()
 

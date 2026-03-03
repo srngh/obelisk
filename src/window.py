@@ -24,13 +24,14 @@ import uuid
 from pathlib import Path
 
 from gi.repository import Adw
-from gi.repository import Gio, Gtk
+from gi.repository import Gio, GLib, Gtk
 
 from .ob_config import ObConfig
 from .ob_list_view import ObListView
 from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_term import ObTerm
 from .widgets.ob_tree_node import ObTreeNode
+from .widgets.ob_list_store import ObListStore
 from .widgets.theme_switcher import ThemeSwitcher
 
 
@@ -72,8 +73,8 @@ class ObWindow(Adw.ApplicationWindow):
             'connect',
 
         ]:
-            gaction = Gio.SimpleAction.new(action, None)
-            gaction.connect('activate', getattr(self, f"_on_{action}_activate"))
+            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('s'))
+            gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
             self.actions[action] = gaction
             self.add_action(gaction)
 
@@ -88,27 +89,49 @@ class ObWindow(Adw.ApplicationWindow):
         self._settings.bind('window-maximized', self,
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
 
-        home_dir = Path.home()
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        print(dir_path)
+        # home_dir = Path.home()
+        # dir_path = os.path.dirname(os.path.realpath(__file__))
+        # print(dir_path)
         # self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/obelisk_3_write_test.yaml')
         self.config = ObConfig(filename='/app/share/obelisk/obelisk/config.yaml')
 
-        self.obelisk_list_view = ObListView(selection_model=self.config.selection_model)
+        # self.obelisk_list_view = ObListView(selection_model=self.config.selection_model)
+        self.obelisk_list_view = ObListView(config=self.config)
 
         self.obelisk_sidebar.set_content(self.obelisk_list_view)
         self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
 
-    def _on_new_item_activate(self, *args):
-        # print(args)
-        self.item_dialog = ObEditItemDialog()
-        self.item_dialog.connect('node_submitted', self.__on_new_item_create)
-        self.item_dialog.present()
+    def _on_new_item_activate(self, action, param):
+        # print(param)
+        # print(param.get_string())
+        if param is not None:
+            uuid = param.get_string()
+            # print(uuid)
+            # Moved parent lookup to ListView, here we always receive a ListStores UUID
+            folder = self.config.get_node_by_uuid(uuid)
+            # print(item.name)
+            """
+            if isinstance(item, ObTreeNode):
+                # Get Parent Folder
+                folder = self.config.get_liststore_by_node_uuid(item.uuid)
+            elif isinstance(item, ObListStore):
+                folder = item
+            """
 
-    def __on_new_item_create(self, dialog, node):
+            if folder is not None:
+                self.item_dialog = ObEditItemDialog(folder)
+                self.item_dialog.connect('node_submitted', self.__on_new_item_create)
+                self.item_dialog.present(self)
+
+
+    def __on_new_item_create(self, dialog, node, parent_node):
+        # del self.obelisk_list_view.context_menu
         del dialog
-        parent = self.config.get_liststore_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
-        self.config.add_item(node, parent)
+        # parent = self.config.get_liststore_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
+        # print(node)
+        # print(parent_node)
+        print(parent_node.name, node.name)
+        self.config.add_item(node, parent_node)
         self.obelisk_sidebar.set_content(self.obelisk_list_view)
 
     def _on_clone_item_activate(action, *args):

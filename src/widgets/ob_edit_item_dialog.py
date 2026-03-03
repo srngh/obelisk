@@ -25,6 +25,7 @@ from gi.repository import Adw, GObject, Gtk
 import netaddr
 
 from .ob_tree_node import ObTreeNode
+from .ob_list_store import ObListStore
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
@@ -32,7 +33,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     __gtype_name__ = 'ObNewItemDialog'
 
     __gsignals__ = {
-        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode,)),
+        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObListStore)),
     }
 
     # Template Elements
@@ -48,8 +49,9 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
-    def __init__(self, **kwargs):
+    def __init__(self, parent_node, **kwargs):
         super().__init__(**kwargs)
+        self.parent_node = parent_node
 
         self.port_input.set_value(22)
 
@@ -95,8 +97,9 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             node.port = port
             node.auth = 'pubkey'
             try:
-                print(type(node), node)
-                self.emit('node_submitted', node)
+                # print(type(node), node)
+                print(self.parent_node)
+                self.emit('node_submitted', node, self.parent_node)
             finally:
                 self.close()
 

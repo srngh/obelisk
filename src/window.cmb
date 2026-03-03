@@ -6,5 +6,5 @@
   <ui template-class="PreferencesDialog" filename="gtk/preferences.blp" sha256="3395db18025bf11cae17e0954b11d5b1e5546c7fca71104093a335b099787f06"/>
   <ui filename="gtk/help-overlay.blp" sha256="2583bfbe7c22221fb369bccd95a9d040d247cfe18135544eb9ba12650ccc3dd5"/>
   <ui template-class="ObContextMenu" filename="gtk/ob_context_menu.blp" sha256="1e50ad45cd955243688dc9c805d01699b106d33cf12b74ffa4e49d30afd82369"/>
-  <ui template-class="ObNewItemDialog" filename="gtk/ob_new_item_dialog.blp" sha256="5e323fe6247be181ac470c4bea80c0fc6b054255774095d39f3d1e6edbceb3d2"/>
+  <ui template-class="ObNewItemDialog" filename="gtk/ob_new_item_dialog.blp" sha256="120a94dd87e1a52f9027e21f747bf867da83dd175880ca92d32e49a6f7569899"/>
 </cambalache-project>
