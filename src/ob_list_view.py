@@ -28,13 +28,15 @@ from .widgets.ob_list_store import ObListStore
 
 
 class ObListView(Gtk.ListView):
-
+    """
+    ObListView Class, which presents a dynamic List of nested Items.
+    A ObConfig must be passed, to retrieve the fully built Data Model to present.
+    """
     __gtype_name__ = 'ObeliskListView'
 
     model = Gtk.SingleSelection()
 
     def __init__(self, config, **kwargs):
-    #def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.config = config
 
@@ -47,53 +49,64 @@ class ObListView(Gtk.ListView):
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
         gesture.connect('released', self.__on_button_press)
         self.add_controller(gesture)
-        self.set_model(config.selection_model)
+        self.set_model(self.config.selection_model)
 
     def __on_button_press(self, gesture, npress, x, y):
-        # print(gesture, npress, x, y)
+        """
+        Opens a Context Menu pointing to the referenced Item in the ListView.
+        If a folder is clicked, its' UUID will be passed to the context menu.
+        If a node is clicked, the parent folders' UUID will be passed to the context menu.
+        If the empty part is clicked, the parent is assumed to be the root of the ListView.
+
+        :param gesture: The released gesture invoking this function
+        :type gesture: Gtk.GestureClick
+        :param npress: The amount of clicks
+        :type npress: int
+        :param x: X coordinate of the click
+        :type x: float
+        :param y: Y coordinate of the click
+        :type y: float
+        :rtype: bool
+        """
+        # TO DO: Pass the full item to the ConectMenu, so edit and clone methods can work with the same dialog
         expander = self.__get_tree_expander(x, y)
         if npress != 1:
             return False
         elif expander is None:
-            """
-            When clicking on any empty part of the ListView
-            """
+            # When clicking on any empty part of the ListView
             context_menu = ObContextMenu('00000000-0000-0000-0000-000000000000')
             context_menu.set_parent(self)
             context_menu.popup_at(x, y)
-            # self.context_menu.set_reference('00000000-0000-0000-0000-000000000000')
-            # print('Popup created at 00000000-0000-0000-0000-000000000000')
             return True
         else:
-            """
-            When clicking on an item of the ListView
-            """
+            # When clicking on any item or folder of the ListView
             item = expander.props.item
-            parent_folder = None
+            folder = None
             if isinstance(item, ObTreeNode):
-                parent_folder = self.config.get_liststore_by_node_uuid(item.uuid)
+                folder = self.config.get_liststore_by_node_uuid(item.uuid)
             elif isinstance(item, ObListStore):
-                parent_folder = item
+                folder = item
 
-            if parent_folder is not None:
-                """
-                print(f'clicked on {item.name}')
-                if parent_folder.uuid == item.uuid:
-                    print(f'this is a folder')
-                else:
-                    print(f'resolved parent to {parent_folder.name}')
-                """
-                context_menu = ObContextMenu(parent_folder.uuid)
+            if folder is not None:
+                context_menu = ObContextMenu(folder.uuid)
                 context_menu.set_parent(self)
                 list_row = expander.get_list_row()
                 self.model.set_selected(list_row.get_position())
 
                 context_menu.popup_at(x, y)
-                # print(f'Popup created at {expander.props.item.uuid}')
-                # self.context_menu.set_reference(expander.props.item.uuid)
                 return True
 
     def __get_tree_expander(self, x, y):
+        """
+        Get the TreeExpander at X,Y coordinates.
+
+        :param x: X coordinate
+        :type x: float
+        :param y: Y coordinate
+        :type y: float
+        :return: Clicked TreeExpander or None
+        :rtype: Gtk.TreeExpander or None
+        """
         pick = self.pick(x, y, Gtk.PickFlags.DEFAULT)
 
         if pick is None:
@@ -103,7 +116,6 @@ class ObListView(Gtk.ListView):
             return pick
 
         child = pick.get_first_child()
-
         if child and isinstance(child, Gtk.TreeExpander):
             return child
 

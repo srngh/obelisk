@@ -27,14 +27,14 @@ class ObContextMenu(Gtk.PopoverMenu):
 
     def __init__(self, uuid, **kwargs):
         super().__init__(**kwargs)
-        self.referenced_item_uuid = uuid
+        self.referenced_node_uuid: str = uuid
 
         model = Gio.Menu.new()
 
         section_1 = Gio.Menu.new()
 
         item_1 = Gio.MenuItem.new('_New Item', 'win.new_item')
-        item_1.set_action_and_target_value('win.new_item', GLib.Variant.new_string(self.referenced_item_uuid))
+        item_1.set_action_and_target_value('win.new_item', GLib.Variant.new_string(self.referenced_node_uuid))
         section_1.append_item(item_1)
         section_1.append('_Duplicate Item', 'win.clone_item')
         section_1.append('_Remove Item', 'win.delete_item')
@@ -50,6 +50,7 @@ class ObContextMenu(Gtk.PopoverMenu):
         self.set_position(1)
 
     def popup_at(self, x, y):
+        print(self.referenced_node_uuid)
         r = Gdk.Rectangle()
         r.x, r.y = (x, y)
         r.width = r.height = 0
@@ -60,7 +61,4 @@ class ObContextMenu(Gtk.PopoverMenu):
         #     print(index, range(model.get_n_items()))
         #     print(model.get_item(index))
         self.popup()
-
-    def set_reference(self, uuid):
-        self.referenced_item_uuid = uuid
 

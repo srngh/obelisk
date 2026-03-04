@@ -117,8 +117,6 @@ class ObConfig(GObject.Object, Gio.ListModel):
         # list_store.insert(3, node)
 
         parent.append(node)
-
-
         # print(node.uuid)
         # index = self.get_tree_row_index_by_uuid(node.uuid)
         # print(index)
@@ -134,22 +132,61 @@ class ObConfig(GObject.Object, Gio.ListModel):
         # list_store.items_changed(index, 0, 1)
 
     def get_node_by_uuid(self, uuid):
+        """
+        Get an item by its UUID.
+        The item may be an ObTreeNode or ObListStore.
+
+        :param uuid: The UUID of the item
+        :type uuid: str
+        :return: The item or None
+        :rtype: ObTreeNode, ObListStore or None
+        """
         list_store = self.ob_list_store_model
         return get_node_by_uuid(list_store, uuid)
 
     def get_liststore_by_uuid(self, uuid):
+        """
+        Get a folder by its UUID.
+
+        :param uuid: The UUID of the folder
+        :type uuid: str
+        :return: The ObListStore or None
+        :rtype: ObListStore or None
+        """
         list_store = self.ob_list_store_model
         return get_liststore_by_uuid(list_store, uuid)
 
     def get_liststore_by_node_uuid(self, uuid):
+        """
+        Get a folder by a child's UUID.
+        This helps get parent folders.
+
+        :param uuid: The UUID of the folder
+        :type uuid: str
+        :return: The ObListStore or None
+        :rtype: ObListStore or None
+        """
         list_store = self.ob_list_store_model
         return get_liststore_by_node_uuid(list_store, uuid)
 
     def get_liststore_uuid_by_child_uuid(self, uuid):
+        """
+        Get a folder's UUID by a child's UUID.
+        This helps identify parent folders.
+
+        :param uuid: The UUID of the folder
+        :type uuid: str
+        :return: The ObListStore or None
+        :rtype: ObListStore or None
+        """
         list_store = self.ob_list_store_model
         return get_liststore_uuid_by_child_uuid(list_store, uuid)
 
     def tests(self):
+        """
+        Runs some test cases, to verify if lookup methods for the model work correctly.
+        Pretty ugly and hacky.
+        """
         # These are tests and will be removed once the datamodel functions properly
         # Tests if a ObTreeNode can be accessed via its UUID
         # Should return item server-3
@@ -214,6 +251,13 @@ def get_node_by_uuid(list_store, uuid):
     """
     The recursive part of resolving the index of a connection items by uuid
     This will return either a ObTreeNode or ObListStore.
+
+    :param list_store: The ListStore which will be searched
+    :type list_store: ObListStore
+    :param uuid: The uuid of the target item
+    :type uuid: str
+    :return: folder, node or None
+    :rtype: ObListStore, ObTreeNode or None
     """
     for index in range(list_store.get_n_items()):
         child = list_store.get_item(index)
@@ -229,6 +273,13 @@ def get_node_by_uuid(list_store, uuid):
 def get_liststore_by_uuid(list_store, uuid):
     """
     Returns an ObListStore by its UUID
+
+    :param list_store: The ListStore which will be searched
+    :type list_store: ObListStore
+    :param uuid: The uuid of the target item
+    :type uuid: str
+    :return: folder or None
+    :rtype: ObListStore or None
     """
     if list_store.uuid == uuid:
         return list_store
@@ -247,6 +298,13 @@ def get_liststore_by_uuid(list_store, uuid):
 def get_liststore_by_node_uuid(list_store, uuid):
     """
     Returns the parent ObListStore by a child ObTreeNodes UUID
+
+    :param list_store: The ListStore which will be searched
+    :type list_store: ObListStore
+    :param uuid: The uuid of the target item
+    :type uuid: str
+    :return: folder or None
+    :rtype: ObListStore or None
     """
     for index in range(list_store.get_n_items()):
         child = list_store.get_item(index)
@@ -262,6 +320,13 @@ def get_liststore_by_node_uuid(list_store, uuid):
 def get_liststore_uuid_by_child_uuid(list_store, uuid):
     """
     Returns the parent ObListStore UUID by a child ObTreeNodes or ObListStores UUID
+
+    :param list_store: The ListStore which will be searched
+    :type list_store: ObListStore
+    :param uuid: The uuid of the target item
+    :type uuid: str
+    :return: folder UUID or None
+    :rtype: str or None
     """
     for index in range(list_store.get_n_items()):
         child = list_store.get_item(index)

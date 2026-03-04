@@ -24,7 +24,7 @@ import uuid
 from pathlib import Path
 
 from gi.repository import Adw
-from gi.repository import Gio, GLib, Gtk
+from gi.repository import GLib, Gio, Gtk
 
 from .ob_config import ObConfig
 from .ob_list_view import ObListView
@@ -101,38 +101,37 @@ class ObWindow(Adw.ApplicationWindow):
         self.obelisk_sidebar.set_content(self.obelisk_list_view)
         self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
 
-    def _on_new_item_activate(self, action, param):
-        # print(param)
-        # print(param.get_string())
-        if param is not None:
-            uuid = param.get_string()
-            # print(uuid)
-            # Moved parent lookup to ListView, here we always receive a ListStores UUID
+    def _on_new_item_activate(self, action, folder_uuid):
+        """
+        Callback for the win.new_item action.
+        Folder Lookup has been performed in ObListView already.
+
+        :param folder_uuid: UUID of the target folder in the sidebar
+        :type folder_uuid: GVariant
+        """
+        if folder_uuid is not None:
+            # TO DO: probably faster to just pass the Object directly
+            uuid = folder_uuid.get_string()
             folder = self.config.get_node_by_uuid(uuid)
-            # print(item.name)
-            """
-            if isinstance(item, ObTreeNode):
-                # Get Parent Folder
-                folder = self.config.get_liststore_by_node_uuid(item.uuid)
-            elif isinstance(item, ObListStore):
-                folder = item
-            """
 
             if folder is not None:
-                self.item_dialog = ObEditItemDialog(folder)
+                self.item_dialog = ObEditItemDialog(folder=folder)
                 self.item_dialog.connect('node_submitted', self.__on_new_item_create)
                 self.item_dialog.present(self)
 
+    def __on_new_item_create(self, dialog, node, folder):
+        """
+        Callback for the node_submitted Signal from ObEditItemDialog.
 
-    def __on_new_item_create(self, dialog, node, parent_node):
-        # del self.obelisk_list_view.context_menu
+        :param dialog: Dialog which sends the signal
+        :type dialog: ObEditItemDialog
+        :param node: Node returned by the Dialog
+        :type node: ObTreeNode
+        :param folder: Parent Folder / ListStore of the new Node
+        :type folder: ObListStore
+        """
         del dialog
-        # parent = self.config.get_liststore_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
-        # print(node)
-        # print(parent_node)
-        print(parent_node.name, node.name)
-        self.config.add_item(node, parent_node)
-        self.obelisk_sidebar.set_content(self.obelisk_list_view)
+        self.config.add_item(node, folder)
 
     def _on_clone_item_activate(action, *args):
         print('cloning item')
@@ -146,6 +145,8 @@ class ObWindow(Adw.ApplicationWindow):
     def on_sidebar_item_activated(self, list_view, index):
         """
         Spawn a SSH Connection
+
+        TO DO: Clean up this mess
         """
         print(f'activated {index}')
         print(f'sidebar: {list_view}')
@@ -171,7 +172,7 @@ class ObWindow(Adw.ApplicationWindow):
     def on_add_item_btn_clicked(self, Button):
         """
         Creates a new item in the sidebar
-        Mostly for testing and debugging.
+        Mostly for testing and debugging, this is pretty hacky atm.
         """
         print('clicked item add button')
         # list_store = self.config.selection_model.get_model().get_model()
@@ -193,6 +194,9 @@ class ObWindow(Adw.ApplicationWindow):
     def on_save_btn_clicked(self, Button):
         """
         Writes the current configuration to a yaml file
+
+        :param Button: The Button from which this callback is invoked
+        :type Button: Gtk.Button
         """
         self.config.save()
 
