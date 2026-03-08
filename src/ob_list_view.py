@@ -82,9 +82,9 @@ class ObListView(Gtk.ListView):
             # When clicking on any item or folder of the ListView
             item = expander.props.item
             folder = None
-            if isinstance(item, ObTreeNode):
-                folder = self.config.get_liststore_by_node_uuid(item.uuid)
-            elif isinstance(item, ObListStore):
+            if not item.is_folder:
+                folder = self.config.get_folder_by_child_uuid(item.uuid)
+            elif item.is_folder:
                 folder = item
 
             if folder is not None:

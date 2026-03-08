@@ -49,9 +49,3 @@ class ObListStore(Gio.ListStore):
     def uuid(self) -> str:
         return self._uuid
 
-    def get_position(self, node):
-        for index in range(self.get_n_items()):
-            print(node.uuid, self.get_item(index).uuid)
-            if node.uuid == self.get_item(index).uuid:
-                return index
-

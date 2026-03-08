@@ -25,7 +25,6 @@ from gi.repository import Adw, GObject, Gtk
 import netaddr
 
 from .ob_tree_node import ObTreeNode
-from .ob_list_store import ObListStore
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
@@ -43,7 +42,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     __gtype_name__ = 'ObNewItemDialog'
 
     __gsignals__ = {
-        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObListStore)),
+        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObTreeNode)),
     }
 
     # Template Elements

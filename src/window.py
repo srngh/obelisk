@@ -154,7 +154,7 @@ class ObWindow(Adw.ApplicationWindow):
         item = list_view.get_model()[index].get_item()
         term = ObTerm()
 
-        sel_page = self.tab_view.add_page(term).set_title(item.get_item_title())
+        sel_page = self.tab_view.add_page(term).set_title(item.name)
         term.spawn_ssh()
 
     @Gtk.Template.Callback()
@@ -164,9 +164,12 @@ class ObWindow(Adw.ApplicationWindow):
         Mostly for testing and debugging.
         """
         print('clicked tab add button')
+
         term = ObTerm()
+
         sel_page = self.tab_view.add_page(term).set_title('local shell')
         term.spawn_sh()
+        term.grab_focus()
 
     @Gtk.Template.Callback()
     def on_add_item_btn_clicked(self, Button):
@@ -184,7 +187,7 @@ class ObWindow(Adw.ApplicationWindow):
         node.protocol = 'ssh'
         node.auth = 'pubkey'
 
-        parent = self.config.get_liststore_uuid_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
+        parent = self.config.get_folder_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
         self.config.add_item(node, parent)
         print(node)
 
@@ -199,6 +202,7 @@ class ObWindow(Adw.ApplicationWindow):
         :type Button: Gtk.Button
         """
         self.config.save()
+
 
 
 
