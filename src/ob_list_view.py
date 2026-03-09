@@ -126,15 +126,34 @@ class ObListView(Gtk.ListView):
         return None
 
     def on_setup(self, factory, list_item):
-        list_item.set_child(ObTreeExpander())
+        list_item.set_child(ObTreeWidget())
 
     def on_bind(self, factory, list_item):
         list_row = list_item.get_item()
-        expander = list_item.get_child()
+        expander = list_item.expander
         expander.set_list_row(list_row)
         expander.update_bind()
 
     def on_unbind(self, factory, list_item):
-        expander = list_item.get_child()
+        expander = list_item.expander
         expander.clear_bind()
 
+
+class ObTreeWidget(Gtk.Box):
+    def __init__(self):
+        super().__init__(
+            spacing=2
+        )
+        self.expander = ObTreeExpander()
+        self.label = Gtk.Label(halign=Gtk.Align.START)
+
+        self.append(self.expander)
+        self.append(self.label)
+
+    def update_bind(self):
+        item = self.expander.props.item
+        item.connect('notify::n-items', self.expander.__on_item_n_items_notify)
+
+    def clear_bind(self):
+        item = self.expander.props.item
+        item.disconnect_by_func(self.expander.__on_item_n_items_notify)
