@@ -58,10 +58,16 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
-    def __init__(self, folder, item=None, **kwargs):
+    def __init__(self, folder, node=None, **kwargs):
         super().__init__(**kwargs)
         self.folder = folder
-        self.item = item
+        self.node = node
+
+        if self.node is not None:
+            load_node_into_dialog()
+
+        # if kwargs['username']:
+        #     self.username = username
 
         self.port_input.set_value(22)
 
@@ -74,20 +80,6 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
         :param Button: The Button which is connected to this function.
         :type Button: Gtk.Button
-        """
-        """
-        Validate
-        - is hostname_input
-            - valid IPv4 address
-            - valid IPv6 address
-            - valid FQDN
-        - is username set, else use current users name
-        - auth is kbd_interactive by default
-        - jump host can be empty (ignored for now)
-        - proxy can be empty (ignored for now)
-        - if connection title is empty, use ip address as title
-        - port is 22 by default
-            - Port cant be over 65535
         """
         node = self.__create_new_node()
         try:
@@ -104,6 +96,15 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         :type Button: Gtk.Button
         """
         self.close()
+
+    def load_node_into_dialog(self):
+        """
+        Load an Items content into the dialog.
+        """
+        self.hostname_input.set_text(self.node.ip4_address)
+        self.connection_name_input.set_text(self.node.name)
+        self.username_input.set_text(self.node.username)
+        pass
 
     def __create_new_node(self) -> ObTreeNode:
         """
@@ -132,20 +133,21 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             name = self.connection_name_input.get_text() or ip
             username = self.username_input.get_text() or os.getlogin()
 
-            node = ObTreeNode(
-                name=name,
-                uuid=str(uuid4())
-            )
+            if self.node is None:
+                self.node = ObTreeNode(
+                    name=name,
+                    uuid=str(uuid4())
+                )
             if ip.version == 4:
-                node.ip4_address = str(ip)
+                self.node.ip4_address = str(ip)
             elif ip.version == 6:
-                node.ip6_address = str(ip)
-            node.username = username
-            node.protocol = 'ssh'
-            node.port = port
-            node.auth = 'pubkey'
+                self.node.ip6_address = str(ip)
+            self.node.username = username
+            self.node.protocol = 'ssh'
+            self.node.port = port
+            self.node.auth = 'pubkey'
+            return self.node
 
-            return node
         except netaddr.AddrFormatError as e:
             print(e)
         return None

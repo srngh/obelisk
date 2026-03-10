@@ -78,6 +78,14 @@ class ObWindow(Adw.ApplicationWindow):
             self.actions[action] = gaction
             self.add_action(gaction)
 
+        for action in [
+            'edit_item',
+        ]:
+            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('a'))
+            gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
+            self.actions[action] = gaction
+            self.add_action(gaction)
+
         # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
         self.menu_btn.get_popover().add_child(ThemeSwitcher(), 'themeswitcher')
 
@@ -89,11 +97,11 @@ class ObWindow(Adw.ApplicationWindow):
         self._settings.bind('window-maximized', self,
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
 
-        # home_dir = Path.home()
+        home_dir = Path.home()
         # dir_path = os.path.dirname(os.path.realpath(__file__))
         # print(dir_path)
-        # self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/obelisk_3_write_test.yaml')
-        self.config = ObConfig(filename='/app/share/obelisk/obelisk/config.yaml')
+        self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/config_write_test.yaml')
+        # self.config = ObConfig(filename='/app/share/obelisk/obelisk/config.yaml')
 
         # self.obelisk_list_view = ObListView(selection_model=self.config.selection_model)
         self.obelisk_list_view = ObListView(config=self.config)
@@ -109,10 +117,15 @@ class ObWindow(Adw.ApplicationWindow):
         :param folder_uuid: UUID of the target folder in the sidebar
         :type folder_uuid: GVariant
         """
+
         if folder_uuid is not None:
+            print(f"attempting to spawn dialog for {folder_uuid}")
             # TO DO: probably faster to just pass the Object directly
             uuid = folder_uuid.get_string()
-            folder = self.config.get_node_by_uuid(uuid)
+            if uuid != '00000000-0000-0000-0000-000000000000':
+                folder = self.config.get_node_by_uuid(uuid)
+            else:
+                folder = ObTreeNode(name='root', uuid=uuid)
 
             if folder is not None:
                 self.item_dialog = ObEditItemDialog(folder=folder)
@@ -132,6 +145,16 @@ class ObWindow(Adw.ApplicationWindow):
         """
         del dialog
         self.config.add_item(node, folder)
+
+    def _on_edit_item_activate(self, action, folder_uuid):
+        """
+        Callback for the win.edit_item action.
+        Folder Lookup has been performed in ObListView already.
+
+        :param folder_uuid: UUID of the target folder in the sidebar
+        :type folder_uuid: GVariant
+        """
+        pass
 
     def _on_clone_item_activate(action, *args):
         print('cloning item')

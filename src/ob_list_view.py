@@ -24,7 +24,7 @@ from gi.repository import GObject, Gdk, Gtk
 from .widgets.ob_context_menu import ObContextMenu
 from .widgets.ob_tree_expander import ObTreeExpander
 from .widgets.ob_tree_node import ObTreeNode
-from .widgets.ob_list_store import ObListStore
+# from .widgets.ob_list_store import ObListStore
 
 
 class ObListView(Gtk.ListView):
@@ -69,12 +69,18 @@ class ObListView(Gtk.ListView):
         :rtype: bool
         """
         # TO DO: Pass the full item to the ConectMenu, so edit and clone methods can work with the same dialog
-        expander = self.__get_tree_expander(x, y)
+        tree_widget = self.__get_tree_widget(x, y)
+        if hasattr (tree_widget, 'expander'):
+            expander = tree_widget.expander
+        else:
+            expander = None
+
         if npress != 1:
             return False
         elif expander is None:
             # When clicking on any empty part of the ListView
-            context_menu = ObContextMenu('00000000-0000-0000-0000-000000000000')
+            folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
+            context_menu = ObContextMenu(folder.uuid)
             context_menu.set_parent(self)
             context_menu.popup_at(x, y)
             return True
@@ -84,11 +90,13 @@ class ObListView(Gtk.ListView):
             folder = None
             if not item.is_folder:
                 folder = self.config.get_folder_by_child_uuid(item.uuid)
+                if folder is None:
+                    folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
             elif item.is_folder:
                 folder = item
 
             if folder is not None:
-                context_menu = ObContextMenu(folder.uuid)
+                context_menu = ObContextMenu(folder.uuid, node=item)
                 context_menu.set_parent(self)
                 list_row = expander.get_list_row()
                 self.model.set_selected(list_row.get_position())
@@ -96,7 +104,7 @@ class ObListView(Gtk.ListView):
                 context_menu.popup_at(x, y)
                 return True
 
-    def __get_tree_expander(self, x, y):
+    def __get_tree_widget(self, x, y):
         """
         Get the TreeExpander at X,Y coordinates.
 
@@ -112,16 +120,19 @@ class ObListView(Gtk.ListView):
         if pick is None:
             return None
 
-        if isinstance(pick, Gtk.TreeExpander):
+        if isinstance(pick, ObTreeWidget):
             return pick
 
         child = pick.get_first_child()
-        if child and isinstance(child, Gtk.TreeExpander):
+        if child and isinstance(child, ObTreeWidget):
             return child
 
         parent = pick.props.parent
-        if parent and isinstance(parent, Gtk.TreeExpander):
+        if parent and isinstance(parent, ObTreeWidget):
             return parent
+
+        else:
+            print(type(pick))
 
         return None
 
@@ -130,16 +141,24 @@ class ObListView(Gtk.ListView):
 
     def on_bind(self, factory, list_item):
         list_row = list_item.get_item()
-        expander = list_item.expander
-        expander.set_list_row(list_row)
-        expander.update_bind()
+        widget = list_item.get_child()
+        item = list_row.get_item()
+
+        widget.expander.set_list_row(list_row)
+        widget.update_bind()
+        if not item.is_folder:
+            image = Gtk.Image.new_from_icon_name("org.gnome.Terminal-symbolic")
+            image.set_icon_size(1)
+            widget.insert_child_after(image, widget.expander)
+        widget.label.set_label(item.name)
 
     def on_unbind(self, factory, list_item):
-        expander = list_item.expander
-        expander.clear_bind()
+        widget = list_item.get_child()
+        widget.clear_bind()
 
 
 class ObTreeWidget(Gtk.Box):
+    __gtype_name__ = 'ObTreeWidget'
     def __init__(self):
         super().__init__(
             spacing=2
@@ -152,8 +171,8 @@ class ObTreeWidget(Gtk.Box):
 
     def update_bind(self):
         item = self.expander.props.item
-        item.connect('notify::n-items', self.expander.__on_item_n_items_notify)
+        item.connect('notify::n-items', self.expander.on_item_n_items_notify)
 
     def clear_bind(self):
         item = self.expander.props.item
-        item.disconnect_by_func(self.expander.__on_item_n_items_notify)
+        item.disconnect_by_func(self.expander.on_item_n_items_notify)

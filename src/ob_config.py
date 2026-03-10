@@ -41,17 +41,14 @@ class ObConfig(GObject.Object, Gio.ListModel):
         self.config_type = 'obelisk'
 
         self.default_handler = ConfigFileHandlerFactory().create_handler('obelisk', self.filename)
-
         self.default_handler.load_config()
-
-        # print(default_handler.connections)
         self.ob_list_store_model = merge_configs(self.default_handler.connections)
 
         self.tree_list_model = Gtk.TreeListModel.new(
             self.ob_list_store_model, False, True, self.__tree_model_create_func
         )
         self.selection_model = Gtk.SingleSelection(model=self.tree_list_model)
-        self.tests()
+        # self.tests()
 
     def save(self):
         """
@@ -61,9 +58,9 @@ class ObConfig(GObject.Object, Gio.ListModel):
         - Error handling
         """
         self.prepare_config()
-        # home_dir = Path.home()
-        # self.default_handler.filename = f'{home_dir}/.config/obelisk/obelisk_3_write_test.yaml'
-        self.default_handler.filename = 'config.yaml'
+        home_dir = Path.home()
+        self.default_handler.filename = f'{home_dir}/.config/obelisk/config_write_test.yaml'
+        # self.default_handler.filename = 'config.yaml'
         self.default_handler.write_config()
 
     def __tree_model_create_func(self, item):
@@ -108,7 +105,10 @@ class ObConfig(GObject.Object, Gio.ListModel):
         """
         Pass an ObTreeNode and the parent Node
         """
-        folder.add_child(node)
+        if folder.uuid == '00000000-0000-0000-0000-000000000000':
+            self.ob_list_store_model.append(node)
+        else:
+            folder.add_child(node)
 
     def get_node_by_uuid(self, uuid):
         """
@@ -147,7 +147,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
         for index in range(root_list_store.get_n_items()):
             child = root_list_store.get_item(index)
             if child.is_folder:
-                result = get_folder_by_child_uuid(child, uuid)
+                result = iter_folder_by_child_uuid(child, uuid)
                 if result is not None:
                     return result
         return None
@@ -167,12 +167,10 @@ class ObConfig(GObject.Object, Gio.ListModel):
         for index in range(root_list_store.get_n_items()):
             child = root_list_store.get_item(index)
             if child.is_folder:
-                result = get_folder_by_child_uuid(child, uuid)
+                result = iter_folder_uuid_by_child_uuid(child, uuid)
                 if result is not None:
                     return result
         return None
-        # list_store = self.ob_list_store_model
-        # return get_folder_uuid_by_child_uuid(list_store, uuid)
 
     def tests(self):
         """
@@ -201,7 +199,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
         test_list_store_uuid = self.get_folder_uuid_by_child_uuid(uuid_4)
         print(f'Searched {uuid_4}, got parent UUID {test_list_store_uuid}')
 
-
+# TO DO: Clean this up and validate against new data model
 def prepare_sub_tree(list_store):
     """
     The iterative part of prepare_config
@@ -210,7 +208,7 @@ def prepare_sub_tree(list_store):
     connections = []
     for index in range(list_store.get_n_items()):
         child = list_store.get_item(index)
-        if isinstance(child, ObTreeNode):
+        if not child.is_folder:
             item = Item(
                 name=child.name,
                 uuid=child.uuid,
@@ -222,11 +220,11 @@ def prepare_sub_tree(list_store):
                 auth=child.auth
             )
             connections.append(item)
-        elif isinstance(child, ObListStore):
+        elif child.is_folder:
             folder = Folder(
                 name=child.name,
                 uuid=child.uuid,
-                connections=prepare_sub_tree(child)
+                connections=prepare_sub_tree(child.children)
             )
             connections.append(folder)
     return connections
@@ -255,7 +253,7 @@ def iter_node_by_uuid(folder, uuid):
     return None
 
 
-def get_folder_by_child_uuid(folder, uuid):
+def iter_folder_by_child_uuid(folder, uuid):
     """
     Returns the parent node identified a child ObTreeNodes UUID
 
@@ -269,7 +267,7 @@ def get_folder_by_child_uuid(folder, uuid):
     for index in range(folder.children.get_n_items()):
         child = folder.children.get_item(index)
         if child.is_folder:
-            result = get_folder_by_child_uuid(child, uuid)
+            result = iter_folder_by_child_uuid(child, uuid)
             if result is not None:
                 return result
         elif child.uuid == uuid:
@@ -277,7 +275,7 @@ def get_folder_by_child_uuid(folder, uuid):
     return None
 
 
-def get_folder_uuid_by_child_uuid(folder, uuid):
+def iter_folder_uuid_by_child_uuid(folder, uuid):
     """
     Returns the parent ObListStore UUID by a child ObTreeNodes or ObListStores UUID
 
@@ -293,7 +291,7 @@ def get_folder_uuid_by_child_uuid(folder, uuid):
         if child.uuid == uuid:
             return folder.uuid
         elif isinstance(child, ObListStore):
-            result = get_folder_uuid_by_child_uuid(child, uuid)
+            result = iter_folder_uuid_by_child_uuid(child, uuid)
             if result is not None:
                 return result
     return None
@@ -309,12 +307,11 @@ def debug_ob_store(store):
         if isinstance(child, ObListStore):
             debug_ob_store(child)
 
-
+# TO DO: This needs renaming, and some general rework.
+# The Root ListStore should (somehow) remember from which config file a nested ObTreeNode Structure is imported
 def merge_configs(connections):
     """
-    Create a ObListStore, each containing either more ObListStores or ObTreeNodes.
-    Only ObListStores can contain ObTreeNodes.
-    ObTreeNodes will never have child objects.
+    Create a root ObListStore, containing nested ObTreeNodes.
     """
     # ob_list_store_model = Gtk.ListStore.new(ObTreeNode)
     ob_list_store_model = ObListStore(

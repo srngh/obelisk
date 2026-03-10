@@ -46,7 +46,7 @@ class ObTreeNode(GObject.GObject):
         return self._uuid
 
     def __repr__(self):
-        return f'{self.name}, {self.uuid}, {self.ip4_address}, {self.description}, {self.protocol}, {self.port}, {self.auth}'
+        return f'{self.name}, {self.uuid}'
 
     def add_child(self, child_node):
         if self.children is not None:
