@@ -17,8 +17,6 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# from pprint import pprint
-
 from gi.repository import GObject, Gdk, Gtk
 
 from .widgets.ob_context_menu import ObContextMenu
@@ -96,7 +94,7 @@ class ObListView(Gtk.ListView):
                 folder = item
 
             if folder is not None:
-                context_menu = ObContextMenu(folder.uuid, node=item)
+                context_menu = ObContextMenu(folder.uuid, node_uuid=item.uuid)
                 context_menu.set_parent(self)
                 list_row = expander.get_list_row()
                 self.model.set_selected(list_row.get_position())
@@ -131,9 +129,6 @@ class ObListView(Gtk.ListView):
         if parent and isinstance(parent, ObTreeWidget):
             return parent
 
-        else:
-            print(type(pick))
-
         return None
 
     def on_setup(self, factory, list_item):
@@ -147,7 +142,7 @@ class ObListView(Gtk.ListView):
         widget.expander.set_list_row(list_row)
         widget.update_bind()
         if not item.is_folder:
-            image = Gtk.Image.new_from_icon_name("org.gnome.Terminal-symbolic")
+            image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
             image.set_icon_size(1)
             widget.insert_child_after(image, widget.expander)
         widget.label.set_label(item.name)

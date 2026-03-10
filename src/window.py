@@ -81,7 +81,7 @@ class ObWindow(Adw.ApplicationWindow):
         for action in [
             'edit_item',
         ]:
-            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('a'))
+            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('as'))
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
             self.actions[action] = gaction
             self.add_action(gaction)
@@ -128,7 +128,7 @@ class ObWindow(Adw.ApplicationWindow):
                 folder = ObTreeNode(name='root', uuid=uuid)
 
             if folder is not None:
-                self.item_dialog = ObEditItemDialog(folder=folder)
+                self.item_dialog = ObEditItemDialog(folder=folder, dialog_mode='new_node')
                 self.item_dialog.connect('node_submitted', self.__on_new_item_create)
                 self.item_dialog.present(self)
 
@@ -146,7 +146,7 @@ class ObWindow(Adw.ApplicationWindow):
         del dialog
         self.config.add_item(node, folder)
 
-    def _on_edit_item_activate(self, action, folder_uuid):
+    def _on_edit_item_activate(self, action, param):
         """
         Callback for the win.edit_item action.
         Folder Lookup has been performed in ObListView already.
@@ -154,7 +154,30 @@ class ObWindow(Adw.ApplicationWindow):
         :param folder_uuid: UUID of the target folder in the sidebar
         :type folder_uuid: GVariant
         """
+        folder = None
+        node = None
+        if param is not None:
+            string_list = param.get_strv()
+            folder_uuid = string_list[0]
+            node_uuid = string_list[1]
+
+        if folder_uuid != '00000000-0000-0000-0000-000000000000':
+            folder = self.config.get_node_by_uuid(folder_uuid)
+        else:
+            folder = ObTreeNode(name='root', uuid=uuid)
+
+        if node_uuid != '':
+            node = self.config.get_node_by_uuid(node_uuid)
+
+        # Folders are not editable for now, until inheritance of parameters is implemented
+        if folder is not None and node is not None and not node.is_folder:
+            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='edit_node')
+            self.item_dialog.connect('node_submitted', self.__on_edit_item)
+            self.item_dialog.present(self)
+
+    def __on_edit_item(self, dialog, node, folder):
         pass
+
 
     def _on_clone_item_activate(action, *args):
         print('cloning item')

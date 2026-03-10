@@ -58,16 +58,14 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
-    def __init__(self, folder, node=None, **kwargs):
+    def __init__(self, folder, node=None, dialog_mode='new_node', **kwargs):
         super().__init__(**kwargs)
+        self.dialog_mode = dialog_mode
         self.folder = folder
         self.node = node
 
         if self.node is not None:
-            load_node_into_dialog()
-
-        # if kwargs['username']:
-        #     self.username = username
+            self.load_node_into_dialog()
 
         self.port_input.set_value(22)
 
@@ -81,12 +79,21 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         :param Button: The Button which is connected to this function.
         :type Button: Gtk.Button
         """
-        node = self.__create_new_node()
-        try:
-            if node is not None:
-                self.emit('node_submitted', node, self.folder)
-        finally:
-            self.close()
+        match self.dialog_mode:
+            case 'new_node':
+                node = self.__create_new_node()
+                try:
+                    if node is not None:
+                        self.emit('node_submitted', self.node, self.folder)
+                finally:
+                    self.close()
+            case 'edit_node':
+                try:
+                    self.__edit_node()
+                    self.emit('node_submitted', self.node, self.folder)
+                finally:
+                    self.close()
+
 
     def on_cancel(self, Button):
         """
@@ -151,4 +158,25 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         except netaddr.AddrFormatError as e:
             print(e)
         return None
+
+    def __edit_node(self):
+        try:
+            ip = netaddr.IPAddress(self.hostname_input.get_text())
+            port = self.port_input.get_value()
+            name = self.connection_name_input.get_text() or ip
+            username = self.username_input.get_text() or os.getlogin()
+            if ip.version == 4:
+                self.node.ip4_address = str(ip)
+            elif ip.version == 6:
+                self.node.ip6_address = str(ip)
+            self.node.username = username
+            self.node.protocol = 'ssh'
+            self.node.port = port
+            self.node.auth = 'pubkey'
+            return self.node
+
+        except netaddr.AddrFormatError as e:
+            print(e)
+        return None
+
 
