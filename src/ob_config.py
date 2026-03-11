@@ -199,6 +199,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
         test_list_store_uuid = self.get_folder_uuid_by_child_uuid(uuid_4)
         print(f'Searched {uuid_4}, got parent UUID {test_list_store_uuid}')
 
+
 # TO DO: Clean this up and validate against new data model
 def prepare_sub_tree(list_store):
     """
@@ -306,6 +307,7 @@ def debug_ob_store(store):
         child = store.get_item(index)
         if isinstance(child, ObListStore):
             debug_ob_store(child)
+
 
 # TO DO: This needs renaming, and some general rework.
 # The Root ListStore should (somehow) remember from which config file a nested ObTreeNode Structure is imported

@@ -66,9 +66,9 @@ class ObListView(Gtk.ListView):
         :type y: float
         :rtype: bool
         """
-        # TO DO: Pass the full item to the ConectMenu, so edit and clone methods can work with the same dialog
+        # TO DO: Pass the full item to the ContextMenu, so edit and clone methods can work with the same dialog
         tree_widget = self.__get_tree_widget(x, y)
-        if hasattr (tree_widget, 'expander'):
+        if hasattr(tree_widget, 'expander'):
             expander = tree_widget.expander
         else:
             expander = None
@@ -137,19 +137,30 @@ class ObListView(Gtk.ListView):
     def on_bind(self, factory, list_item):
         list_row = list_item.get_item()
         widget = list_item.get_child()
-        item = list_row.get_item()
+        node = list_row.get_item()
 
         widget.expander.set_list_row(list_row)
         widget.update_bind()
-        if not item.is_folder:
+        if not node.is_folder:
             image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
             image.set_icon_size(1)
             widget.insert_child_after(image, widget.expander)
-        widget.label.set_label(item.name)
+
+        binding = node.bind_property(
+            'name',
+            widget.label,
+            'label',
+            GObject.BindingFlags.SYNC_CREATE
+        )
+        list_item._name_binding = binding
+        # widget.label.set_label(node.name)
 
     def on_unbind(self, factory, list_item):
-        widget = list_item.get_child()
-        widget.clear_bind()
+        if hasattr(list_item, '_name_binding') and list_item._name_binding:
+            list_item._name_binding.unbind()
+            list_item._name_binding = None
+        # widget = list_item.get_child()
+        # widget.clear_bind()
 
 
 class ObTreeWidget(Gtk.Box):

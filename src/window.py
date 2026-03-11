@@ -19,7 +19,7 @@
 
 # from pprint import pprint
 
-import os
+# import os
 import uuid
 from pathlib import Path
 
@@ -31,7 +31,7 @@ from .ob_list_view import ObListView
 from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_term import ObTerm
 from .widgets.ob_tree_node import ObTreeNode
-from .widgets.ob_list_store import ObListStore
+# from .widgets.ob_list_store import ObListStore
 from .widgets.theme_switcher import ThemeSwitcher
 
 
@@ -68,10 +68,8 @@ class ObWindow(Adw.ApplicationWindow):
 
         for action in [
             'new_item',
-            'clone_item',
             'delete_item',
             'connect',
-
         ]:
             gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('s'))
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
@@ -80,6 +78,7 @@ class ObWindow(Adw.ApplicationWindow):
 
         for action in [
             'edit_item',
+            'clone_item',
         ]:
             gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('as'))
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
@@ -101,9 +100,6 @@ class ObWindow(Adw.ApplicationWindow):
         # dir_path = os.path.dirname(os.path.realpath(__file__))
         # print(dir_path)
         self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/config_write_test.yaml')
-        # self.config = ObConfig(filename='/app/share/obelisk/obelisk/config.yaml')
-
-        # self.obelisk_list_view = ObListView(selection_model=self.config.selection_model)
         self.obelisk_list_view = ObListView(config=self.config)
 
         self.obelisk_sidebar.set_content(self.obelisk_list_view)
@@ -146,18 +142,18 @@ class ObWindow(Adw.ApplicationWindow):
         del dialog
         self.config.add_item(node, folder)
 
-    def _on_edit_item_activate(self, action, param):
+    def _on_edit_item_activate(self, action, uuid_array):
         """
         Callback for the win.edit_item action.
         Folder Lookup has been performed in ObListView already.
 
-        :param folder_uuid: UUID of the target folder in the sidebar
-        :type folder_uuid: GVariant
+        :param uuid_array: Array containing folder_uuid and node_uuid
+        :type uuid_array: GLib.VariantType('as')
         """
         folder = None
         node = None
-        if param is not None:
-            string_list = param.get_strv()
+        if uuid_array is not None:
+            string_list = uuid_array.get_strv()
             folder_uuid = string_list[0]
             node_uuid = string_list[1]
 
@@ -172,17 +168,39 @@ class ObWindow(Adw.ApplicationWindow):
         # Folders are not editable for now, until inheritance of parameters is implemented
         if folder is not None and node is not None and not node.is_folder:
             self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='edit_node')
-            self.item_dialog.connect('node_submitted', self.__on_edit_item)
+            # self.item_dialog.connect('node_submitted', self.__on_new_item_create)
             self.item_dialog.present(self)
 
-    def __on_edit_item(self, dialog, node, folder):
-        pass
+    def _on_clone_item_activate(self, action, uuid_array):
+        """
+        Callback for the win.clone_item action.
+        Folder Lookup has been performed in ObListView already.
 
+        :param uuid_array: Array containing folder_uuid and node_uuid
+        :type uuid_array: GLib.VariantType('as')
+        """
+        folder = None
+        node = None
+        if uuid_array is not None:
+            string_list = uuid_array.get_strv()
+            folder_uuid = string_list[0]
+            node_uuid = string_list[1]
 
-    def _on_clone_item_activate(action, *args):
-        print('cloning item')
+        if folder_uuid != '00000000-0000-0000-0000-000000000000':
+            folder = self.config.get_node_by_uuid(folder_uuid)
+        else:
+            folder = ObTreeNode(name='root', uuid=uuid)
 
-    def _on_delete_item_activate(action, *args):
+        if node_uuid != '':
+            node = self.config.get_node_by_uuid(node_uuid)
+
+        # Folders are not editable for now, until inheritance of parameters is implemented
+        if folder is not None and node is not None and not node.is_folder:
+            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='clone_node')
+            self.item_dialog.connect('node_submitted', self.__on_new_item_create)
+            self.item_dialog.present(self)
+
+    def _on_delete_item_activate(self, action, *args):
         print('deleting item')
 
     def _on_connect_activate(action, *args):

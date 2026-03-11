@@ -90,10 +90,14 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             case 'edit_node':
                 try:
                     self.__edit_node()
+                finally:
+                    self.close()
+            case 'clone_node':
+                try:
+                    self.__clone_node()
                     self.emit('node_submitted', self.node, self.folder)
                 finally:
                     self.close()
-
 
     def on_cancel(self, Button):
         """
@@ -169,6 +173,32 @@ class ObEditItemDialog(Adw.PreferencesDialog):
                 self.node.ip4_address = str(ip)
             elif ip.version == 6:
                 self.node.ip6_address = str(ip)
+            self.node.name = name
+            self.node.username = username
+            self.node.protocol = 'ssh'
+            self.node.port = port
+            self.node.auth = 'pubkey'
+            # return self.node
+
+        except netaddr.AddrFormatError as e:
+            print(e)
+        return None
+
+    def __clone_node(self):
+        try:
+            ip = netaddr.IPAddress(self.hostname_input.get_text())
+            port = self.port_input.get_value()
+            name = self.connection_name_input.get_text() or ip
+            username = self.username_input.get_text() or os.getlogin()
+            self.node = ObTreeNode(
+                name=name,
+                uuid=str(uuid4())
+            )
+            if ip.version == 4:
+                self.node.ip4_address = str(ip)
+            elif ip.version == 6:
+                self.node.ip6_address = str(ip)
+            self.node.name = name
             self.node.username = username
             self.node.protocol = 'ssh'
             self.node.port = port
@@ -178,5 +208,4 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         except netaddr.AddrFormatError as e:
             print(e)
         return None
-
 

@@ -23,6 +23,9 @@ from gi.repository import GObject, Gio
 class ObTreeNode(GObject.GObject):
     __gtype_name__ = 'ObTreeNode'
 
+    name = GObject.Property(type=str)
+    uuid = GObject.Property(type=str)
+
     username: str = ''
     ip4_address: str
     description: str = ''
@@ -32,18 +35,10 @@ class ObTreeNode(GObject.GObject):
 
     def __init__(self, name: str, uuid: str, is_folder=False):
         super().__init__()
-        self._name = name
-        self._uuid = uuid
+        self.name = name
+        self.uuid = uuid
         self.is_folder = is_folder
         self.children = Gio.ListStore.new(ObTreeNode) if is_folder else None
-
-    @GObject.Property(type=str)
-    def name(self) -> str:
-        return self._name
-
-    @GObject.Property(type=str)
-    def uuid(self) -> str:
-        return self._uuid
 
     def __repr__(self):
         return f'{self.name}, {self.uuid}'
