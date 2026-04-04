@@ -31,7 +31,7 @@ from .ob_list_view import ObListView
 from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_term import ObTerm
 from .widgets.ob_tree_node import ObTreeNode
-# from .widgets.ob_list_store import ObListStore
+from .widgets.ob_rename_item_dialog import ObRenameItemDialog
 from .widgets.theme_switcher import ThemeSwitcher
 
 
@@ -70,6 +70,7 @@ class ObWindow(Adw.ApplicationWindow):
             'new_item',
             'delete_item',
             'connect',
+            'rename',
         ]:
             gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('s'))
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
@@ -113,9 +114,10 @@ class ObWindow(Adw.ApplicationWindow):
         :param folder_uuid: UUID of the target folder in the sidebar
         :type folder_uuid: GVariant
         """
+        self.obelisk_list_view.derefence_conectext_menu()
 
         if folder_uuid is not None:
-            print(f"attempting to spawn dialog for {folder_uuid}")
+            # print('"attempting to spawn dialog for {folder_uuid}')
             # TO DO: probably faster to just pass the Object directly
             uuid = folder_uuid.get_string()
             if uuid != '00000000-0000-0000-0000-000000000000':
@@ -150,6 +152,8 @@ class ObWindow(Adw.ApplicationWindow):
         :param uuid_array: Array containing folder_uuid and node_uuid
         :type uuid_array: GLib.VariantType('as')
         """
+        self.obelisk_list_view.derefence_conectext_menu()
+
         folder = None
         node = None
         if uuid_array is not None:
@@ -179,6 +183,8 @@ class ObWindow(Adw.ApplicationWindow):
         :param uuid_array: Array containing folder_uuid and node_uuid
         :type uuid_array: GLib.VariantType('as')
         """
+        self.obelisk_list_view.derefence_conectext_menu()
+
         folder = None
         node = None
         if uuid_array is not None:
@@ -200,11 +206,48 @@ class ObWindow(Adw.ApplicationWindow):
             self.item_dialog.connect('node_submitted', self.__on_new_item_create)
             self.item_dialog.present(self)
 
+    def _on_rename_activate(self, action, node_uuid):
+        """
+        Callback for the win.rename_item action.
+
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('s'))
+        :param node_uuid: The UUID of the node.
+        :type node_uuid: GLib.VariantType('s')
+        """
+
+        self.obelisk_list_view.derefence_conectext_menu()
+        node = self.config.get_node_by_uuid(node_uuid.get_string())
+        dialog = ObRenameItemDialog(self, node)
+
+        dialog.connect('renamed', self._on_item_renamed)
+
+        dialog.present()
+
+        print('renaming item')
+
+    def _on_item_renamed(self, dialog, node, name):
+        """
+        Convenience function for renaming an item from a dialog.
+
+        :param dialog: The dialog calling this method.
+        :type dialog: Gtk.Dialog
+        :param node: The node to be renamed
+        :type node: ObTreeNode
+        :param name: New name for the node
+        :type name: str
+        """
+        dialog.destroy()
+        node.name = name
+
+
+
     def _on_delete_item_activate(self, action, *args):
         print('deleting item')
 
     def _on_connect_activate(action, *args):
         print('establishing ssh connection')
+        print(args)
 
     def on_sidebar_item_activated(self, list_view, index):
         """

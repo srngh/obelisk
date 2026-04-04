@@ -24,8 +24,8 @@ from gi.repository import GObject, Gio, Gtk
 from .config_file_handlers.config_file_handler import ConfigFileHandlerFactory
 from .config_file_handlers.connection_types.folder import Folder
 from .config_file_handlers.connection_types.item import Item
-from .widgets.ob_tree_node import ObTreeNode
 from .widgets.ob_list_store import ObListStore
+from .widgets.ob_tree_node import ObTreeNode
 
 
 class ObConfig(GObject.Object, Gio.ListModel):
