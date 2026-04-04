@@ -209,9 +209,9 @@ class ObListView(Gtk.ListView):
 
         print(f'{dragged_node.name} to be dropped into {target_node.name}')
 
-        # TO DO:
-        # remove dragged_node from previous position
-        # append dragged_node to target_node
+        self.config.remove_item(dragged_node)
+        self.config.add_item(dragged_node, target_node)
+
         return True
 
 
