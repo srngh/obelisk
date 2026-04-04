@@ -68,7 +68,7 @@ class ObWindow(Adw.ApplicationWindow):
 
         for action in [
             'new_item',
-            'delete_item',
+            'remove_item',
             'connect',
             'rename',
         ]:
@@ -114,7 +114,10 @@ class ObWindow(Adw.ApplicationWindow):
         :param folder_uuid: UUID of the target folder in the sidebar
         :type folder_uuid: GVariant
         """
-        self.obelisk_list_view.derefence_conectext_menu()
+        try:
+            self.obelisk_list_view.derefence_context_menu()
+        except AttributeError:
+            pass
 
         if folder_uuid is not None:
             # print('"attempting to spawn dialog for {folder_uuid}')
@@ -152,7 +155,10 @@ class ObWindow(Adw.ApplicationWindow):
         :param uuid_array: Array containing folder_uuid and node_uuid
         :type uuid_array: GLib.VariantType('as')
         """
-        self.obelisk_list_view.derefence_conectext_menu()
+        try:
+            self.obelisk_list_view.derefence_context_menu()
+        except AttributeError:
+            pass
 
         folder = None
         node = None
@@ -183,7 +189,10 @@ class ObWindow(Adw.ApplicationWindow):
         :param uuid_array: Array containing folder_uuid and node_uuid
         :type uuid_array: GLib.VariantType('as')
         """
-        self.obelisk_list_view.derefence_conectext_menu()
+        try:
+            self.obelisk_list_view.derefence_context_menu()
+        except AttributeError:
+            pass
 
         folder = None
         node = None
@@ -216,7 +225,10 @@ class ObWindow(Adw.ApplicationWindow):
         :type node_uuid: GLib.VariantType('s')
         """
 
-        self.obelisk_list_view.derefence_conectext_menu()
+        try:
+            self.obelisk_list_view.derefence_context_menu()
+        except AttributeError:
+            pass
         node = self.config.get_node_by_uuid(node_uuid.get_string())
         dialog = ObRenameItemDialog(self, node)
 
@@ -242,8 +254,22 @@ class ObWindow(Adw.ApplicationWindow):
 
 
 
-    def _on_delete_item_activate(self, action, *args):
-        print('deleting item')
+    def _on_remove_item_activate(self, action, node_uuid):
+        """
+        Callback for the win.delete_item action.
+
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('s'))
+        :param node_uuid: The UUID of the node.
+        :type node_uuid: GLib.VariantType('s')
+        """
+        try:
+            self.obelisk_list_view.derefence_context_menu()
+        except AttributeError:
+            pass
+        node = self.config.get_node_by_uuid(node_uuid.get_string())
+        self.config.remove_item(node)
+
 
     def _on_connect_activate(action, *args):
         print('establishing ssh connection')

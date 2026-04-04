@@ -73,6 +73,10 @@ class ObListView(Gtk.ListView):
         else:
             expander = None
 
+        # Cleanup context menus, if they haven't been properly dereferenced before
+        if hasattr(self, 'context_menu'):
+            self.context_menu.unparent(self.context_menu)
+
         if npress != 1:
             return False
         elif expander is None:
@@ -105,7 +109,7 @@ class ObListView(Gtk.ListView):
                 self.context_menu.popup_at(x, y)
                 return True
 
-    def derefence_conectext_menu(self):
+    def derefence_context_menu(self):
         popover = self.context_menu
         popover.unparent(popover)
         del popover
@@ -140,12 +144,25 @@ class ObListView(Gtk.ListView):
         return None
 
     def on_setup(self, factory, list_item):
-        list_item.set_child(ObTreeWidget())
+        widget = ObTreeWidget()
+
+        drag_source = Gtk.DragSource()
+        drag_source.set_actions(Gdk.DragAction.MOVE)
+        drag_source.connect('prepare', self.on_drag_prepare, list_item)
+        widget.add_controller(drag_source)
+
+        drop_target = Gtk.DropTarget.new(ObTreeNode.__gtype__, Gdk.DragAction.MOVE)
+        drop_target.connect('accept', self.on_drop_accept, list_item)
+        drop_target.connect('drop', self.on_drop, list_item)
+        widget.add_controller(drop_target)
+
+        list_item.set_child(widget)
 
     def on_bind(self, factory, list_item):
         list_row = list_item.get_item()
         widget = list_item.get_child()
         node = list_row.get_item()
+        widget._bound_node = node
 
         widget.expander.set_list_row(list_row)
         widget.update_bind()
@@ -169,6 +186,33 @@ class ObListView(Gtk.ListView):
             list_item._name_binding = None
         # widget = list_item.get_child()
         # widget.clear_bind()
+
+    def on_drag_prepare(self, drag_source, x, y, list_item):
+        widget = list_item.get_child()
+        dragged_node = widget._bound_node
+
+        return Gdk.ContentProvider.new_for_value(dragged_node)
+
+    def on_drop_accept(self, drop_target, drop, list_item):
+        target_node = list_item.get_child()._bound_node
+
+        if not target_node.is_folder:
+            return False
+        return True
+
+    def on_drop(self, drop_target, dragged_value, x, y, list_item):
+        target_node = list_item.get_child()._bound_node
+        dragged_node = dragged_value
+
+        if target_node == dragged_node:
+            return False
+
+        print(f'{dragged_node.name} to be dropped into {target_node.name}')
+
+        # TO DO:
+        # remove dragged_node from previous position
+        # append dragged_node to target_node
+        return True
 
 
 class ObTreeWidget(Gtk.Box):

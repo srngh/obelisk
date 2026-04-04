@@ -49,13 +49,17 @@ class ObContextMenu(Gtk.PopoverMenu):
         section_2.append_item(menu_clone_item)
 
         if self.folder_uuid != '00000000-0000-0000-0000-000000000000' or self.node_uuid != '':
-            rename_item = Gio.MenuItem.new('_Rename', 'win.rename')
-            rename_item.set_action_and_target_value('win.rename', GLib.Variant.new_string(self.node_uuid))
+            menu_rename_item = Gio.MenuItem.new('_Rename', 'win.rename')
+            menu_rename_item.set_action_and_target_value('win.rename', GLib.Variant.new_string(self.node_uuid))
         else:
-            rename_item = Gio.MenuItem.new('_Rename', 'win.empty')
-        section_2.append_item(rename_item)
+            menu_rename_item = Gio.MenuItem.new('_Rename', 'win.empty')
+        section_2.append_item(menu_rename_item)
 
-        section_2.append('_Remove Item', 'win.delete_item')
+        # section_2.append('_Remove Item', 'win.delete_item')
+        menu_remove_item = Gio.MenuItem.new('_Remove Item', 'win.remove_item')
+        menu_remove_item.set_action_and_target_value('win.remove_item', GLib.Variant.new_string(self.node_uuid))
+        section_2.append_item(menu_remove_item)
+
         model.append_section(None, section_2)
 
         section_3 = Gio.Menu.new()

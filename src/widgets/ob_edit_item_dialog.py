@@ -155,8 +155,9 @@ class ObEditItemDialog(Adw.PreferencesDialog):
                 self.node.ip6_address = str(ip)
             self.node.username = username
             self.node.protocol = 'ssh'
-            self.node.port = port
+            self.node.port = int(port)
             self.node.auth = 'pubkey'
+            print(self.node.port, type(self.node.port))
             return self.node
 
         except netaddr.AddrFormatError as e:

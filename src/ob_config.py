@@ -18,6 +18,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from pathlib import Path
+import os
 
 from gi.repository import GObject, Gio, Gtk
 
@@ -42,13 +43,13 @@ class ObConfig(GObject.Object, Gio.ListModel):
 
         self.default_handler = ConfigFileHandlerFactory().create_handler('obelisk', self.filename)
         self.default_handler.load_config()
-        self.ob_list_store_model = merge_configs(self.default_handler.connections)
+        self.ob_list_store_model = merge_configs(self.default_handler)
 
         self.tree_list_model = Gtk.TreeListModel.new(
             self.ob_list_store_model, False, True, self.__tree_model_create_func
         )
         self.selection_model = Gtk.SingleSelection(model=self.tree_list_model)
-        # self.tests()
+        # self.run_tests()
 
     def save(self):
         """
@@ -57,7 +58,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
         TO DO:
         - Error handling
         """
-        self.prepare_config()
+        self.prepare_model_for_write()
         home_dir = Path.home()
         self.default_handler.filename = f'{home_dir}/.config/obelisk/config_write_test.yaml'
         # self.default_handler.filename = 'config.yaml'
@@ -77,15 +78,13 @@ class ObConfig(GObject.Object, Gio.ListModel):
         list_store = self.selection_model.get_model().get_model()
         debug_ob_store(list_store)
 
-    def prepare_config(self):
+    def prepare_model_for_write(self):
         """
-        Return the TreeListModel to a data structure for default_handler to write to a file
-
-        TO DO:
-        loop over the treelistmodel and build up the nested list of folders and items
+        Transform the TreeListModel to a data structure that can be parsed
+        by the yaml dumper for writing to file.
         """
         list_store = self.ob_list_store_model
-        connections = prepare_sub_tree(list_store)
+        connections = self.prepare_sub_tree(list_store)
         self.default_handler.connections = connections
 
     def get_tree_row_index_by_uuid(self, uuid):
@@ -109,6 +108,21 @@ class ObConfig(GObject.Object, Gio.ListModel):
             self.ob_list_store_model.append(node)
         else:
             folder.add_child(node)
+
+    def remove_item(self, node):
+        """
+        Pass an ObTreeNode which should be removed from the config.
+        """
+        print(f'{node} {node.name}')
+
+        folder = self.get_folder_by_child_uuid(node.uuid)
+        print(f'{folder}')
+        found, index = folder.children.find(node)
+
+        if found:
+            folder.children.remove(index)
+        else:
+            print("Could't remove node")
 
     def get_node_by_uuid(self, uuid):
         """
@@ -172,7 +186,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
                     return result
         return None
 
-    def tests(self):
+    def run_tests(self):
         """
         Runs some test cases, to verify if lookup methods for the model work correctly.
         Pretty ugly and hacky.
@@ -181,54 +195,69 @@ class ObConfig(GObject.Object, Gio.ListModel):
         # Tests if a ObTreeNode can be accessed via its UUID
         # Should return item server-3
         print('===== Test 1 =====')
+        print('Test Case: Node Lookup')
         uuid_1 = '4283d28d-f301-4935-9112-e42f3819d53e'
+        print(f'Node UUID: {uuid_1}, Expected Result: {uuid_1}')
         test_node_1 = self.get_node_by_uuid(uuid_1)
-        print(f'Searched {uuid_1}, got Node {test_node_1.name} with UUID {test_node_1.uuid}')
+        print(f'Result Node: {test_node_1.name} with UUID: {test_node_1.uuid}')
 
         # Tests if a ObListStore can be accessed via a child nodes UUID
         # Should return folder us-east-3a, child uuid is of item router-us-east-3a
         print('===== Test 2 =====')
-        uuid_3 = '4283d28d-f301-4935-9112-e42f3819d53e'
-        test_list_store_2 = self.get_folder_by_child_uuid(uuid_3)
-        print(f'Searched {uuid_3}, got {test_list_store_2.name} with UUID {test_list_store_2.uuid}')
+        print('Test Case: Folder by Child UUID Lookup')
+        uuid_2 = '4283d28d-f301-4935-9112-e42f3819d53e'
+        print(f'Node UUID: {uuid_2}, Expected Result: us-east-3a - 3e8639e7-abc6-4012-8500-32a8c61eb42f')
+        test_list_store_2 = self.get_folder_by_child_uuid(uuid_2)
+        print(f'Result Folder: {test_list_store_2.name} with UUID {test_list_store_2.uuid}')
 
         # Tests if a ObListStores UUID can be resolved from a child nodes UUID
         # Should return folder us-east-3, child uuid is of folder us-east-3a
         print('===== Test 3 =====')
-        uuid_4 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
-        test_list_store_uuid = self.get_folder_uuid_by_child_uuid(uuid_4)
-        print(f'Searched {uuid_4}, got parent UUID {test_list_store_uuid}')
+        print('Test Case: Folder UUID by Child UUID Lookup')
+        uuid_3 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
+        print(f'Node UUID: {uuid_3}, Expected Result: be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
+        test_list_store_uuid = self.get_folder_uuid_by_child_uuid(uuid_3)
+        print(f'Result: Folder UUID {test_list_store_uuid}')
 
+        print('===== Test 4 =====')
+        print('Test Case: Folder by Child UUID Lookup, Folder should be config file representer')
+        uuid_4 = '0b7fd8c4-1bdd-456e-960f-5838b56d215b'
+        print(f'Node UUID: {uuid_3}, Expected Result: {os.path.basename(self.filename)}')
+        test_list_store_4 = self.get_folder_by_child_uuid(uuid_4)
+        print(f'Result Folder: {test_list_store_4.name} with UUID {test_list_store_4.uuid}')
 
-# TO DO: Clean this up and validate against new data model
-def prepare_sub_tree(list_store):
-    """
-    The iterative part of prepare_config
-    Returns a list of all items contained in a ObListStore as a List
-    """
-    connections = []
-    for index in range(list_store.get_n_items()):
-        child = list_store.get_item(index)
-        if not child.is_folder:
-            item = Item(
-                name=child.name,
-                uuid=child.uuid,
-                username=child.username,
-                ip4_address=child.ip4_address,
-                description=child.description,
-                protocol=child.protocol,
-                port=child.port,
-                auth=child.auth
-            )
-            connections.append(item)
-        elif child.is_folder:
-            folder = Folder(
-                name=child.name,
-                uuid=child.uuid,
-                connections=prepare_sub_tree(child.children)
-            )
-            connections.append(folder)
-    return connections
+    def prepare_sub_tree(self, list_store):
+        """
+        The iterative part of prepare_config
+        Returns a list of all items contained in a ObListStore as a List
+        """
+        connections = []
+        for index in range(list_store.get_n_items()):
+            child = list_store.get_item(index)
+            if not child.is_folder:
+                item = Item(
+                    name=child.name,
+                    uuid=child.uuid,
+                    username=child.username,
+                    ip4_address=child.ip4_address,
+                    description=child.description,
+                    protocol=child.protocol,
+                    port=child.port,
+                    auth=child.auth
+                )
+                connections.append(item)
+            elif child.is_folder:
+                folder = Folder(
+                    name=child.name,
+                    uuid=child.uuid,
+                    connections=self.prepare_sub_tree(child.children)
+                )
+                if folder.name != os.path.basename(self.filename):
+                    connections.append(folder)
+                else:
+                    for con in folder.connections:
+                        connections.append(con)
+        return connections
 
 
 def iter_node_by_uuid(folder, uuid):
@@ -311,7 +340,7 @@ def debug_ob_store(store):
 
 # TO DO: This needs renaming, and some general rework.
 # The Root ListStore should (somehow) remember from which config file a nested ObTreeNode Structure is imported
-def merge_configs(connections):
+def merge_configs(handler):
     """
     Create a root ObListStore, containing nested ObTreeNodes.
     """
@@ -320,14 +349,9 @@ def merge_configs(connections):
         'root',
         '00000000-0000-0000-0000-000000000000'
     )
-    for item in connections:
-        if isinstance(item, Item):
-            node = create_tree_node(item)
-            ob_list_store_model.append(node)
-        if isinstance(item, Folder):
-            folder = create_folder_node(
-                item)
-            ob_list_store_model.append(folder)
+    super_folder = create_folder_node(Folder(name=handler.name, uuid=handler.uuid, connections=handler.connections))
+
+    ob_list_store_model.append(super_folder)
     return ob_list_store_model
 
 
