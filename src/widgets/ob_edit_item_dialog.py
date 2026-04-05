@@ -25,15 +25,24 @@ from gi.repository import Adw, GObject, Gtk
 import netaddr
 
 from .ob_tree_node import ObTreeNode
-from .ob_list_store import ObListStore
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
 class ObEditItemDialog(Adw.PreferencesDialog):
+    """
+    A Dialog to create and edit Items.
+    A Folder must be passed, so it is clear where to insert a new Item later on.
+    An Item may be passed, if it should be edited.
+
+    :param folder: The folder where the returned item should be attached to
+    :type folder: ObListStore
+    :param item: The item that will be edited
+    :type item: ObTreeNode
+    """
     __gtype_name__ = 'ObNewItemDialog'
 
     __gsignals__ = {
-        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObListStore)),
+        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObTreeNode)),
     }
 
     # Template Elements
@@ -49,27 +58,85 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
-    def __init__(self, parent_node, **kwargs):
+    def __init__(self, folder, node=None, dialog_mode='new_node', **kwargs):
         super().__init__(**kwargs)
-        self.parent_node = parent_node
+        self.dialog_mode = dialog_mode
+        self.folder = folder
+        self.node = node
+
+        if self.node is not None:
+            self.load_node_into_dialog()
 
         self.port_input.set_value(22)
 
         self.confirm_button.connect('clicked', self.on_confirm)
         self.cancel_button.connect('clicked', self.on_cancel)
 
-    def on_confirm(self, user_data):
-        # self.set_can_close(False) # Lock the Dialog before the minimum input is correct
-
+    def on_confirm(self, Button):
         """
-        Validate
-        - is hostname_input a valid IPv4 or IPv6 address
+        Create a new item or raise a toast (soon) informing the user which input is missing / wrong.
+
+        :param Button: The Button which is connected to this function.
+        :type Button: Gtk.Button
+        """
+        match self.dialog_mode:
+            case 'new_node':
+                node = self.__create_new_node()
+                try:
+                    if node is not None:
+                        self.emit('node_submitted', self.node, self.folder)
+                finally:
+                    self.close()
+            case 'edit_node':
+                try:
+                    self.__edit_node()
+                finally:
+                    self.close()
+            case 'clone_node':
+                try:
+                    self.__clone_node()
+                    self.emit('node_submitted', self.node, self.folder)
+                finally:
+                    self.close()
+
+    def on_cancel(self, Button):
+        """
+        Close the Dialog.
+
+        :param Button: The Button which is connected to this function.
+        :type Button: Gtk.Button
+        """
+        self.close()
+
+    def load_node_into_dialog(self):
+        """
+        Load an Items content into the dialog.
+        """
+        self.hostname_input.set_text(self.node.ip4_address)
+        self.connection_name_input.set_text(self.node.name)
+        self.username_input.set_text(self.node.username)
+        pass
+
+    def __create_new_node(self) -> ObTreeNode:
+        """
+        Create a new Item from Dialog Input.
+
+        :return: A new Item
+        :rtype: ObTreeNode
+        """
+        """
+        Validation Notes
+        - is hostname_input
+            - valid IPv4 address
+            - valid IPv6 address
+            - valid FQDN
         - is username set, else use current users name
         - auth is kbd_interactive by default
         - jump host can be empty (ignored for now)
         - proxy can be empty (ignored for now)
         - if connection title is empty, use ip address as title
         - port is 22 by default
+            - Port cant be over 65535
         """
         try:
             ip = netaddr.IPAddress(self.hostname_input.get_text())
@@ -77,35 +144,69 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             name = self.connection_name_input.get_text() or ip
             username = self.username_input.get_text() or os.getlogin()
 
-            # print(f'User Input {ip} is an IPv{ip.version} Address')
-            # print(f'Title: {name}\
-            # IP: {ip}\
-            # Port: {int(port)}\
-            # Username: {username}')
+            if self.node is None:
+                self.node = ObTreeNode(
+                    name=name,
+                    uuid=str(uuid4())
+                )
+            if ip.version == 4:
+                self.node.ip4_address = str(ip)
+            elif ip.version == 6:
+                self.node.ip6_address = str(ip)
+            self.node.username = username
+            self.node.protocol = 'ssh'
+            self.node.port = int(port)
+            self.node.auth = 'pubkey'
+            print(self.node.port, type(self.node.port))
+            return self.node
 
-            self.set_can_close(True)
-            node = ObTreeNode(
+        except netaddr.AddrFormatError as e:
+            print(e)
+        return None
+
+    def __edit_node(self):
+        try:
+            ip = netaddr.IPAddress(self.hostname_input.get_text())
+            port = self.port_input.get_value()
+            name = self.connection_name_input.get_text() or ip
+            username = self.username_input.get_text() or os.getlogin()
+            if ip.version == 4:
+                self.node.ip4_address = str(ip)
+            elif ip.version == 6:
+                self.node.ip6_address = str(ip)
+            self.node.name = name
+            self.node.username = username
+            self.node.protocol = 'ssh'
+            self.node.port = port
+            self.node.auth = 'pubkey'
+            # return self.node
+
+        except netaddr.AddrFormatError as e:
+            print(e)
+        return None
+
+    def __clone_node(self):
+        try:
+            ip = netaddr.IPAddress(self.hostname_input.get_text())
+            port = self.port_input.get_value()
+            name = self.connection_name_input.get_text() or ip
+            username = self.username_input.get_text() or os.getlogin()
+            self.node = ObTreeNode(
                 name=name,
                 uuid=str(uuid4())
             )
             if ip.version == 4:
-                node.ip4_address = str(ip)
+                self.node.ip4_address = str(ip)
             elif ip.version == 6:
-                node.ip6_address = str(ip)
-            node.username = username
-            node.protocol = 'ssh'
-            node.port = port
-            node.auth = 'pubkey'
-            try:
-                # print(type(node), node)
-                print(self.parent_node)
-                self.emit('node_submitted', node, self.parent_node)
-            finally:
-                self.close()
+                self.node.ip6_address = str(ip)
+            self.node.name = name
+            self.node.username = username
+            self.node.protocol = 'ssh'
+            self.node.port = port
+            self.node.auth = 'pubkey'
+            return self.node
 
         except netaddr.AddrFormatError as e:
             print(e)
-
-    def on_cancel(self, user_data):
-        self.close()
+        return None
 

@@ -23,7 +23,7 @@ import gi
 
 gi.require_version('Vte', '3.91')
 
-from gi.repository import GLib, Vte
+from gi.repository import Adw, Gdk, GLib, Vte
 
 
 class ObTerm(Vte.Terminal):
@@ -35,6 +35,45 @@ class ObTerm(Vte.Terminal):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.style_manager = Adw.StyleManager.get_default()
+        self._theme_signal_id = self.style_manager.connect('notify::dark', self.__on_theme_changed)
+        self.update_colors()
+        self.connect('destroy', self.__on_destroy)
+
+    def __on_theme_changed(self, manager, param):
+        self.update_colors()
+
+    def update_colors(self):
+        is_dark = self.style_manager.get_dark()
+        if is_dark:
+            bg = self._hex_to_rgba('#1d1d20')
+            fg = self._hex_to_rgba('#ffffff')
+            palette = [
+                '#241f31', '#c01c28', '#2ec27e', '#f5c211',
+                '#51a1ff', '#9841bb', '#0ab9dc', '#c0bfbc',
+                '#5e5c64', '#ed333b', '#57e389', '#f8e45c',
+                '#51a1ff', '#c061cb', '#4fd2fd', '#f6f5f4'
+            ]
+        else:
+            bg = self._hex_to_rgba('#ffffff')
+            fg = self._hex_to_rgba('#171421')
+            palette = [
+                '#241f31', '#c01c28', '#2ec27e', '#e8b504',
+                '#1e78e4', '#9841bb', '#0ab9dc', '#c0bfbc',
+                '#5e5c64', '#ed333b', '#4ad67c', '#d2be36',
+                '#51a1ff', '#c061cb', '#4fd2fd', '#f6f5f4'
+            ]
+        palette_rgba = [self._hex_to_rgba(hex_color) for hex_color in palette]
+        self.set_colors(foreground=fg, background=bg, palette=palette_rgba)
+
+    def __on_destroy(self, widget):
+        if self.style_manager and self._theme_signal_id:
+            self.style_manager.disconnect(self._theme_signal_id)
+
+    def _hex_to_rgba(self, hex_color):
+        rgba = Gdk.RGBA()
+        rgba.parse(hex_color)
+        return rgba
 
     def spawn_bash(self):
         self.spawn_async(

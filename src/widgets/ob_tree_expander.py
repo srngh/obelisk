@@ -25,28 +25,9 @@ class ObTreeExpander(Gtk.TreeExpander):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.label = Gtk.Inscription(hexpand=True)
-        self.icon = Gtk.Image()
+        self.set_indent_for_icon(False)
 
-        self.set_child(self.label)
-
-    def update_bind(self):
-        item = self.props.item
-
-        # Handle label
-        self.__update_label(item)
-        item.connect('notify::n-items', self.__on_item_n_items_notify)
-
-    def clear_bind(self):
-        item = self.props.item
-
-        item.disconnect_by_func(self.__on_item_n_items_notify)
-
-
-    def __update_label(self, item):
-        self.label.set_markup(item.name)
-
-    def __on_item_n_items_notify(self, item, pspec):
+    def on_item_n_items_notify(self, item, pspec):
         self.props.hide_expander = item.props.n_items == 0
 
 

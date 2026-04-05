@@ -19,10 +19,10 @@
 
 
 # from pathlib import Path
+import os
+from uuid import uuid4
 
 import yaml
-# To Do:
-# Demote this to a ObeliskConfigFileHandler
 
 from .connection_types.folder import Folder, folder_constructor, folder_representer
 from .connection_types.item import Item, item_constructor, item_representer
@@ -35,6 +35,8 @@ class ObeliskFileHandler:
 
     def __init__(self, filename: str):
         self.filename = filename
+        self.name = os.path.basename(filename)
+        self.uuid = uuid4()
         self.connections: list
 
     def load_config(self):

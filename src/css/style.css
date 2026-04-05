@@ -95,7 +95,7 @@ dropdown, dropdown box, dropdown > entry, dropdown > button {
   color: @theme_selected_fg_color;
 }
 
-expander { -gtk-icon-source: -gtk-icontheme("folder-visiting-symbolic"); color: #f6d32d; }
+expander { -gtk-icon-source: -gtk-icontheme("folder-closed-symbolic"); color: #f6d32d; }
 expander:checked { -gtk-icon-source: -gtk-icontheme("folder-open-symbolic"); color: #33d17a;}
 listview {background-color: rgba(0, 0, 0, 0);}
 row {padding-top: 0.4em; padding-left: 1.1em;}

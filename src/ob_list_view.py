@@ -17,24 +17,24 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# from pprint import pprint
-
 from gi.repository import GObject, Gdk, Gtk
 
 from .widgets.ob_context_menu import ObContextMenu
 from .widgets.ob_tree_expander import ObTreeExpander
 from .widgets.ob_tree_node import ObTreeNode
-from .widgets.ob_list_store import ObListStore
+# from .widgets.ob_list_store import ObListStore
 
 
 class ObListView(Gtk.ListView):
-
+    """
+    ObListView Class, which presents a dynamic List of nested Items.
+    A ObConfig must be passed, to retrieve the fully built Data Model to present.
+    """
     __gtype_name__ = 'ObeliskListView'
 
     model = Gtk.SingleSelection()
 
     def __init__(self, config, **kwargs):
-    #def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.config = config
 
@@ -47,82 +47,191 @@ class ObListView(Gtk.ListView):
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
         gesture.connect('released', self.__on_button_press)
         self.add_controller(gesture)
-        self.set_model(config.selection_model)
+        self.set_model(self.config.selection_model)
 
     def __on_button_press(self, gesture, npress, x, y):
-        # print(gesture, npress, x, y)
-        expander = self.__get_tree_expander(x, y)
+        """
+        Opens a Context Menu pointing to the referenced Item in the ListView.
+        If a folder is clicked, its' UUID will be passed to the context menu.
+        If a node is clicked, the parent folders' UUID will be passed to the context menu.
+        If the empty part is clicked, the parent is assumed to be the root of the ListView.
+
+        :param gesture: The released gesture invoking this function
+        :type gesture: Gtk.GestureClick
+        :param npress: The amount of clicks
+        :type npress: int
+        :param x: X coordinate of the click
+        :type x: float
+        :param y: Y coordinate of the click
+        :type y: float
+        :rtype: bool
+        """
+        # TO DO: Pass the full item to the ContextMenu, so edit and clone methods can work with the same dialog
+        tree_widget = self.__get_tree_widget(x, y)
+        if hasattr(tree_widget, 'expander'):
+            expander = tree_widget.expander
+        else:
+            expander = None
+
+        # Cleanup context menus, if they haven't been properly dereferenced before
+        if hasattr(self, 'context_menu'):
+            self.context_menu.unparent(self.context_menu)
+
         if npress != 1:
             return False
         elif expander is None:
-            """
-            When clicking on any empty part of the ListView
-            """
-            context_menu = ObContextMenu('00000000-0000-0000-0000-000000000000')
-            context_menu.set_parent(self)
+            # When clicking on any empty part of the ListView
+            folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
+            context_menu = ObContextMenu(folder.uuid)
+            context_menu.set_parent(self.props.parent.props.parent)
             context_menu.popup_at(x, y)
-            # self.context_menu.set_reference('00000000-0000-0000-0000-000000000000')
-            # print('Popup created at 00000000-0000-0000-0000-000000000000')
             return True
         else:
-            """
-            When clicking on an item of the ListView
-            """
+            # When clicking on any item or folder of the ListView
             item = expander.props.item
-            parent_folder = None
-            if isinstance(item, ObTreeNode):
-                parent_folder = self.config.get_liststore_by_node_uuid(item.uuid)
-            elif isinstance(item, ObListStore):
-                parent_folder = item
+            folder = None
+            if not item.is_folder:
+                folder = self.config.get_folder_by_child_uuid(item.uuid)
+                if folder is None:
+                    folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
+            elif item.is_folder:
+                folder = item
 
-            if parent_folder is not None:
-                """
-                print(f'clicked on {item.name}')
-                if parent_folder.uuid == item.uuid:
-                    print(f'this is a folder')
-                else:
-                    print(f'resolved parent to {parent_folder.name}')
-                """
-                context_menu = ObContextMenu(parent_folder.uuid)
-                context_menu.set_parent(self)
+            if folder is not None:
+                self.context_menu = ObContextMenu(folder.uuid, node_uuid=item.uuid)
+
+                # not exactly elegant, but this binds the popover to the Adw.Bin which contains the Sidebar
+                # otherwise the popover is really small an comes with an annoying scrollbar
+                self.context_menu.set_parent(self.props.parent.props.parent)
                 list_row = expander.get_list_row()
                 self.model.set_selected(list_row.get_position())
 
-                context_menu.popup_at(x, y)
-                # print(f'Popup created at {expander.props.item.uuid}')
-                # self.context_menu.set_reference(expander.props.item.uuid)
+                self.context_menu.popup_at(x, y)
                 return True
 
-    def __get_tree_expander(self, x, y):
+    def derefence_context_menu(self):
+        popover = self.context_menu
+        popover.unparent(popover)
+        del popover
+
+    def __get_tree_widget(self, x, y):
+        """
+        Get the TreeExpander at X,Y coordinates.
+
+        :param x: X coordinate
+        :type x: float
+        :param y: Y coordinate
+        :type y: float
+        :return: Clicked TreeExpander or None
+        :rtype: Gtk.TreeExpander or None
+        """
         pick = self.pick(x, y, Gtk.PickFlags.DEFAULT)
 
         if pick is None:
             return None
 
-        if isinstance(pick, Gtk.TreeExpander):
+        if isinstance(pick, ObTreeWidget):
             return pick
 
         child = pick.get_first_child()
-
-        if child and isinstance(child, Gtk.TreeExpander):
+        if child and isinstance(child, ObTreeWidget):
             return child
 
         parent = pick.props.parent
-        if parent and isinstance(parent, Gtk.TreeExpander):
+        if parent and isinstance(parent, ObTreeWidget):
             return parent
 
         return None
 
     def on_setup(self, factory, list_item):
-        list_item.set_child(ObTreeExpander())
+        widget = ObTreeWidget()
+
+        drag_source = Gtk.DragSource()
+        drag_source.set_actions(Gdk.DragAction.MOVE)
+        drag_source.connect('prepare', self.on_drag_prepare, list_item)
+        widget.add_controller(drag_source)
+
+        drop_target = Gtk.DropTarget.new(ObTreeNode.__gtype__, Gdk.DragAction.MOVE)
+        drop_target.connect('accept', self.on_drop_accept, list_item)
+        drop_target.connect('drop', self.on_drop, list_item)
+        widget.add_controller(drop_target)
+
+        list_item.set_child(widget)
 
     def on_bind(self, factory, list_item):
         list_row = list_item.get_item()
-        expander = list_item.get_child()
-        expander.set_list_row(list_row)
-        expander.update_bind()
+        widget = list_item.get_child()
+        node = list_row.get_item()
+        widget._bound_node = node
+
+        widget.expander.set_list_row(list_row)
+        widget.update_bind()
+        if not node.is_folder:
+            image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
+            image.set_icon_size(1)
+            widget.insert_child_after(image, widget.expander)
+
+        binding = node.bind_property(
+            'name',
+            widget.label,
+            'label',
+            GObject.BindingFlags.SYNC_CREATE
+        )
+        list_item._name_binding = binding
+        # widget.label.set_label(node.name)
 
     def on_unbind(self, factory, list_item):
-        expander = list_item.get_child()
-        expander.clear_bind()
+        if hasattr(list_item, '_name_binding') and list_item._name_binding:
+            list_item._name_binding.unbind()
+            list_item._name_binding = None
+        # widget = list_item.get_child()
+        # widget.clear_bind()
 
+    def on_drag_prepare(self, drag_source, x, y, list_item):
+        widget = list_item.get_child()
+        dragged_node = widget._bound_node
+
+        return Gdk.ContentProvider.new_for_value(dragged_node)
+
+    def on_drop_accept(self, drop_target, drop, list_item):
+        target_node = list_item.get_child()._bound_node
+
+        if not target_node.is_folder:
+            return False
+        return True
+
+    def on_drop(self, drop_target, dragged_value, x, y, list_item):
+        target_node = list_item.get_child()._bound_node
+        dragged_node = dragged_value
+
+        if target_node == dragged_node:
+            return False
+
+        print(f'{dragged_node.name} to be dropped into {target_node.name}')
+
+        self.config.remove_item(dragged_node)
+        self.config.add_item(dragged_node, target_node)
+
+        return True
+
+
+class ObTreeWidget(Gtk.Box):
+    __gtype_name__ = 'ObTreeWidget'
+
+    def __init__(self):
+        super().__init__(
+            spacing=2
+        )
+        self.expander = ObTreeExpander()
+        self.label = Gtk.Label(halign=Gtk.Align.START)
+
+        self.append(self.expander)
+        self.append(self.label)
+
+    def update_bind(self):
+        item = self.expander.props.item
+        item.connect('notify::n-items', self.expander.on_item_n_items_notify)
+
+    def clear_bind(self):
+        item = self.expander.props.item
+        item.disconnect_by_func(self.expander.on_item_n_items_notify)
