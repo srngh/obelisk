@@ -2,7 +2,7 @@
 <!DOCTYPE cambalache-project SYSTEM "cambalache-project.dtd">
 <!-- Created with Cambalache 0.97.8 -->
 <cambalache-project version="0.96.0" target_tk="gtk-4.0">
-  <ui template-class="ObWindow" filename="window.blp" sha256="413e986a1b90e5634ffe2e396e9b0fa0e6989255818907ae674f7aeaddef2729"/>
+  <ui template-class="ObWindow" filename="window.blp" sha256="98db8cd867689fe751e1fd2087b2ea670a8e4992490c927de729b7c32d1cc7b5"/>
   <ui template-class="PreferencesDialog" filename="gtk/preferences.blp" sha256="3395db18025bf11cae17e0954b11d5b1e5546c7fca71104093a335b099787f06"/>
   <ui filename="gtk/help-overlay.blp" sha256="2583bfbe7c22221fb369bccd95a9d040d247cfe18135544eb9ba12650ccc3dd5"/>
   <ui template-class="ObNewItemDialog" filename="gtk/ob_new_item_dialog.blp" sha256="03ec8f0d8e5fe2ce056466fd3649a588502ed2266b0d31b2b16e2b806eff09fc"/>

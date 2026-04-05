@@ -5,8 +5,67 @@ template $ObWindow: Adw.ApplicationWindow {
   default-height: 400;
   default-width: 600;
 
-  Adw.OverlaySplitView split_view {
-    content: Adw.ToolbarView {
+  Paned ob_paned {
+    end-child: main_area;
+    overflow: visible;
+    shrink-end-child: false;
+    shrink-start-child: false;
+    start-child: obelisk_sidebar;
+    wide-handle: false;
+
+    Adw.ToolbarView obelisk_sidebar {
+      hexpand: true;
+      hexpand-set: true;
+
+      [top]
+      Adw.HeaderBar {
+        show-back-button: false;
+        show-end-title-buttons: false;
+        show-start-title-buttons: false;
+
+        title-widget: Label {
+          label: "Obelisk";
+        };
+
+        [start]
+        ToggleButton show_search_btn {
+          icon-name: "search-symbolic";
+          tooltip-text: "Show/hide searchbar";
+          activate => $show_search_btn();
+        }
+
+        [end]
+        MenuButton fav_btn {
+          icon-name: "starred-symbolic";
+
+          popover: Popover {
+            child: Adw.ViewStack fav_stack {
+              visible: true;
+              width-request: 300;
+
+              Adw.ViewStackPage empty {
+                child: Adw.StatusPage {
+                  description: "Add your favorite Connections here by clicking the star button beside the title";
+                  icon-name: "starred-symbolic";
+                  title: "No Connections";
+                };
+              }
+            };
+          };
+        }
+      }
+
+      [top]
+      SearchBar search_bar {
+        child: SearchEntry _search_entry {
+          placeholder-text: "Search Connections…";
+        };
+
+        search-mode-enabled: bind show_search_btn.active no-sync-create;
+      }
+    }
+
+    Adw.ToolbarView main_area {
       content: Adw.ToolbarView tab_container {
         content: Adw.TabView tab_view {};
 
@@ -49,7 +108,7 @@ template $ObWindow: Adw.ApplicationWindow {
           tooltip-text: "Add a new tab";
           clicked => $on_add_tab_btn_clicked();
         }
-
+        
         [end]
         Button add_item_btn {
           has-frame: false;
@@ -73,61 +132,7 @@ template $ObWindow: Adw.ApplicationWindow {
           clicked => $on_save_btn_clicked();
         }
       }
-    };
-
-    max-sidebar-width: 350;
-    show-sidebar: bind toggle_sidebar_btn.active no-sync-create;
-
-    sidebar: Adw.ToolbarView obelisk_sidebar {
-      hexpand: true;
-      hexpand-set: true;
-
-      [top]
-      Adw.HeaderBar {
-        title-widget: Label {
-          label: "Obelisk";
-        };
-
-        [start]
-        ToggleButton show_search_btn {
-          icon-name: "search-symbolic";
-          tooltip-text: "Show/hide searchbar";
-          activate => $show_search_btn();
-        }
-
-        [end]
-        MenuButton fav_btn {
-          icon-name: "starred-symbolic";
-
-          popover: Popover {
-            child: Adw.ViewStack fav_stack {
-              visible: true;
-              width-request: 300;
-
-              Adw.ViewStackPage empty {
-                child: Adw.StatusPage {
-                  description: "Add your favorite Connections here by clicking the star button beside the title";
-                  icon-name: "starred-symbolic";
-                  title: "No Connections";
-                };
-              }
-            };
-          };
-        }
-      }
-
-      [top]
-      SearchBar search_bar {
-        child: SearchEntry _search_entry {
-          placeholder-text: "Search Connections…";
-        };
-
-        search-mode-enabled: bind show_search_btn.active no-sync-create;
-      }
-    };
-
-    sidebar-width-fraction: 0.27;
-    sidebar-width-unit: px;
+    }
   }
 }
 

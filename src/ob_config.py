@@ -166,6 +166,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
                     return result
         return None
 
+    # TO DO: is this actually needed?
     def get_folder_uuid_by_child_uuid(self, uuid):
         """
         Get a folder's UUID by a child's UUID.
@@ -222,9 +223,16 @@ class ObConfig(GObject.Object, Gio.ListModel):
         print('===== Test 4 =====')
         print('Test Case: Folder by Child UUID Lookup, Folder should be config file representer')
         uuid_4 = '0b7fd8c4-1bdd-456e-960f-5838b56d215b'
-        print(f'Node UUID: {uuid_3}, Expected Result: {os.path.basename(self.filename)}')
+        print(f'Node UUID: {uuid_4}, Expected Result: {os.path.basename(self.filename)}')
         test_list_store_4 = self.get_folder_by_child_uuid(uuid_4)
         print(f'Result Folder: {test_list_store_4.name} with UUID {test_list_store_4.uuid}')
+        
+        print('===== Test 5 =====')
+        print('Test Case: Folder by Child Folder UUID Lookup')
+        uuid_5 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
+        print(f'Node UUID: {uuid_5}, Expected Result: be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
+        test_list_store_5 = self.get_folder_by_child_uuid(uuid_5)
+        print(f'Result Folder: {test_list_store_5.name} with UUID {test_list_store_5.uuid}')
 
     def prepare_sub_tree(self, list_store):
         """
@@ -296,7 +304,7 @@ def iter_folder_by_child_uuid(folder, uuid):
     """
     for index in range(folder.children.get_n_items()):
         child = folder.children.get_item(index)
-        if child.is_folder:
+        if child.is_folder and child.uuid != uuid:
             result = iter_folder_by_child_uuid(child, uuid)
             if result is not None:
                 return result
