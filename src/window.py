@@ -79,24 +79,13 @@ class ObWindow(Adw.ApplicationWindow):
         self.actions = {}
 
         for action in [
-            'new_item',
-            'remove_item',
             'connect',
-            'rename',
         ]:
             gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('s'))
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
             self.actions[action] = gaction
             self.add_action(gaction)
 
-        for action in [
-            'edit_item',
-            'clone_item',
-        ]:
-            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('as'))
-            gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
-            self.actions[action] = gaction
-            self.add_action(gaction)
 
         # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
         self.menu_btn.get_popover().add_child(ThemeSwitcher(), 'themeswitcher')
@@ -112,11 +101,11 @@ class ObWindow(Adw.ApplicationWindow):
         # Config loading logic, pretty bad atm
         home_dir = Path.home()
         self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/config_write_test.yaml')
-        self.obelisk_list_view = ObListView(config=self.config)
 
         # Wrapping the ListView in a Bin makes the ContextMenu a better size
         adw_bin = Adw.Bin()
-        adw_bin.set_child(self.obelisk_list_view)
+        adw_bin.set_child(ObListView(config=self.config, parent=adw_bin))
+        self.obelisk_list_view = adw_bin.get_child()
         self.obelisk_sidebar.set_content(adw_bin)
         self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
         
@@ -125,155 +114,10 @@ class ObWindow(Adw.ApplicationWindow):
         self.save_btn.connect('clicked', self.on_save_btn_clicked)
         self.add_item_btn.connect('clicked', self.on_add_item_btn_clicked)
 
-    def _on_new_item_activate(self, action, folder_uuid):
+
+    def _on_connect_activate(self, action, node_uuid):
         """
-        Callback for the win.new_item action.
-        Folder Lookup has been performed in ObListView already.
-
-        :param folder_uuid: UUID of the target folder in the sidebar
-        :type folder_uuid: GVariant
-        """
-        try:
-            self.obelisk_list_view.derefence_context_menu()
-        except AttributeError:
-            pass
-
-        if folder_uuid is not None:
-            # TO DO: probably faster to just pass the Object directly
-            # TO DO: don't use the root list store anymore
-            uuid = folder_uuid.get_string()
-            if uuid != '00000000-0000-0000-0000-000000000000':
-                folder = self.config.get_node_by_uuid(uuid)
-            else:
-                folder = ObTreeNode(name='root', uuid=uuid)
-
-            if folder is not None:
-                self.item_dialog = ObEditItemDialog(folder=folder, dialog_mode='new_node')
-                self.item_dialog.connect('node_submitted', self.__on_new_item_create)
-                self.item_dialog.present(self)
-
-    def __on_new_item_create(self, dialog, node, folder):
-        """
-        Callback for the node_submitted Signal from ObEditItemDialog.
-
-        :param dialog: Dialog which sends the signal
-        :type dialog: ObEditItemDialog
-        :param node: Node returned by the Dialog
-        :type node: ObTreeNode
-        :param folder: Parent Folder / ListStore of the new Node
-        :type folder: ObListStore
-        """
-        del dialog
-        self.config.add_item(node, folder)
-
-    def _on_edit_item_activate(self, action, uuid_array):
-        """
-        Callback for the win.edit_item action.
-        Folder Lookup has been performed in ObListView already.
-
-        :param uuid_array: Array containing folder_uuid and node_uuid
-        :type uuid_array: GLib.VariantType('as')
-        """
-        try:
-            self.obelisk_list_view.derefence_context_menu()
-        except AttributeError:
-            pass
-
-        folder = None
-        node = None
-        if uuid_array is not None:
-            string_list = uuid_array.get_strv()
-            folder_uuid = string_list[0]
-            node_uuid = string_list[1]
-
-        if folder_uuid != '00000000-0000-0000-0000-000000000000':
-            folder = self.config.get_node_by_uuid(folder_uuid)
-        else:
-            folder = ObTreeNode(name='root', uuid=uuid)
-
-        if node_uuid != '':
-            node = self.config.get_node_by_uuid(node_uuid)
-
-        # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None and not node.is_folder:
-            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='edit_node')
-            # self.item_dialog.connect('node_submitted', self.__on_new_item_create)
-            self.item_dialog.present(self)
-
-    def _on_clone_item_activate(self, action, uuid_array):
-        """
-        Callback for the win.clone_item action.
-        Folder Lookup has been performed in ObListView already.
-
-        :param uuid_array: Array containing folder_uuid and node_uuid
-        :type uuid_array: GLib.VariantType('as')
-        """
-        try:
-            self.obelisk_list_view.derefence_context_menu()
-        except AttributeError:
-            pass
-
-        folder = None
-        node = None
-        if uuid_array is not None:
-            string_list = uuid_array.get_strv()
-            folder_uuid = string_list[0]
-            node_uuid = string_list[1]
-
-        if folder_uuid != '00000000-0000-0000-0000-000000000000':
-            folder = self.config.get_node_by_uuid(folder_uuid)
-        else:
-            folder = ObTreeNode(name='root', uuid=uuid)
-
-        if node_uuid != '':
-            node = self.config.get_node_by_uuid(node_uuid)
-
-        # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None and not node.is_folder:
-            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='clone_node')
-            self.item_dialog.connect('node_submitted', self.__on_new_item_create)
-            self.item_dialog.present(self)
-
-    def _on_rename_activate(self, action, node_uuid):
-        """
-        Callback for the win.rename_item action.
-
-        :param action: The action calling this method.
-        :type action: Gio.SimpleAction(GLib.VariantType('s'))
-        :param node_uuid: The UUID of the node.
-        :type node_uuid: GLib.VariantType('s')
-        """
-
-        try:
-            self.obelisk_list_view.derefence_context_menu()
-        except AttributeError:
-            pass
-        node = self.config.get_node_by_uuid(node_uuid.get_string())
-        dialog = ObRenameItemDialog(self, node)
-
-        dialog.connect('renamed', self._on_item_renamed)
-
-        dialog.present()
-
-        print('renaming item')
-
-    def _on_item_renamed(self, dialog, node, name):
-        """
-        Convenience function for renaming an item from a dialog.
-
-        :param dialog: The dialog calling this method.
-        :type dialog: Gtk.Dialog
-        :param node: The node to be renamed
-        :type node: ObTreeNode
-        :param name: New name for the node
-        :type name: str
-        """
-        dialog.destroy()
-        node.name = name
-
-    def _on_remove_item_activate(self, action, node_uuid):
-        """
-        Callback for the win.delete_item action.
+        Callback for the win.connect Signal action. Spawns a simple SSH Session.
 
         :param action: The action calling this method.
         :type action: Gio.SimpleAction(GLib.VariantType('s'))
@@ -284,21 +128,23 @@ class ObWindow(Adw.ApplicationWindow):
             self.obelisk_list_view.derefence_context_menu()
         except AttributeError:
             pass
-        node = self.config.get_node_by_uuid(node_uuid.get_string())
-        self.config.remove_item(node)
 
-    def _on_connect_activate(self, action, *args):
-        print('establishing ssh connection')
-        print(args)
+        node = self.config.get_node_by_uuid(node_uuid.get_string())
+
+        if not node.is_folder:
+            term = ObTerm()
+            term.spawn_ssh_session(node, self.tab_view)
+            term.grab_focus()
 
     def on_sidebar_item_activated(self, list_view, index):
         """
-        Spawn a SSH Connection
+        Signal Callback for obelisk_list_view.activate.
 
-        TO DO: Clean up this mess
+        :param list_view: The ListView calling this method
+        :type list_view: ObListView
+        :param index: The index of the activated item
+        :type index: int
         """
-        # print(f'activated {index}')
-        # print(f'sidebar: {list_view}')
         item = list_view.get_model()[index].get_item()
 
         if not item.is_folder:
@@ -346,10 +192,10 @@ class ObWindow(Adw.ApplicationWindow):
 
         term = ObTerm()
 
-        # sel_page = self.tab_view.add_page(term).set_title('local shell')
         term.spawn_bash(self.tab_view)
         term.grab_focus()
 
+    # remove this on next commit. item creation is stable enough already
     def on_add_item_btn_clicked(self, Button):
         """
         Creates a new item in the sidebar

@@ -13,7 +13,6 @@ sources = [
   'ob_term.py',
   'ob_tree_expander.py',
   'preferences.py',
-  'shell.py',
   'theme_switcher.py',
   'ob_tree_node.py',
   'ob_list_store.py',

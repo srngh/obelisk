@@ -3,9 +3,6 @@
   <gresource prefix="/io/github/srngh/obelisk">
     <!-- Stylesheets -->
     <file alias="style.css">css/style.css</file>
-    <file alias="style-hc.css">css/style-hc.css</file>
-    <file alias="style-dark.css">css/style-dark.css</file>
-    <file alias="style-dark-hc.css">css/style-dark-hc.css</file>
 
     <!-- UI files -->
     <file preprocess="xml-stripblanks">window.ui</file>

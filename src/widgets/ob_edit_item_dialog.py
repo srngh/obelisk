@@ -157,7 +157,6 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             self.node.protocol = 'ssh'
             self.node.port = int(port)
             self.node.auth = 'pubkey'
-            print(self.node.port, type(self.node.port))
             return self.node
 
         except netaddr.AddrFormatError as e:
@@ -179,7 +178,6 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             self.node.protocol = 'ssh'
             self.node.port = port
             self.node.auth = 'pubkey'
-            # return self.node
 
         except netaddr.AddrFormatError as e:
             print(e)

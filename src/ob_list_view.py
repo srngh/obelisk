@@ -17,12 +17,13 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import GObject, Gdk, Gtk
+from gi.repository import GLib, GObject, Gdk, Gtk, Gio
 
+from .widgets.ob_edit_item_dialog import ObEditItemDialog
+from .widgets.ob_rename_item_dialog import ObRenameItemDialog
 from .widgets.ob_context_menu import ObContextMenu
 from .widgets.ob_tree_expander import ObTreeExpander
 from .widgets.ob_tree_node import ObTreeNode
-# from .widgets.ob_list_store import ObListStore
 
 
 class ObListView(Gtk.ListView):
@@ -34,20 +35,110 @@ class ObListView(Gtk.ListView):
 
     model = Gtk.SingleSelection()
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, parent, **kwargs):
         super().__init__(**kwargs)
         self.config = config
+        self.parent = parent
 
+        # Factory to populate the ListView
         factory = Gtk.SignalListItemFactory()
         factory.connect('setup', self.on_setup)
         factory.connect('bind', self.on_bind)
         factory.connect('unbind', self.on_unbind)
         self.set_factory(factory)
 
+        # Right click
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
         gesture.connect('released', self.__on_button_press)
         self.add_controller(gesture)
         self.set_model(self.config.selection_model)
+
+        # Callbacks for Context Menu
+        self.action_group = Gio.SimpleActionGroup.new()
+
+        for action in [
+            'new_item',
+            'rename_item',
+            'remove_item',
+        ]:
+            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('s'))
+            gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
+            self.action_group.add_action(gaction)
+
+        for action in [
+            'edit_item',
+            'clone_item',
+        ]:
+            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('as'))
+            gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
+            self.action_group.add_action(gaction)
+
+        self.parent.insert_action_group('list_view', self.action_group)
+
+    def on_setup(self, factory, list_item):
+        """
+        Setup Method for Factory, this creates TreeWidgets when necessary.
+
+        :param factory: The factory calling this method
+        :type factory: Gtk.SignalListItemFactory
+        :param list_item: The item for which a TreeWidget shall be created
+        :type list_item: ObTreeNode
+        """
+        widget = ObTreeWidget()
+
+        drag_source = Gtk.DragSource()
+        drag_source.set_actions(Gdk.DragAction.MOVE)
+        drag_source.connect('prepare', self.on_drag_prepare, list_item)
+        widget.add_controller(drag_source)
+
+        drop_target = Gtk.DropTarget.new(ObTreeNode.__gtype__, Gdk.DragAction.MOVE)
+        drop_target.connect('accept', self.on_drop_accept, list_item)
+        drop_target.connect('drop', self.on_drop, list_item)
+        widget.add_controller(drop_target)
+
+        list_item.set_child(widget)
+
+    def on_bind(self, factory, list_item):
+        """
+        Bind Method for Factory, this (re-)binds TreeWidgets to items.
+
+        :param factory: The factory calling this method
+        :type factory: Gtk.SignalListItemFactory
+        :param list_item: The item for which a TreeWidget shall be created
+        :type list_item: ObTreeNode
+        """
+        list_row = list_item.get_item()
+        widget = list_item.get_child()
+        node = list_row.get_item()
+        widget._bound_node = node
+
+        widget.expander.set_list_row(list_row)
+        widget.update_bind()
+        if not node.is_folder:
+            image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
+            image.set_icon_size(1)
+            widget.insert_child_after(image, widget.expander)
+
+        binding = node.bind_property(
+            'name',
+            widget.label,
+            'label',
+            GObject.BindingFlags.SYNC_CREATE
+        )
+        list_item._name_binding = binding
+
+    def on_unbind(self, factory, list_item):
+        """
+        Unbind Method for Factory, this unbinds TreeWidgets from items.
+
+        :param factory: The factory calling this method
+        :type factory: Gtk.SignalListItemFactory
+        :param list_item: The item for which a TreeWidget shall be created
+        :type list_item: ObTreeNode
+        """
+        if hasattr(list_item, '_name_binding') and list_item._name_binding:
+            list_item._name_binding.unbind()
+            list_item._name_binding = None
 
     def __on_button_press(self, gesture, npress, x, y):
         """
@@ -110,13 +201,16 @@ class ObListView(Gtk.ListView):
                 return True
 
     def derefence_context_menu(self):
+        """
+        This is a cleanup function. It removes leftover Popover Menus.
+        """
         popover = self.context_menu
         popover.unparent(popover)
         del popover
 
     def __get_tree_widget(self, x, y):
         """
-        Get the TreeExpander at X,Y coordinates.
+        Get the TreeExpander at X, Y coordinates.
 
         :param x: X coordinate
         :type x: float
@@ -143,50 +237,173 @@ class ObListView(Gtk.ListView):
 
         return None
 
-    def on_setup(self, factory, list_item):
-        widget = ObTreeWidget()
+    def _on_new_item_activate(self, action, folder_uuid):
+        """
+        Callback for the list_view.new_item action.
+        Folder Lookup has been performed in ObListView already.
 
-        drag_source = Gtk.DragSource()
-        drag_source.set_actions(Gdk.DragAction.MOVE)
-        drag_source.connect('prepare', self.on_drag_prepare, list_item)
-        widget.add_controller(drag_source)
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('s'))
+        :param folder_uuid: UUID of the target folder in the sidebar
+        :type folder_uuid: GLib.VariantType('s')
+        """
+        try:
+            self.derefence_context_menu()
+        except AttributeError:
+            pass
 
-        drop_target = Gtk.DropTarget.new(ObTreeNode.__gtype__, Gdk.DragAction.MOVE)
-        drop_target.connect('accept', self.on_drop_accept, list_item)
-        drop_target.connect('drop', self.on_drop, list_item)
-        widget.add_controller(drop_target)
+        if folder_uuid is not None:
+            # TO DO: don't use the root list store anymore
+            uuid = folder_uuid.get_string()
+            if uuid != '00000000-0000-0000-0000-000000000000':
+                folder = self.config.get_node_by_uuid(uuid)
+            else:
+                folder = ObTreeNode(name='root', uuid=uuid)
 
-        list_item.set_child(widget)
+            if folder is not None:
+                self.item_dialog = ObEditItemDialog(folder=folder, dialog_mode='new_node')
+                self.item_dialog.connect('node_submitted', self.__on_new_item_create)
+                self.item_dialog.present(self)
 
-    def on_bind(self, factory, list_item):
-        list_row = list_item.get_item()
-        widget = list_item.get_child()
-        node = list_row.get_item()
-        widget._bound_node = node
+    def __on_new_item_create(self, dialog, node, folder):
+        """
+        Callback for the node_submitted Signal from ObEditItemDialog.
 
-        widget.expander.set_list_row(list_row)
-        widget.update_bind()
-        if not node.is_folder:
-            image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
-            image.set_icon_size(1)
-            widget.insert_child_after(image, widget.expander)
+        :param dialog: Dialog which sends the signal
+        :type dialog: ObEditItemDialog
+        :param node: Node returned by the Dialog
+        :type node: ObTreeNode
+        :param folder: Parent Folder / ListStore of the new Node
+        :type folder: ObListStore
+        """
+        del dialog
+        self.config.add_item(node, folder)
 
-        binding = node.bind_property(
-            'name',
-            widget.label,
-            'label',
-            GObject.BindingFlags.SYNC_CREATE
-        )
-        list_item._name_binding = binding
-        # widget.label.set_label(node.name)
+    def _on_rename_item_activate(self, action, node_uuid):
+        """
+        Callback for the list_view.rename_item action.
 
-    def on_unbind(self, factory, list_item):
-        if hasattr(list_item, '_name_binding') and list_item._name_binding:
-            list_item._name_binding.unbind()
-            list_item._name_binding = None
-        # widget = list_item.get_child()
-        # widget.clear_bind()
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('s'))
+        :param node_uuid: The UUID of the node.
+        :type node_uuid: GLib.VariantType('s')
+        """
 
+        try:
+            self.derefence_context_menu()
+        except AttributeError:
+            pass
+        node = self.config.get_node_by_uuid(node_uuid.get_string())
+        dialog = ObRenameItemDialog(node)
+
+        dialog.connect('renamed', self.__on_item_renamed)
+
+        dialog.present(self.get_root())
+
+        print('renaming item')
+
+    def __on_item_renamed(self, dialog, node, name):
+        """
+        Convenience function for renaming an item from a dialog.
+
+        :param dialog: The dialog calling this method.
+        :type dialog: Gtk.Dialog
+        :param node: The node to be renamed
+        :type node: ObTreeNode
+        :param name: New name for the node
+        :type name: str
+        """
+        node.name = name
+
+    def _on_remove_item_activate(self, action, node_uuid):
+        """
+        Callback for the list_view.delete_item action.
+
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('s'))
+        :param node_uuid: The UUID of the node.
+        :type node_uuid: GLib.VariantType('s')
+        """
+        try:
+            self.derefence_context_menu()
+        except AttributeError:
+            pass
+
+        node = self.config.get_node_by_uuid(node_uuid.get_string())
+        self.config.remove_item(node)
+
+    def _on_edit_item_activate(self, action, uuid_array):
+        """
+        Callback for the list_view.edit_item action.
+        Folder Lookup has been performed in ObListView already.
+
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('as'))
+        :param uuid_array: Array containing folder_uuid and node_uuid
+        :type uuid_array: GLib.VariantType('as')
+        """
+        try:
+            self.derefence_context_menu()
+        except AttributeError:
+            pass
+
+        folder = None
+        node = None
+        if uuid_array is not None:
+            string_list = uuid_array.get_strv()
+            folder_uuid = string_list[0]
+            node_uuid = string_list[1]
+
+        if folder_uuid != '00000000-0000-0000-0000-000000000000':
+            folder = self.config.get_node_by_uuid(folder_uuid)
+        else:
+            folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
+
+        if node_uuid != '':
+            node = self.config.get_node_by_uuid(node_uuid)
+
+        # Folders are not editable for now, until inheritance of parameters is implemented
+        if folder is not None and node is not None and not node.is_folder:
+            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='edit_node')
+            self.item_dialog.present(self)
+
+    def _on_clone_item_activate(self, action, uuid_array):
+        """
+        Callback for the list_view.clone_item action.
+        Folder Lookup has been performed in ObListView already.
+
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('as'))
+        :param uuid_array: Array containing folder_uuid and node_uuid
+        :type uuid_array: GLib.VariantType('as')
+        """
+        try:
+            self.derefence_context_menu()
+        except AttributeError:
+            pass
+
+        folder = None
+        node = None
+        if uuid_array is not None:
+            string_list = uuid_array.get_strv()
+            folder_uuid = string_list[0]
+            node_uuid = string_list[1]
+
+        if folder_uuid != '00000000-0000-0000-0000-000000000000':
+            folder = self.config.get_node_by_uuid(folder_uuid)
+        else:
+            folder = ObTreeNode(name='root', uuid=uuid)
+
+        if node_uuid != '':
+            node = self.config.get_node_by_uuid(node_uuid)
+
+        # Folders are not editable for now, until inheritance of parameters is implemented
+        if folder is not None and node is not None and not node.is_folder:
+            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='clone_node')
+            self.item_dialog.connect('node_submitted', self.__on_new_item_create)
+            self.item_dialog.present(self)
+
+    # Drag and Drop Methods
     def on_drag_prepare(self, drag_source, x, y, list_item):
         widget = list_item.get_child()
         dragged_node = widget._bound_node
