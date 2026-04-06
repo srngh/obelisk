@@ -113,10 +113,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
         """
         Pass an ObTreeNode which should be removed from the config.
         """
-        print(f'{node} {node.name}')
-
         folder = self.get_folder_by_child_uuid(node.uuid)
-        print(f'{folder}')
         found, index = folder.children.find(node)
 
         if found:

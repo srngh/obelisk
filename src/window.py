@@ -19,12 +19,12 @@
 
 # from pprint import pprint
 
-# import os
+import os
 import uuid
 from pathlib import Path
 
 from gi.repository import Adw
-from gi.repository import GLib, Gio, Gtk
+from gi.repository import GLib, Gio, Gtk, Vte
 
 from .ob_config import ObConfig
 from .ob_list_view import ObListView
@@ -42,8 +42,8 @@ class ObWindow(Adw.ApplicationWindow):
     # Template Elements
     # split_view = Gtk.Template.Child()
     ob_paned = Gtk.Template.Child()
-    show_search_btn = Gtk.Template.Child() # needed?
-    fav_btn = Gtk.Template.Child() # needed?
+    # show_search_btn = Gtk.Template.Child() # needed?
+    # fav_btn = Gtk.Template.Child() # needed?
     fav_stack = Gtk.Template.Child() 
     search_bar = Gtk.Template.Child()
 
@@ -109,7 +109,7 @@ class ObWindow(Adw.ApplicationWindow):
         self._settings.bind('window-maximized', self,
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
 
-        # Some config loading logic, pretty bad atm
+        # Config loading logic, pretty bad atm
         home_dir = Path.home()
         self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/config_write_test.yaml')
         self.obelisk_list_view = ObListView(config=self.config)
@@ -287,7 +287,60 @@ class ObWindow(Adw.ApplicationWindow):
         node = self.config.get_node_by_uuid(node_uuid.get_string())
         self.config.remove_item(node)
 
+    def _on_connect_activate(self, action, *args):
+        print('establishing ssh connection')
+        print(args)
+
     def on_sidebar_item_activated(self, list_view, index):
+        """
+        Spawn a SSH Connection
+
+        TO DO: Clean up this mess
+        """
+        # print(f'activated {index}')
+        # print(f'sidebar: {list_view}')
+        item = list_view.get_model()[index].get_item()
+        term = ObTerm()
+
+        page = self.tab_view.add_page(term)
+        page.set_title(item.name)
+
+        ssh_command = ['/usr/bin/ssh', f'{item.username}@{item.ip4_address}', '-p', f'{item.port}']
+
+        term._page = page
+
+        term.spawn_async(
+            Vte.PtyFlags.DEFAULT,
+            None,
+            ssh_command,
+            None,
+            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            None,
+            None,
+            -1,
+            None,
+            self.on_terminal_spawn,
+            None
+        )
+
+    def on_terminal_spawn(self, terminal, pid, error, *args):
+        """
+        Triggered on Terminal spawn.
+        """
+        if error:
+            print(f'error: {error.message}')
+        else:
+            terminal.watch_child(pid)
+            terminal.connect('child-exited', self.on_command_exited)
+            # terminal.connect('selection-changed', self.on_selection_changed)
+
+    def on_command_exited(self, terminal, status):
+        print(status)
+        print(f'ssh exited')
+        self.tab_view.close_page(terminal._page)
+
+
+    def on_sidebar_item_activated_old(self, list_view, index):
         """
         Spawn a SSH Connection
 
@@ -302,7 +355,8 @@ class ObWindow(Adw.ApplicationWindow):
         sel_page = self.tab_view.add_page(term).set_title(item.name)
         term.spawn_ssh()
 
-    # UI Callbacks
+
+    # Sidebar UI Callbacks
 
     def on_save_btn_clicked(self, Button):
         """
@@ -312,19 +366,6 @@ class ObWindow(Adw.ApplicationWindow):
         :type Button: Gtk.Button
         """
         self.config.save()
-
-    def on_add_tab_btn_clicked(self, Button):
-        """
-        Spawns a shell inside the flatpak.
-        Mostly for testing and debugging.
-        """
-        print('clicked tab add button')
-
-        term = ObTerm()
-
-        sel_page = self.tab_view.add_page(term).set_title('local shell')
-        term.spawn_sh()
-        term.grab_focus()
 
     def on_toggle_sidebar_clicked(self, button):
         if self.obelisk_sidebar.get_visible():
@@ -343,6 +384,21 @@ class ObWindow(Adw.ApplicationWindow):
         if current_position > self.MAX_SIDEBAR_WIDTH:
             # If the user drags it too far right, force it back to the maximum
             paned.set_position(self.MAX_SIDEBAR_WIDTH)
+
+    # Testing / Debugging
+
+    def on_add_tab_btn_clicked(self, Button):
+        """
+        Spawns a shell inside the flatpak.
+        Mostly for testing and debugging.
+        """
+        print('clicked tab add button')
+
+        term = ObTerm()
+
+        sel_page = self.tab_view.add_page(term).set_title('local shell')
+        term.spawn_sh()
+        term.grab_focus()
 
     def on_add_item_btn_clicked(self, Button):
         """
@@ -363,7 +419,3 @@ class ObWindow(Adw.ApplicationWindow):
         self.config.add_item(node, parent)
         print(node)
 
-
-    def _on_connect_activate(self, action, *args):
-        print('establishing ssh connection')
-        print(args)

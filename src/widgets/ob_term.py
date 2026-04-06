@@ -23,15 +23,11 @@ import gi
 
 gi.require_version('Vte', '3.91')
 
-from gi.repository import Adw, Gdk, GLib, Vte
+from gi.repository import Adw, GLib, Gdk, Gtk, Vte
 
 
 class ObTerm(Vte.Terminal):
     __gtype_name__ = 'ObTerm'
-
-    # term = Vte.Terminal()
-    # pty = Vte.Pty.new_sync(Vte.PtyFlags.DEFAULT)
-    # term.set_pty(pty)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -39,6 +35,10 @@ class ObTerm(Vte.Terminal):
         self._theme_signal_id = self.style_manager.connect('notify::dark', self.__on_theme_changed)
         self.update_colors()
         self.connect('destroy', self.__on_destroy)
+
+        key_controller = Gtk.EventControllerKey.new()
+        key_controller.connect('key-pressed', self._on_key_press)
+        self.add_controller(key_controller)
 
     def __on_theme_changed(self, manager, param):
         self.update_colors()
@@ -74,6 +74,15 @@ class ObTerm(Vte.Terminal):
         rgba = Gdk.RGBA()
         rgba.parse(hex_color)
         return rgba
+
+    def _on_key_press(self, controller, keyval, keycode, state):
+        has_ctrl = state & Gdk.ModifierType.CONTROL_MASK
+        has_shift = state & Gdk.ModifierType.SHIFT_MASK
+
+        if has_ctrl and has_shift and keyval in [Gdk.KEY_V, Gdk.KEY_v,]:
+            self.paste_clipboard()
+            return True
+        return False
 
     def spawn_bash(self):
         self.spawn_async(
