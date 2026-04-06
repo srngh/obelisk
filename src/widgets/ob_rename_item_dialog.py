@@ -17,27 +17,28 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import GObject, Gtk
+from gi.repository import Adw, GObject, Gtk
 
 from .ob_tree_node import ObTreeNode
 
 
-class ObRenameItemDialog(Gtk.Dialog):
+class ObRenameItemDialog(Adw.Dialog):
     __gtype_name__ = 'ObRenameItemDialog'
     __gsignals__ = {
         'renamed': (GObject.SignalFlags.RUN_FIRST, None, (ObTreeNode, str,))
     }
 
-    def __init__(self, parent_window, node, **kwargs):
+    def __init__(self, node, **kwargs):
 
-        super().__init__(title='Rename', transient_for=parent_window, modal=True)
+        super().__init__(title='Rename')
         self.node = node
 
-        box = self.get_content_area()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         box.set_spacing(12)
         box.set_margin_start(12)
         box.set_margin_end(12)
         box.set_margin_top(12)
+        box.set_margin_bottom(12)
 
         input_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self.entry = Gtk.Entry()
@@ -72,4 +73,5 @@ class ObRenameItemDialog(Gtk.Dialog):
 
     def on_cancel_activated(self, widget):
         self.close()
+
 
