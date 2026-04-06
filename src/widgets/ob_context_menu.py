@@ -62,7 +62,9 @@ class ObContextMenu(Gtk.PopoverMenu):
         model.append_section(None, section_2)
 
         section_3 = Gio.Menu.new()
-        section_3.append('_Connect', 'win.connect')
+        connect_item = Gio.MenuItem.new('_Connect', 'win.connect')
+        connect_item.set_action_and_target_value('win.connect', GLib.Variant.new_string(self.node_uuid))
+        section_3.append_item(connect_item)
         model.append_section(None, section_3)
 
         self.set_menu_model(model)
