@@ -300,45 +300,32 @@ class ObWindow(Adw.ApplicationWindow):
         # print(f'activated {index}')
         # print(f'sidebar: {list_view}')
         item = list_view.get_model()[index].get_item()
-        term = ObTerm()
 
-        page = self.tab_view.add_page(term)
-        page.set_title(item.name)
+        if not item.is_folder:
+            term = ObTerm()
+            term.spawn_ssh_session(item, self.tab_view)
 
-        ssh_command = ['/usr/bin/ssh', f'{item.username}@{item.ip4_address}', '-p', f'{item.port}']
+            # page = self.tab_view.add_page(term)
+            # page.set_title(item.name)
 
-        term._page = page
+            # ssh_command = ['/usr/bin/ssh', f'{item.username}@{item.ip4_address}', '-p', f'{item.port}']
 
-        term.spawn_async(
-            Vte.PtyFlags.DEFAULT,
-            None,
-            ssh_command,
-            None,
-            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-            None,
-            None,
-            -1,
-            None,
-            self.on_terminal_spawn,
-            None
-        )
+            # term._page = page
+            # term._tab_view = self.tab_view
 
-    def on_terminal_spawn(self, terminal, pid, error, *args):
-        """
-        Triggered on Terminal spawn.
-        """
-        if error:
-            print(f'error: {error.message}')
-        else:
-            terminal.watch_child(pid)
-            terminal.connect('child-exited', self.on_command_exited)
-            # terminal.connect('selection-changed', self.on_selection_changed)
-
-    def on_command_exited(self, terminal, status):
-        print(status)
-        print(f'ssh exited')
-        self.tab_view.close_page(terminal._page)
-
+            # term.spawn_async(
+            #     Vte.PtyFlags.DEFAULT,
+            #     None,
+            #     ssh_command,
+            #     None,
+            #     GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            #     None,
+            #     None,
+            #     -1,
+            #     None,
+            #     term.on_terminal_spawn,
+            #     None
+            # )
 
     def on_sidebar_item_activated_old(self, list_view, index):
         """

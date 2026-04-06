@@ -131,3 +131,38 @@ class ObTerm(Vte.Terminal):
             None
         )
 
+    def spawn_ssh_session(self, item, tab_view):
+
+        page = tab_view.add_page(self)
+        page.set_title(item.name)
+        self._page = page
+        self._tab_view = tab_view
+
+        ssh_command = ['/usr/bin/ssh', f'{item.username}@{item.ip4_address}', '-p', f'{item.port}']
+
+        self.spawn_async(
+            Vte.PtyFlags.DEFAULT,
+            None,
+            ssh_command,
+            None,
+            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            None,
+            None,
+            -1,
+            None,
+            self.on_terminal_spawn,
+            None
+        )
+
+    def on_terminal_spawn(self, terminal, pid, error, *args):
+        """
+        Triggered on Terminal spawn.
+        """
+        if error:
+            print(f'error: {error.message}')
+        else:
+            terminal.watch_child(pid)
+            terminal.connect('child-exited', self.on_command_exited)
+
+    def on_command_exited(self, terminal, status):
+        self._tab_view.close_page(self._page)
