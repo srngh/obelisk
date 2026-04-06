@@ -34,30 +34,29 @@ class ObContextMenu(Gtk.PopoverMenu):
 
         section_1 = Gio.Menu.new()
 
-        menu_new_item = Gio.MenuItem.new('_New Item', 'win.new_item')
-        menu_new_item.set_action_and_target_value('win.new_item', GLib.Variant.new_string(self.folder_uuid))
+        menu_new_item = Gio.MenuItem.new('_New Item', 'list_view.new_item')
+        menu_new_item.set_action_and_target_value('list_view.new_item', GLib.Variant.new_string(self.folder_uuid))
         section_1.append_item(menu_new_item)
         model.append_section(None, section_1)
 
         section_2 = Gio.Menu.new()
-        menu_edit_item = Gio.MenuItem.new('_Edit Item', 'win.edit_item')
-        menu_edit_item.set_action_and_target_value('win.edit_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
+        menu_edit_item = Gio.MenuItem.new('_Edit Item', 'list_view.edit_item')
+        menu_edit_item.set_action_and_target_value('list_view.edit_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
         section_2.append_item(menu_edit_item)
 
-        menu_clone_item = Gio.MenuItem.new('_Clone Item', 'win.clone_item')
-        menu_clone_item.set_action_and_target_value('win.clone_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
+        menu_clone_item = Gio.MenuItem.new('_Clone Item', 'list_view.clone_item')
+        menu_clone_item.set_action_and_target_value('list_view.clone_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
         section_2.append_item(menu_clone_item)
 
         if self.folder_uuid != '00000000-0000-0000-0000-000000000000' or self.node_uuid != '':
-            menu_rename_item = Gio.MenuItem.new('_Rename', 'win.rename')
-            menu_rename_item.set_action_and_target_value('win.rename', GLib.Variant.new_string(self.node_uuid))
+            menu_rename_item = Gio.MenuItem.new('_Rename', 'list_view.rename_item')
+            menu_rename_item.set_action_and_target_value('list_view.rename_item', GLib.Variant.new_string(self.node_uuid))
         else:
-            menu_rename_item = Gio.MenuItem.new('_Rename', 'win.empty')
+            menu_rename_item = Gio.MenuItem.new('_Rename', 'list_view.empty')
         section_2.append_item(menu_rename_item)
 
-        # section_2.append('_Remove Item', 'win.delete_item')
-        menu_remove_item = Gio.MenuItem.new('_Remove Item', 'win.remove_item')
-        menu_remove_item.set_action_and_target_value('win.remove_item', GLib.Variant.new_string(self.node_uuid))
+        menu_remove_item = Gio.MenuItem.new('_Remove Item', 'list_view.remove_item')
+        menu_remove_item.set_action_and_target_value('list_view.remove_item', GLib.Variant.new_string(self.node_uuid))
         section_2.append_item(menu_remove_item)
 
         model.append_section(None, section_2)
