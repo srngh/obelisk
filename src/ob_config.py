@@ -53,7 +53,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
 
     def save(self):
         """
-        Write Config to file
+        Write the current configuration to file
 
         TO DO:
         - Error handling
@@ -66,17 +66,12 @@ class ObConfig(GObject.Object, Gio.ListModel):
 
     def __tree_model_create_func(self, item):
         """
-        This builds the Gtk.TreeListModel.
+        This builds the Gtk.TreeListModel out of the underlying ObListStore
+
+        :param item: A Connection Item or Folder
+        :type item: ObTreeNode
         """
         return item.children
-
-    def __tree_model_debug_func(self):
-        """
-        This is a debugging / testing method.
-        For viewing the TreeModel.
-        """
-        list_store = self.selection_model.get_model().get_model()
-        debug_ob_store(list_store)
 
     def prepare_model_for_write(self):
         """
@@ -87,22 +82,14 @@ class ObConfig(GObject.Object, Gio.ListModel):
         connections = self.prepare_sub_tree(list_store)
         self.default_handler.connections = connections
 
-    def get_tree_row_index_by_uuid(self, uuid):
-        """
-        This is a debugging / testing method.
-        Probably a hack.
-        """
-        list_store = self.tree_list_model
-        for index in range(self.tree_list_model.get_n_items()):
-            # print(f'Index {index}\
-            # {list_store.get_item(index).get_item().name}\
-            # {list_store.get_item(index).get_item().uuid}')
-            if uuid == list_store.get_item(index):
-                return index
-
     def add_item(self, node, folder):
         """
         Pass an ObTreeNode and the parent Node
+
+        :param node: The node to add to the model
+        :type node: ObTreeNode
+        :param folder: The folder node where the new node will be appended to
+        :type folder: ObTreeNode
         """
         if folder.uuid == '00000000-0000-0000-0000-000000000000':
             self.ob_list_store_model.append(node)
@@ -112,11 +99,12 @@ class ObConfig(GObject.Object, Gio.ListModel):
     def remove_item(self, node):
         """
         Pass an ObTreeNode which should be removed from the config.
-        """
-        print(f'{node} {node.name}')
+        If the TreeNode is a folder, all child items are removed as well.
 
+        :param node: The node that should be removed from the model.
+        :type node: ObTreeNode
+        """
         folder = self.get_folder_by_child_uuid(node.uuid)
-        print(f'{folder}')
         found, index = folder.children.find(node)
 
         if found:
@@ -166,6 +154,7 @@ class ObConfig(GObject.Object, Gio.ListModel):
                     return result
         return None
 
+    # TO DO: is this actually needed?
     def get_folder_uuid_by_child_uuid(self, uuid):
         """
         Get a folder's UUID by a child's UUID.
@@ -222,14 +211,24 @@ class ObConfig(GObject.Object, Gio.ListModel):
         print('===== Test 4 =====')
         print('Test Case: Folder by Child UUID Lookup, Folder should be config file representer')
         uuid_4 = '0b7fd8c4-1bdd-456e-960f-5838b56d215b'
-        print(f'Node UUID: {uuid_3}, Expected Result: {os.path.basename(self.filename)}')
+        print(f'Node UUID: {uuid_4}, Expected Result: {os.path.basename(self.filename)}')
         test_list_store_4 = self.get_folder_by_child_uuid(uuid_4)
         print(f'Result Folder: {test_list_store_4.name} with UUID {test_list_store_4.uuid}')
+        
+        print('===== Test 5 =====')
+        print('Test Case: Folder by Child Folder UUID Lookup')
+        uuid_5 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
+        print(f'Node UUID: {uuid_5}, Expected Result: be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
+        test_list_store_5 = self.get_folder_by_child_uuid(uuid_5)
+        print(f'Result Folder: {test_list_store_5.name} with UUID {test_list_store_5.uuid}')
 
     def prepare_sub_tree(self, list_store):
         """
-        The iterative part of prepare_config
-        Returns a list of all items contained in a ObListStore as a List
+        The iterative part of prepare_model_for_write
+        Flattens a ListStore back into a plain python list.
+
+        :param list_store: A ListStore containing items
+        :type list_store: ListStore
         """
         connections = []
         for index in range(list_store.get_n_items()):
@@ -296,7 +295,7 @@ def iter_folder_by_child_uuid(folder, uuid):
     """
     for index in range(folder.children.get_n_items()):
         child = folder.children.get_item(index)
-        if child.is_folder:
+        if child.is_folder and child.uuid != uuid:
             result = iter_folder_by_child_uuid(child, uuid)
             if result is not None:
                 return result
@@ -327,24 +326,14 @@ def iter_folder_uuid_by_child_uuid(folder, uuid):
     return None
 
 
-def debug_ob_store(store):
-    """
-    This is a debugging / testing method.
-    The recursive part of parent_list_storeviewing the TreeModel.
-    """
-    for index in range(store.get_n_items()):
-        child = store.get_item(index)
-        if isinstance(child, ObListStore):
-            debug_ob_store(child)
-
-
 # TO DO: This needs renaming, and some general rework.
-# The Root ListStore should (somehow) remember from which config file a nested ObTreeNode Structure is imported
+# The Root ListStore should remember from which config file a nested ObTreeNode Structure is imported
 def merge_configs(handler):
     """
     Create a root ObListStore, containing nested ObTreeNodes.
+
+    :param handler: A config file handler, such as a oblisk_file_handler
     """
-    # ob_list_store_model = Gtk.ListStore.new(ObTreeNode)
     ob_list_store_model = ObListStore(
         'root',
         '00000000-0000-0000-0000-000000000000'
@@ -358,6 +347,11 @@ def merge_configs(handler):
 def create_tree_node(item: Item):
     """
     Create a single ObTreeNode, containing all neccessary data
+
+    :param item: A normalized item returned by a config loader.
+    :type item: Item
+    :return: A Node representing a connection item
+    :rtype: ObTreeNode
     """
     node = ObTreeNode(name=item.name, uuid=item.uuid, is_folder=False)
     node.ip4_address = item.ip4_address
@@ -372,6 +366,11 @@ def create_tree_node(item: Item):
 def create_folder_node(folder: Folder):
     """
     Create a single ObTreeNode Folder, containing all neccessary data
+
+    :param folder: A normalized folder returned by a config loader.
+    :type folder: Folder
+    :return: A Node representing a folder
+    :rtype: ObTreeNode
     """
     node = ObTreeNode(name=folder.name, uuid=folder.uuid, is_folder=True)
     for item in folder.connections:

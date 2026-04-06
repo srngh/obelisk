@@ -23,15 +23,11 @@ import gi
 
 gi.require_version('Vte', '3.91')
 
-from gi.repository import Adw, Gdk, GLib, Vte
+from gi.repository import Adw, GLib, Gdk, Gtk, Vte
 
 
 class ObTerm(Vte.Terminal):
     __gtype_name__ = 'ObTerm'
-
-    # term = Vte.Terminal()
-    # pty = Vte.Pty.new_sync(Vte.PtyFlags.DEFAULT)
-    # term.set_pty(pty)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -39,6 +35,10 @@ class ObTerm(Vte.Terminal):
         self._theme_signal_id = self.style_manager.connect('notify::dark', self.__on_theme_changed)
         self.update_colors()
         self.connect('destroy', self.__on_destroy)
+
+        key_controller = Gtk.EventControllerKey.new()
+        key_controller.connect('key-pressed', self._on_key_press)
+        self.add_controller(key_controller)
 
     def __on_theme_changed(self, manager, param):
         self.update_colors()
@@ -75,7 +75,27 @@ class ObTerm(Vte.Terminal):
         rgba.parse(hex_color)
         return rgba
 
-    def spawn_bash(self):
+    def _on_key_press(self, controller, keyval, keycode, state):
+        has_ctrl = state & Gdk.ModifierType.CONTROL_MASK
+        has_shift = state & Gdk.ModifierType.SHIFT_MASK
+
+        if has_ctrl and has_shift and keyval in [Gdk.KEY_V, Gdk.KEY_v,]:
+            self.paste_clipboard()
+            return True
+        return False
+
+    def spawn_bash(self, tab_view):
+        """
+        Spawn a bash shell outside the Flatpak Sandbox
+
+        :param tab_view: The TabView, where the terminal is spawned in
+        :type tab_view: Adw.TabView
+        """
+        page = tab_view.add_page(self)
+        page.set_title('local shell')
+        self._page = page
+        self._tab_view = tab_view
+
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
@@ -86,11 +106,22 @@ class ObTerm(Vte.Terminal):
             None,
             -1,
             None,
-            None,
+            self.on_terminal_spawn,
             None
         )
 
-    def spawn_sh(self):
+    def spawn_sh(self, tab_view):
+        """
+        Spawn a shell inside the Flatpak Sandbox
+
+        :param tab_view: The TabView, where the terminal is spawned in
+        :type tab_view: Adw.TabView
+        """
+        page = tab_view.add_page(self)
+        page.set_title('local shell')
+        self._page = page
+        self._tab_view = tab_view
+
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
@@ -101,13 +132,16 @@ class ObTerm(Vte.Terminal):
             None,
             -1,
             None,
-            None,
+            self.on_terminal_spawn,
             None
         )
         # pty = self.get_pty()
         # pid = pty.spawn(finish)
 
     def spawn_ssh(self):
+        """
+        This is just a testing function and will be removed soon.
+        """
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
@@ -122,3 +156,50 @@ class ObTerm(Vte.Terminal):
             None
         )
 
+    def spawn_ssh_session(self, item, tab_view):
+        """
+        Spawn a SSH Session with the systems default SSH Client.
+
+        :param item: The connection item
+        :type item: ObTreeNode
+        :param tab_view: The TabView, where the terminal is spawned in
+        :type tab_view: Adw.TabView
+        """
+        page = tab_view.add_page(self)
+        page.set_title(item.name)
+        self._page = page
+        self._tab_view = tab_view
+
+        ssh_command = [
+            '/usr/bin/ssh',
+            f'{item.username}@{item.ip4_address}',
+            '-p',
+            f'{item.port}'
+            ]
+
+        self.spawn_async(
+            Vte.PtyFlags.DEFAULT,
+            None,
+            ssh_command,
+            None,
+            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            None,
+            None,
+            -1,
+            None,
+            self.on_terminal_spawn,
+            None
+        )
+
+    def on_terminal_spawn(self, terminal, pid, error, *args):
+        """
+        Triggered on Terminal spawn.
+        """
+        if error:
+            print(f'error: {error.message}')
+        else:
+            terminal.watch_child(pid)
+            terminal.connect('child-exited', self.on_command_exited)
+
+    def on_command_exited(self, terminal, status):
+        self._tab_view.close_page(self._page)

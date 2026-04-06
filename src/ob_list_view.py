@@ -83,7 +83,7 @@ class ObListView(Gtk.ListView):
             # When clicking on any empty part of the ListView
             folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
             context_menu = ObContextMenu(folder.uuid)
-            context_menu.set_parent(self.props.parent.props.parent)
+            context_menu.set_parent(self.props.parent)
             context_menu.popup_at(x, y)
             return True
         else:
@@ -102,7 +102,7 @@ class ObListView(Gtk.ListView):
 
                 # not exactly elegant, but this binds the popover to the Adw.Bin which contains the Sidebar
                 # otherwise the popover is really small an comes with an annoying scrollbar
-                self.context_menu.set_parent(self.props.parent.props.parent)
+                self.context_menu.set_parent(self.props.parent)
                 list_row = expander.get_list_row()
                 self.model.set_selected(list_row.get_position())
 

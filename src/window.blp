@@ -5,85 +5,24 @@ template $ObWindow: Adw.ApplicationWindow {
   default-height: 400;
   default-width: 600;
 
-  Adw.OverlaySplitView split_view {
-    content: Adw.ToolbarView {
-      content: Adw.ToolbarView tab_container {
-        content: Adw.TabView tab_view {};
+  Paned ob_paned {
+    end-child: main_area;
+    overflow: visible;
+    shrink-end-child: false;
+    shrink-start-child: false;
+    start-child: obelisk_sidebar;
+    wide-handle: false;
 
-        reveal-bottom-bars: false;
-
-        [top]
-        Adw.TabBar tab_bar {
-          start-action-widget: Adw.TabButton {
-            view: tab_view;
-          };
-
-          view: tab_view;
-        }
-      };
-
-      reveal-bottom-bars: false;
-
-      [top]
-      Adw.HeaderBar show_sidebar_btn {
-        show-title: false;
-
-        [start]
-        ToggleButton toggle_sidebar_btn {
-          active: true;
-          icon-name: "dock-left-symbolic";
-          tooltip-text: "Show/hide sidebar";
-        }
-
-        [end]
-        MenuButton menu_btn {
-          icon-name: "document-properties-symbolic";
-          menu-model: primary_menu;
-        }
-
-        [end]
-        Button add_tab_btn {
-          has-frame: false;
-          icon-name: "add";
-          receives-default: false;
-          tooltip-text: "Add a new tab";
-          clicked => $on_add_tab_btn_clicked();
-        }
-
-        [end]
-        Button add_item_btn {
-          has-frame: false;
-          icon-name: "add";
-          receives-default: false;
-          tooltip-text: "Add a new item";
-          clicked => $on_add_item_btn_clicked();
-        }
-
-        [start]
-        MenuButton debug_btn {
-          direction: right;
-          icon-name: "document-properties-symbolic";
-          menu-model: test_list_view_item_menu;
-        }
-
-        [start]
-        Button save_btn {
-          icon-name: "document-save-symbolic";
-          tooltip-text: "Save current configuration";
-          clicked => $on_save_btn_clicked();
-        }
-      }
-    };
-
-    max-sidebar-width: 350;
-    show-sidebar: bind toggle_sidebar_btn.active no-sync-create;
-
-    sidebar: Adw.ToolbarView obelisk_sidebar {
+    Adw.ToolbarView obelisk_sidebar {
       hexpand: true;
       hexpand-set: true;
 
       [top]
       Adw.HeaderBar {
+        show-back-button: false;
+        show-end-title-buttons: false;
+        show-start-title-buttons: false;
+
         title-widget: Label {
           label: "Obelisk";
         };
@@ -124,10 +63,78 @@ template $ObWindow: Adw.ApplicationWindow {
 
         search-mode-enabled: bind show_search_btn.active no-sync-create;
       }
-    };
+    }
 
-    sidebar-width-fraction: 0.27;
-    sidebar-width-unit: px;
+    Adw.ToolbarView main_area {
+      content: Adw.ToolbarView tab_container {
+        content: Adw.TabView tab_view {};
+
+        reveal-bottom-bars: false;
+
+        [top]
+        Adw.TabBar tab_bar {
+          autohide: false;
+          start-action-widget: Adw.TabButton {
+            view: tab_view;
+
+          };
+
+          view: tab_view;
+        }
+      };
+
+      reveal-bottom-bars: false;
+
+      [top]
+      Adw.HeaderBar show_sidebar_btn {
+        show-title: false;
+
+        [start]
+        ToggleButton toggle_sidebar_btn {
+          active: true;
+          icon-name: "dock-left-symbolic";
+          tooltip-text: "Show/hide sidebar";
+        }
+
+        [end]
+        MenuButton menu_btn {
+          icon-name: "document-properties-symbolic";
+          menu-model: primary_menu;
+        }
+
+        [end]
+        Button add_tab_btn {
+          has-frame: false;
+          icon-name: "add";
+          receives-default: false;
+          tooltip-text: "Add a new tab";
+          clicked => $on_add_tab_btn_clicked();
+        }
+        
+        [end]
+        Button add_item_btn {
+          has-frame: false;
+          icon-name: "add";
+          receives-default: false;
+          tooltip-text: "Add a new item";
+          clicked => $on_add_item_btn_clicked();
+        }
+
+        [start]
+        MenuButton debug_btn {
+          direction: right;
+          icon-name: "document-properties-symbolic";
+          menu-model: test_list_view_item_menu;
+        }
+
+        [start]
+        Button save_btn {
+          icon-name: "document-save-symbolic";
+          tooltip-text: "Save current configuration";
+          clicked => $on_save_btn_clicked();
+        }
+      }
+    }
   }
 }
 
