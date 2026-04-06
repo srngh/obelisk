@@ -117,7 +117,7 @@ class ObWindow(Adw.ApplicationWindow):
 
     def _on_connect_activate(self, action, node_uuid):
         """
-        Callback for the win.connect Signal action.
+        Callback for the win.connect Signal action. Spawns a simple SSH Session.
 
         :param action: The action calling this method.
         :type action: Gio.SimpleAction(GLib.VariantType('s'))
@@ -138,12 +138,13 @@ class ObWindow(Adw.ApplicationWindow):
 
     def on_sidebar_item_activated(self, list_view, index):
         """
-        Spawn a SSH Connection
+        Signal Callback for obelisk_list_view.activate.
 
-        TO DO: Clean up this mess
+        :param list_view: The ListView calling this method
+        :type list_view: ObListView
+        :param index: The index of the activated item
+        :type index: int
         """
-        # print(f'activated {index}')
-        # print(f'sidebar: {list_view}')
         item = list_view.get_model()[index].get_item()
 
         if not item.is_folder:
@@ -191,10 +192,10 @@ class ObWindow(Adw.ApplicationWindow):
 
         term = ObTerm()
 
-        # sel_page = self.tab_view.add_page(term).set_title('local shell')
         term.spawn_bash(self.tab_view)
         term.grab_focus()
 
+    # remove this on next commit. item creation is stable enough already
     def on_add_item_btn_clicked(self, Button):
         """
         Creates a new item in the sidebar

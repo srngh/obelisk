@@ -56,7 +56,6 @@ class ObListView(Gtk.ListView):
         # Callbacks for Context Menu
         self.action_group = Gio.SimpleActionGroup.new()
 
-        #'connect',
         for action in [
             'new_item',
             'rename_item',
@@ -75,9 +74,16 @@ class ObListView(Gtk.ListView):
             self.action_group.add_action(gaction)
 
         self.parent.insert_action_group('list_view', self.action_group)
-        # print(self.action_group.list_actions())
 
     def on_setup(self, factory, list_item):
+        """
+        Setup Method for Factory, this creates TreeWidgets when necessary.
+
+        :param factory: The factory calling this method
+        :type factory: Gtk.SignalListItemFactory
+        :param list_item: The item for which a TreeWidget shall be created
+        :type list_item: ObTreeNode
+        """
         widget = ObTreeWidget()
 
         drag_source = Gtk.DragSource()
@@ -93,6 +99,14 @@ class ObListView(Gtk.ListView):
         list_item.set_child(widget)
 
     def on_bind(self, factory, list_item):
+        """
+        Bind Method for Factory, this (re-)binds TreeWidgets to items.
+
+        :param factory: The factory calling this method
+        :type factory: Gtk.SignalListItemFactory
+        :param list_item: The item for which a TreeWidget shall be created
+        :type list_item: ObTreeNode
+        """
         list_row = list_item.get_item()
         widget = list_item.get_child()
         node = list_row.get_item()
@@ -114,6 +128,14 @@ class ObListView(Gtk.ListView):
         list_item._name_binding = binding
 
     def on_unbind(self, factory, list_item):
+        """
+        Unbind Method for Factory, this unbinds TreeWidgets from items.
+
+        :param factory: The factory calling this method
+        :type factory: Gtk.SignalListItemFactory
+        :param list_item: The item for which a TreeWidget shall be created
+        :type list_item: ObTreeNode
+        """
         if hasattr(list_item, '_name_binding') and list_item._name_binding:
             list_item._name_binding.unbind()
             list_item._name_binding = None
@@ -180,7 +202,7 @@ class ObListView(Gtk.ListView):
 
     def derefence_context_menu(self):
         """
-        This is a cleanup function, that removes leftover Popover Menus
+        This is a cleanup function. It removes leftover Popover Menus.
         """
         popover = self.context_menu
         popover.unparent(popover)
@@ -188,7 +210,7 @@ class ObListView(Gtk.ListView):
 
     def __get_tree_widget(self, x, y):
         """
-        Get the TreeExpander at X,Y coordinates.
+        Get the TreeExpander at X, Y coordinates.
 
         :param x: X coordinate
         :type x: float
@@ -220,8 +242,10 @@ class ObListView(Gtk.ListView):
         Callback for the list_view.new_item action.
         Folder Lookup has been performed in ObListView already.
 
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('s'))
         :param folder_uuid: UUID of the target folder in the sidebar
-        :type folder_uuid: GVariant
+        :type folder_uuid: GLib.VariantType('s')
         """
         try:
             self.derefence_context_menu()
@@ -313,6 +337,8 @@ class ObListView(Gtk.ListView):
         Callback for the list_view.edit_item action.
         Folder Lookup has been performed in ObListView already.
 
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('as'))
         :param uuid_array: Array containing folder_uuid and node_uuid
         :type uuid_array: GLib.VariantType('as')
         """
@@ -346,6 +372,8 @@ class ObListView(Gtk.ListView):
         Callback for the list_view.clone_item action.
         Folder Lookup has been performed in ObListView already.
 
+        :param action: The action calling this method.
+        :type action: Gio.SimpleAction(GLib.VariantType('as'))
         :param uuid_array: Array containing folder_uuid and node_uuid
         :type uuid_array: GLib.VariantType('as')
         """

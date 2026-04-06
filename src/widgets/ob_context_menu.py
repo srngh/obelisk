@@ -21,7 +21,6 @@
 from gi.repository import GLib, Gdk, Gio, Gtk
 
 
-# @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_context_menu.ui')
 class ObContextMenu(Gtk.PopoverMenu):
     __gtype_name__ = 'ObContextMenu'
 
@@ -30,10 +29,11 @@ class ObContextMenu(Gtk.PopoverMenu):
         self.folder_uuid: str = folder_uuid
         self.node_uuid = node_uuid
 
+        # TO DO: Improve logic for when Actions should connect, and when they shouldn't
+
         model = Gio.Menu.new()
 
         section_1 = Gio.Menu.new()
-
         menu_new_item = Gio.MenuItem.new('_New Item', 'list_view.new_item')
         menu_new_item.set_action_and_target_value('list_view.new_item', GLib.Variant.new_string(self.folder_uuid))
         section_1.append_item(menu_new_item)
