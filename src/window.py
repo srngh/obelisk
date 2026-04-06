@@ -304,44 +304,7 @@ class ObWindow(Adw.ApplicationWindow):
         if not item.is_folder:
             term = ObTerm()
             term.spawn_ssh_session(item, self.tab_view)
-
-            # page = self.tab_view.add_page(term)
-            # page.set_title(item.name)
-
-            # ssh_command = ['/usr/bin/ssh', f'{item.username}@{item.ip4_address}', '-p', f'{item.port}']
-
-            # term._page = page
-            # term._tab_view = self.tab_view
-
-            # term.spawn_async(
-            #     Vte.PtyFlags.DEFAULT,
-            #     None,
-            #     ssh_command,
-            #     None,
-            #     GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-            #     None,
-            #     None,
-            #     -1,
-            #     None,
-            #     term.on_terminal_spawn,
-            #     None
-            # )
-
-    def on_sidebar_item_activated_old(self, list_view, index):
-        """
-        Spawn a SSH Connection
-
-        TO DO: Clean up this mess
-        """
-        print(f'activated {index}')
-        print(f'sidebar: {list_view}')
-        # model = list_view.get_model()
-        item = list_view.get_model()[index].get_item()
-        term = ObTerm()
-
-        sel_page = self.tab_view.add_page(term).set_title(item.name)
-        term.spawn_ssh()
-
+            term.grab_focus()
 
     # Sidebar UI Callbacks
 
@@ -383,8 +346,8 @@ class ObWindow(Adw.ApplicationWindow):
 
         term = ObTerm()
 
-        sel_page = self.tab_view.add_page(term).set_title('local shell')
-        term.spawn_sh()
+        # sel_page = self.tab_view.add_page(term).set_title('local shell')
+        term.spawn_bash(self.tab_view)
         term.grab_focus()
 
     def on_add_item_btn_clicked(self, Button):

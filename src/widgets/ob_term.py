@@ -84,7 +84,18 @@ class ObTerm(Vte.Terminal):
             return True
         return False
 
-    def spawn_bash(self):
+    def spawn_bash(self, tab_view):
+        """
+        Spawn a bash shell outside the Flatpak Sandbox
+
+        :param tab_view: The TabView, where the terminal is spawned in
+        :type tab_view: Adw.TabView
+        """
+        page = tab_view.add_page(self)
+        page.set_title('local shell')
+        self._page = page
+        self._tab_view = tab_view
+
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
@@ -95,11 +106,22 @@ class ObTerm(Vte.Terminal):
             None,
             -1,
             None,
-            None,
+            self.on_terminal_spawn,
             None
         )
 
-    def spawn_sh(self):
+    def spawn_sh(self, tab_view):
+        """
+        Spawn a shell inside the Flatpak Sandbox
+
+        :param tab_view: The TabView, where the terminal is spawned in
+        :type tab_view: Adw.TabView
+        """
+        page = tab_view.add_page(self)
+        page.set_title('local shell')
+        self._page = page
+        self._tab_view = tab_view
+
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
@@ -110,13 +132,16 @@ class ObTerm(Vte.Terminal):
             None,
             -1,
             None,
-            None,
+            self.on_terminal_spawn,
             None
         )
         # pty = self.get_pty()
         # pid = pty.spawn(finish)
 
     def spawn_ssh(self):
+        """
+        This is just a testing function and will be removed soon.
+        """
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.environ['HOME'],
@@ -132,13 +157,25 @@ class ObTerm(Vte.Terminal):
         )
 
     def spawn_ssh_session(self, item, tab_view):
+        """
+        Spawn a SSH Session with the systems default SSH Client.
 
+        :param item: The connection item
+        :type item: ObTreeNode
+        :param tab_view: The TabView, where the terminal is spawned in
+        :type tab_view: Adw.TabView
+        """
         page = tab_view.add_page(self)
         page.set_title(item.name)
         self._page = page
         self._tab_view = tab_view
 
-        ssh_command = ['/usr/bin/ssh', f'{item.username}@{item.ip4_address}', '-p', f'{item.port}']
+        ssh_command = [
+            '/usr/bin/ssh',
+            f'{item.username}@{item.ip4_address}',
+            '-p',
+            f'{item.port}'
+            ]
 
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
