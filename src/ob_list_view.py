@@ -57,7 +57,6 @@ class ObListView(Gtk.ListView):
         self.action_group = Gio.SimpleActionGroup.new()
 
         for action in [
-            'new_item',
             'rename_item',
             'remove_item',
         ]:
@@ -66,6 +65,7 @@ class ObListView(Gtk.ListView):
             self.action_group.add_action(gaction)
 
         for action in [
+            'new_item',
             'edit_item',
             'clone_item',
         ]:
@@ -237,7 +237,7 @@ class ObListView(Gtk.ListView):
 
         return None
 
-    def _on_new_item_activate(self, action, folder_uuid):
+    def _on_new_item_activate(self, action, param_array):
         """
         Callback for the list_view.new_item action.
         Folder Lookup has been performed in ObListView already.
@@ -252,16 +252,21 @@ class ObListView(Gtk.ListView):
         except AttributeError:
             pass
 
-        if folder_uuid is not None:
+        if param_array is not None:
+            string_list = param_array.get_strv()
+            item_type = string_list[0]
+            folder_uuid = string_list[1]
+
+        if param_array is not None:
             # TO DO: don't use the root list store anymore
-            uuid = folder_uuid.get_string()
+            uuid = folder_uuid
             if uuid != '00000000-0000-0000-0000-000000000000':
                 folder = self.config.get_node_by_uuid(uuid)
             else:
                 folder = ObTreeNode(name='root', uuid=uuid)
 
             if folder is not None:
-                self.item_dialog = ObEditItemDialog(folder=folder, dialog_mode='new_node')
+                self.item_dialog = ObEditItemDialog(folder=folder, dialog_mode=f'new_{item_type}')
                 self.item_dialog.connect('node_submitted', self.__on_new_item_create)
                 self.item_dialog.present(self)
 
@@ -363,7 +368,7 @@ class ObListView(Gtk.ListView):
             node = self.config.get_node_by_uuid(node_uuid)
 
         # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None and not node.is_folder:
+        if folder is not None and node is not None:
             self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='edit_node')
             self.item_dialog.present(self)
 
@@ -389,6 +394,8 @@ class ObListView(Gtk.ListView):
             folder_uuid = string_list[0]
             node_uuid = string_list[1]
 
+        print(f'{node_uuid} has parent: {folder_uuid}')
+
         if folder_uuid != '00000000-0000-0000-0000-000000000000':
             folder = self.config.get_node_by_uuid(folder_uuid)
         else:
@@ -398,7 +405,7 @@ class ObListView(Gtk.ListView):
             node = self.config.get_node_by_uuid(node_uuid)
 
         # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None and not node.is_folder:
+        if folder is not None and node is not None:
             self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='clone_node')
             self.item_dialog.connect('node_submitted', self.__on_new_item_create)
             self.item_dialog.present(self)

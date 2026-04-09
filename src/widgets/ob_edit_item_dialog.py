@@ -65,12 +65,18 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         self.node = node
 
         if self.node is not None:
-            self.load_node_into_dialog()
+            self.load_node_into_dialog(self.node.is_folder)
 
         self.port_input.set_value(22)
 
         self.confirm_button.connect('clicked', self.on_confirm)
         self.cancel_button.connect('clicked', self.on_cancel)
+
+        if self.dialog_mode == 'new_folder':
+            list_box = self.hostname_input.props.parent
+            list_box.remove(self.hostname_input)
+            list_box.remove(self.port_input)
+            super().set_title('Add a new Folder')
 
     def on_confirm(self, Button):
         """
@@ -89,13 +95,23 @@ class ObEditItemDialog(Adw.PreferencesDialog):
                     self.close()
             case 'edit_node':
                 try:
-                    self.__edit_node()
+                    if self.node.isfolder:
+                        self.__edit_folder()
+                    else:
+                        self.__edit_node()
                 finally:
                     self.close()
             case 'clone_node':
                 try:
-                    self.__clone_node()
+                    self.__clone_node(self.node.is_folder)
                     self.emit('node_submitted', self.node, self.folder)
+                finally:
+                    self.close()
+            case 'new_folder':
+                node = self.__create_new_folder()
+                try:
+                    if node is not None:
+                        self.emit('node_submitted', self.node, self.folder)
                 finally:
                     self.close()
 
@@ -108,13 +124,19 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         """
         self.close()
 
-    def load_node_into_dialog(self):
+    def load_node_into_dialog(self, is_folder):
         """
         Load an Items content into the dialog.
         """
-        self.hostname_input.set_text(self.node.ip4_address)
-        self.connection_name_input.set_text(self.node.name)
-        self.username_input.set_text(self.node.username)
+        if not is_folder:
+            self.hostname_input.set_text(self.node.ip4_address)
+            self.connection_name_input.set_text(self.node.name)
+            self.username_input.set_text(self.node.username)
+        else:
+            self.connection_name_input.set_text(self.node.name)
+            list_box = self.hostname_input.props.parent
+            list_box.remove(self.hostname_input)
+            list_box.remove(self.port_input)
         pass
 
     def __create_new_node(self) -> ObTreeNode:
@@ -163,6 +185,27 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             print(e)
         return None
 
+    def __create_new_folder(self) -> ObTreeNode:
+        """
+        Create a new Folder from Dialog Input.
+
+        :return: A new Folder
+        :rtype: ObTreeNode
+        """
+        try:
+            name = self.connection_name_input.get_text()
+            if self.node is None and name != '':
+                self.node = ObTreeNode(
+                    name=name,
+                    uuid=str(uuid4()),
+                    is_folder=True
+                )
+            return self.node
+
+        except netaddr.AddrFormatError as e:
+            print(e)
+        return None
+
     def __edit_node(self):
         try:
             ip = netaddr.IPAddress(self.hostname_input.get_text())
@@ -183,26 +226,40 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             print(e)
         return None
 
-    def __clone_node(self):
+    def __edit_folder(self):
+        pass
+
+    def __clone_node(self, is_folder):
         try:
-            ip = netaddr.IPAddress(self.hostname_input.get_text())
-            port = self.port_input.get_value()
-            name = self.connection_name_input.get_text() or ip
-            username = self.username_input.get_text() or os.getlogin()
-            self.node = ObTreeNode(
-                name=name,
-                uuid=str(uuid4())
-            )
-            if ip.version == 4:
-                self.node.ip4_address = str(ip)
-            elif ip.version == 6:
-                self.node.ip6_address = str(ip)
-            self.node.name = name
-            self.node.username = username
-            self.node.protocol = 'ssh'
-            self.node.port = port
-            self.node.auth = 'pubkey'
-            return self.node
+            if is_folder:
+                # TO DO
+                name = self.connection_name_input.get_text()
+                if self.node is None and name != '':
+                    self.node = ObTreeNode(
+                        name=name,
+                        uuid=str(uuid4()),
+                        is_folder=True
+                    )
+                return self.node
+            else:
+                ip = netaddr.IPAddress(self.hostname_input.get_text())
+                port = self.port_input.get_value()
+                name = self.connection_name_input.get_text() or ip
+                username = self.username_input.get_text() or os.getlogin()
+                self.node = ObTreeNode(
+                    name=name,
+                    uuid=str(uuid4())
+                )
+                if ip.version == 4:
+                    self.node.ip4_address = str(ip)
+                elif ip.version == 6:
+                    self.node.ip6_address = str(ip)
+                self.node.name = name
+                self.node.username = username
+                self.node.protocol = 'ssh'
+                self.node.port = port
+                self.node.auth = 'pubkey'
+                return self.node
 
         except netaddr.AddrFormatError as e:
             print(e)
