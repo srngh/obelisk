@@ -34,9 +34,13 @@ class ObContextMenu(Gtk.PopoverMenu):
         model = Gio.Menu.new()
 
         section_1 = Gio.Menu.new()
-        menu_new_item = Gio.MenuItem.new('_New Item', 'list_view.new_item')
-        menu_new_item.set_action_and_target_value('list_view.new_item', GLib.Variant.new_string(self.folder_uuid))
+        menu_new_item = Gio.MenuItem.new('_New Connection', 'list_view.new_item')
+        menu_new_item.set_action_and_target_value('list_view.new_item', GLib.Variant.new_strv(['item', self.folder_uuid]))
         section_1.append_item(menu_new_item)
+
+        menu_new_folder = Gio.MenuItem.new('_New Folder', 'list_view.new_item')
+        menu_new_folder.set_action_and_target_value('list_view.new_item', GLib.Variant.new_strv(['folder', self.folder_uuid]))
+        section_1.append_item(menu_new_folder)
         model.append_section(None, section_1)
 
         section_2 = Gio.Menu.new()

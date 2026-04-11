@@ -35,13 +35,13 @@ class ObConfig(GObject.Object, Gio.ListModel):
     This class holds the configuration of a loaded config file.
     """
 
-    def __init__(self, filename=None, **kwargs):
+    def __init__(self, is_default_handler: bool, filename: str = None, **kwargs):
         super().__init__(**kwargs)
         self.autosave = False
         self.filename = filename
         self.config_type = 'obelisk'
 
-        self.default_handler = ConfigFileHandlerFactory().create_handler('obelisk', self.filename)
+        self.default_handler = ConfigFileHandlerFactory().create_handler('obelisk', self.filename, is_default_handler)
         self.default_handler.load_config()
         self.ob_list_store_model = merge_configs(self.default_handler)
 
@@ -59,8 +59,8 @@ class ObConfig(GObject.Object, Gio.ListModel):
         - Error handling
         """
         self.prepare_model_for_write()
-        home_dir = Path.home()
-        self.default_handler.filename = f'{home_dir}/.config/obelisk/config_write_test.yaml'
+        # home_dir = Path.home()
+        # self.default_handler.filename = f'{home_dir}/.config/obelisk/config_write_test.yaml'
         # self.default_handler.filename = 'config.yaml'
         self.default_handler.write_config()
 

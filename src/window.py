@@ -100,12 +100,18 @@ class ObWindow(Adw.ApplicationWindow):
 
         # Config loading logic, pretty bad atm
         home_dir = Path.home()
-        self.config = ObConfig(filename=f'{home_dir}/.config/obelisk/config_write_test.yaml')
+        self.config = ObConfig(
+            filename = f'{home_dir}/.config/obelisk/config_write_test.yaml',
+            # filename = f'{home_dir}/.config/obelisk/test_config.yaml',
+            is_default_handler = True
+        )
 
         # Wrapping the ListView in a Bin makes the ContextMenu a better size
         adw_bin = Adw.Bin()
-        adw_bin.set_child(ObListView(config=self.config, parent=adw_bin))
-        self.obelisk_list_view = adw_bin.get_child()
+        scrolled_window = Gtk.ScrolledWindow.new()
+        adw_bin.set_child(scrolled_window)
+        scrolled_window.set_child(ObListView(config=self.config, parent=adw_bin))
+        self.obelisk_list_view = scrolled_window.get_child()
         self.obelisk_sidebar.set_content(adw_bin)
         self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
         

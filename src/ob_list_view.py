@@ -57,7 +57,6 @@ class ObListView(Gtk.ListView):
         self.action_group = Gio.SimpleActionGroup.new()
 
         for action in [
-            'new_item',
             'rename_item',
             'remove_item',
         ]:
@@ -66,6 +65,7 @@ class ObListView(Gtk.ListView):
             self.action_group.add_action(gaction)
 
         for action in [
+            'new_item',
             'edit_item',
             'clone_item',
         ]:
@@ -81,10 +81,11 @@ class ObListView(Gtk.ListView):
 
         :param factory: The factory calling this method
         :type factory: Gtk.SignalListItemFactory
-        :param list_item: The item for which a TreeWidget shall be created
-        :type list_item: ObTreeNode
+        :param list_item: The ListItem passed by the factory
+        :type list_item: Gtk.ListItem
         """
         widget = ObTreeWidget()
+        widget.image.set_visible(False)
 
         drag_source = Gtk.DragSource()
         drag_source.set_actions(Gdk.DragAction.MOVE)
@@ -104,8 +105,8 @@ class ObListView(Gtk.ListView):
 
         :param factory: The factory calling this method
         :type factory: Gtk.SignalListItemFactory
-        :param list_item: The item for which a TreeWidget shall be created
-        :type list_item: ObTreeNode
+        :param list_item: The ListItem passed by the factory
+        :type list_item: Gtk.ListItem
         """
         list_row = list_item.get_item()
         widget = list_item.get_child()
@@ -114,10 +115,11 @@ class ObListView(Gtk.ListView):
 
         widget.expander.set_list_row(list_row)
         widget.update_bind()
-        if not node.is_folder:
-            image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
-            image.set_icon_size(1)
-            widget.insert_child_after(image, widget.expander)
+
+        if node.is_folder:
+            widget.image.set_visible(False)
+        else:
+            widget.image.set_visible(True)
 
         binding = node.bind_property(
             'name',
@@ -133,12 +135,14 @@ class ObListView(Gtk.ListView):
 
         :param factory: The factory calling this method
         :type factory: Gtk.SignalListItemFactory
-        :param list_item: The item for which a TreeWidget shall be created
-        :type list_item: ObTreeNode
+        :param list_item: The ListItem passed by the factory
+        :type list_item: Gtk.ListItem
         """
+        widget = list_item.get_child()
         if hasattr(list_item, '_name_binding') and list_item._name_binding:
             list_item._name_binding.unbind()
             list_item._name_binding = None
+        widget.image.set_visible(False)
 
     def __on_button_press(self, gesture, npress, x, y):
         """
@@ -174,7 +178,7 @@ class ObListView(Gtk.ListView):
             # When clicking on any empty part of the ListView
             folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
             context_menu = ObContextMenu(folder.uuid)
-            context_menu.set_parent(self.props.parent)
+            context_menu.set_parent(self.parent)
             context_menu.popup_at(x, y)
             return True
         else:
@@ -193,7 +197,7 @@ class ObListView(Gtk.ListView):
 
                 # not exactly elegant, but this binds the popover to the Adw.Bin which contains the Sidebar
                 # otherwise the popover is really small an comes with an annoying scrollbar
-                self.context_menu.set_parent(self.props.parent)
+                self.context_menu.set_parent(self.parent)
                 list_row = expander.get_list_row()
                 self.model.set_selected(list_row.get_position())
 
@@ -237,7 +241,7 @@ class ObListView(Gtk.ListView):
 
         return None
 
-    def _on_new_item_activate(self, action, folder_uuid):
+    def _on_new_item_activate(self, action, param_array):
         """
         Callback for the list_view.new_item action.
         Folder Lookup has been performed in ObListView already.
@@ -252,16 +256,21 @@ class ObListView(Gtk.ListView):
         except AttributeError:
             pass
 
-        if folder_uuid is not None:
+        if param_array is not None:
+            string_list = param_array.get_strv()
+            item_type = string_list[0]
+            folder_uuid = string_list[1]
+
+        if param_array is not None:
             # TO DO: don't use the root list store anymore
-            uuid = folder_uuid.get_string()
+            uuid = folder_uuid
             if uuid != '00000000-0000-0000-0000-000000000000':
                 folder = self.config.get_node_by_uuid(uuid)
             else:
                 folder = ObTreeNode(name='root', uuid=uuid)
 
             if folder is not None:
-                self.item_dialog = ObEditItemDialog(folder=folder, dialog_mode='new_node')
+                self.item_dialog = ObEditItemDialog(folder=folder, dialog_mode=f'new_{item_type}')
                 self.item_dialog.connect('node_submitted', self.__on_new_item_create)
                 self.item_dialog.present(self)
 
@@ -363,7 +372,7 @@ class ObListView(Gtk.ListView):
             node = self.config.get_node_by_uuid(node_uuid)
 
         # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None and not node.is_folder:
+        if folder is not None and node is not None:
             self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='edit_node')
             self.item_dialog.present(self)
 
@@ -389,6 +398,8 @@ class ObListView(Gtk.ListView):
             folder_uuid = string_list[0]
             node_uuid = string_list[1]
 
+        print(f'{node_uuid} has parent: {folder_uuid}')
+
         if folder_uuid != '00000000-0000-0000-0000-000000000000':
             folder = self.config.get_node_by_uuid(folder_uuid)
         else:
@@ -398,7 +409,7 @@ class ObListView(Gtk.ListView):
             node = self.config.get_node_by_uuid(node_uuid)
 
         # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None and not node.is_folder:
+        if folder is not None and node is not None:
             self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='clone_node')
             self.item_dialog.connect('node_submitted', self.__on_new_item_create)
             self.item_dialog.present(self)
@@ -440,9 +451,11 @@ class ObTreeWidget(Gtk.Box):
             spacing=2
         )
         self.expander = ObTreeExpander()
+        self.image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
         self.label = Gtk.Label(halign=Gtk.Align.START)
 
         self.append(self.expander)
+        self.append(self.image)
         self.append(self.label)
 
     def update_bind(self):
@@ -452,3 +465,9 @@ class ObTreeWidget(Gtk.Box):
     def clear_bind(self):
         item = self.expander.props.item
         item.disconnect_by_func(self.expander.on_item_n_items_notify)
+
+
+#if not node.is_folder:
+#    image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
+#    image.set_icon_size(1)
+#    widget.insert_child_after(image, widget.expander)

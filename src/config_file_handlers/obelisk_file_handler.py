@@ -33,11 +33,16 @@ class ObeliskFileHandler:
     The default file handler for Obelisk
     """
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, is_default_handler: bool):
         self.filename = filename
-        self.name = os.path.basename(filename)
+
         self.uuid = uuid4()
         self.connections: list
+
+        if is_default_handler:
+            self.name = 'Default Config'
+        else:
+            self.name = os.path.basename(filename)
 
     def load_config(self):
         with open(self.filename) as file:
@@ -49,14 +54,14 @@ class ObeliskFileHandler:
 
 
 def get_loader():
-    loader = yaml.SafeLoader
+    loader = yaml.CSafeLoader
     loader.add_constructor('!Folder', folder_constructor)
     loader.add_constructor('!Item', item_constructor)
     return loader
 
 
 def get_dumper():
-    safe_dumper = yaml.SafeDumper
+    safe_dumper = yaml.CSafeDumper
     safe_dumper.add_representer(Folder, folder_representer)
     safe_dumper.add_representer(Item, item_representer)
     return safe_dumper
