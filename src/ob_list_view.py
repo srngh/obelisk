@@ -81,10 +81,11 @@ class ObListView(Gtk.ListView):
 
         :param factory: The factory calling this method
         :type factory: Gtk.SignalListItemFactory
-        :param list_item: The item for which a TreeWidget shall be created
-        :type list_item: ObTreeNode
+        :param list_item: The ListItem passed by the factory
+        :type list_item: Gtk.ListItem
         """
         widget = ObTreeWidget()
+        widget.image.set_visible(False)
 
         drag_source = Gtk.DragSource()
         drag_source.set_actions(Gdk.DragAction.MOVE)
@@ -104,8 +105,8 @@ class ObListView(Gtk.ListView):
 
         :param factory: The factory calling this method
         :type factory: Gtk.SignalListItemFactory
-        :param list_item: The item for which a TreeWidget shall be created
-        :type list_item: ObTreeNode
+        :param list_item: The ListItem passed by the factory
+        :type list_item: Gtk.ListItem
         """
         list_row = list_item.get_item()
         widget = list_item.get_child()
@@ -114,10 +115,11 @@ class ObListView(Gtk.ListView):
 
         widget.expander.set_list_row(list_row)
         widget.update_bind()
-        if not node.is_folder:
-            image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
-            image.set_icon_size(1)
-            widget.insert_child_after(image, widget.expander)
+
+        if node.is_folder:
+            widget.image.set_visible(False)
+        else:
+            widget.image.set_visible(True)
 
         binding = node.bind_property(
             'name',
@@ -133,12 +135,14 @@ class ObListView(Gtk.ListView):
 
         :param factory: The factory calling this method
         :type factory: Gtk.SignalListItemFactory
-        :param list_item: The item for which a TreeWidget shall be created
-        :type list_item: ObTreeNode
+        :param list_item: The ListItem passed by the factory
+        :type list_item: Gtk.ListItem
         """
+        widget = list_item.get_child()
         if hasattr(list_item, '_name_binding') and list_item._name_binding:
             list_item._name_binding.unbind()
             list_item._name_binding = None
+        widget.image.set_visible(False)
 
     def __on_button_press(self, gesture, npress, x, y):
         """
@@ -174,7 +178,7 @@ class ObListView(Gtk.ListView):
             # When clicking on any empty part of the ListView
             folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
             context_menu = ObContextMenu(folder.uuid)
-            context_menu.set_parent(self.props.parent)
+            context_menu.set_parent(self.parent)
             context_menu.popup_at(x, y)
             return True
         else:
@@ -193,7 +197,7 @@ class ObListView(Gtk.ListView):
 
                 # not exactly elegant, but this binds the popover to the Adw.Bin which contains the Sidebar
                 # otherwise the popover is really small an comes with an annoying scrollbar
-                self.context_menu.set_parent(self.props.parent)
+                self.context_menu.set_parent(self.parent)
                 list_row = expander.get_list_row()
                 self.model.set_selected(list_row.get_position())
 
@@ -447,9 +451,11 @@ class ObTreeWidget(Gtk.Box):
             spacing=2
         )
         self.expander = ObTreeExpander()
+        self.image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
         self.label = Gtk.Label(halign=Gtk.Align.START)
 
         self.append(self.expander)
+        self.append(self.image)
         self.append(self.label)
 
     def update_bind(self):
@@ -459,3 +465,9 @@ class ObTreeWidget(Gtk.Box):
     def clear_bind(self):
         item = self.expander.props.item
         item.disconnect_by_func(self.expander.on_item_n_items_notify)
+
+
+#if not node.is_folder:
+#    image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
+#    image.set_icon_size(1)
+#    widget.insert_child_after(image, widget.expander)
