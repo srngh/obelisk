@@ -26,18 +26,16 @@ These are the features I need or want.
 - [ ] SSH Jumphost Support
 - [ ] Inherit variables from folders
 - [ ] Different Config Backends to import / export connections
-- [ ] Convert Configs from other backends to the obelisk format (yaml)
+- [ ] Convert Configs from other backends to the obelisk format (sqlite)
 - [ ] Loading Several Configs at the same time without conflicts
 - [ ] Password backends (Keyring, password managers)
 
 ### Nice to have
 - [ ] Split View Terminals
-- [ ] Color highlighting of terminal output based on pattern matching (-> chromaterm)
+- [ ] Color highlighting of terminal output based on pattern matching (-> chromaterm?)
 
 ## Build Instructions
 This projects is built in Gnome Builder.
-~~Since the flatpak build environment has died several times on me, I've moved to a Fedora 43 Dev Container with toolbx.~~
-I have since moved back to the regular flatpak build environment.
 
 ### Fedora
 #### 1. Clone the repository
@@ -50,8 +48,11 @@ cd obelisk
 
 #### 2. Install dependencies
 ```bash
-sudo dnf install meson msgfmt git cmake glib2-devel gtk4 python3-gobject  libadwaita desktop-file-utils vte291-gtk4 python3-pip gobject-introspection
+sudo dnf install meson msgfmt git cmake glib2-devel gtk4 python3-gobject libadwaita desktop-file-utils vte291-gtk4 python3-pip gobject-introspection
 ```
 
 #### 3. Open the project in Gnome Builder and run it
 ![Screenshot of running Obelisk from Gnome Builder](https://github.com/srngh/obelisk/blob/UI/assets/images/screenshot.png?raw=true)
+
+If the project doesn't build properly, feel free to get in touch at @soern:matrix.org.
+
