@@ -17,7 +17,9 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from uuid import uuid4
 from gi.repository import GLib, GObject, Gdk, Gio, Gtk
+
 
 from .widgets.ob_context_menu import ObContextMenu
 from .widgets.ob_edit_item_dialog import ObEditItemDialog
@@ -147,8 +149,8 @@ class ObDBListView(Gtk.ListView):
     def __on_button_press(self, gesture, npress, x, y):
         """
         Opens a Context Menu pointing to the referenced Item in the ListView.
-        If a folder is clicked, its' UUID will be passed to the context menu.
-        If a node is clicked, the parent folders' UUID will be passed to the context menu.
+        If a folder is clicked, its UUID will be passed to the context menu.
+        If a node is clicked, the parent folders UUID will be passed to the context menu.
         If the empty part is clicked, the parent is assumed to be the root of the ListView.
 
         :param gesture: The released gesture invoking this function
@@ -161,7 +163,6 @@ class ObDBListView(Gtk.ListView):
         :type y: float
         :rtype: bool
         """
-        # TO DO: Pass the full item to the ContextMenu, so edit and clone methods can work with the same dialog
         tree_widget = self.__get_tree_widget(x, y)
         if hasattr(tree_widget, 'expander'):
             expander = tree_widget.expander
@@ -262,20 +263,14 @@ class ObDBListView(Gtk.ListView):
             item_type = string_list[0]
             folder_uuid = string_list[1]
 
-        print(f'new item in {item_type}, {folder_uuid}')
-
-        if param_array is not None:
-            # TO DO: don't use the root list store anymore
-            uuid = folder_uuid
-            if uuid != '00000000-0000-0000-0000-000000000000':
-                folder = self.config.get_node_by_uuid(uuid)
-            else:
-                folder = ObTreeNode(name='root', uuid=uuid)
-
-            if folder is not None:
-                self.item_dialog = ObEditItemDialog(folder=folder, dialog_mode=f'new_{item_type}')
-                self.item_dialog.connect('node_submitted', self.__on_new_item_create)
-                self.item_dialog.present(self)
+        if folder_uuid == '00000000-0000-0000-0000-000000000000':
+            self.item_dialog = ObEditItemDialog(parent_uuid=None, node_uuid=str(uuid4()), conn=self.config.handler.conn, dialog_mode=f'new_{item_type}')
+            self.item_dialog.connect('refresh_parent', self.__refresh_parent)
+            self.item_dialog.present(self)
+        elif folder_uuid != '':
+            self.item_dialog = ObEditItemDialog(parent_uuid=folder_uuid, node_uuid=str(uuid4()), conn=self.config.handler.conn, dialog_mode=f'new_{item_type}')
+            self.item_dialog.connect('refresh_parent', self.__refresh_parent)
+            self.item_dialog.present(self)
 
     def __on_new_item_create(self, dialog, node, folder):
         """
@@ -359,25 +354,39 @@ class ObDBListView(Gtk.ListView):
         except AttributeError:
             pass
 
-        folder = None
         node = None
         if uuid_array is not None:
             string_list = uuid_array.get_strv()
             folder_uuid = string_list[0]
             node_uuid = string_list[1]
 
-        if folder_uuid != '00000000-0000-0000-0000-000000000000':
-            folder = self.config.get_node_by_uuid(folder_uuid)
-        else:
-            folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
-
         if node_uuid != '':
             node = self.config.get_node_by_uuid(node_uuid)
 
         # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None:
-            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='edit_node')
+        if node is not None:
+            self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_id, node_uuid=node.uuid, conn=self.config.handler.conn, dialog_mode='edit_node')
+            self.item_dialog.connect('refresh_parent', self.__refresh_parent)
             self.item_dialog.present(self)
+
+    def __refresh_parent(self, dialog, parent_uuid):
+        """
+        Callback for ObEditItemDialog.
+        Refreshes a Folder, so the UI represents the state of the database.
+        """
+        del dialog
+
+        if parent_uuid not in self.config.active_stores:
+            if parent_uuid is None:
+                new_data = self.config.get_children(parent_id=None, uuid='00000000-0000-0000-0000-000000000000')
+                self.config.root_store.splice(0, self.config.root_store.get_n_items(), new_data)
+            return
+
+        store = self.config.active_stores[parent_uuid]
+
+        new_children = self.config.get_children(parent_uuid)
+
+        store.splice(0, store.get_n_items(), new_children)
 
     def _on_clone_item_activate(self, action, uuid_array):
         """
@@ -394,27 +403,18 @@ class ObDBListView(Gtk.ListView):
         except AttributeError:
             pass
 
-        folder = None
         node = None
         if uuid_array is not None:
             string_list = uuid_array.get_strv()
             folder_uuid = string_list[0]
             node_uuid = string_list[1]
 
-        print(f'{node_uuid} has parent: {folder_uuid}')
-
-        if folder_uuid != '00000000-0000-0000-0000-000000000000':
-            folder = self.config.get_node_by_uuid(folder_uuid)
-        else:
-            folder = ObTreeNode(name='root', uuid=uuid)
-
         if node_uuid != '':
             node = self.config.get_node_by_uuid(node_uuid)
 
-        # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None:
-            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='clone_node')
-            self.item_dialog.connect('node_submitted', self.__on_new_item_create)
+        if node is not None:
+            self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_id, node_uuid=node.uuid, conn=self.config.handler.conn, dialog_mode='clone_node')
+            self.item_dialog.connect('refresh_parent', self.__refresh_parent)
             self.item_dialog.present(self)
 
     # Drag and Drop Methods

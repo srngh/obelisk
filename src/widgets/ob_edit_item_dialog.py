@@ -19,13 +19,13 @@
 
 import os
 from uuid import uuid4
+from dataclasses import dataclass
 
 from gi.repository import Adw, GObject, Gtk
 
 import netaddr
 
 from .ob_tree_node import ObTreeNode
-
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
@@ -44,6 +44,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
     __gsignals__ = {
         'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObTreeNode)),
+        'refresh_parent': (GObject.SignalFlags.RUN_LAST, None, (str,)),
     }
 
     # Template Elements
@@ -59,14 +60,18 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
-    def __init__(self, folder, node=None, dialog_mode='new_node', **kwargs):
+    def __init__(self, parent_uuid=None, node_uuid=None, conn=None, dialog_mode='new_node', **kwargs):
         super().__init__(**kwargs)
         self.dialog_mode = dialog_mode
-        self.folder = folder
-        self.node = node
+        self.parent_uuid = parent_uuid
+        self.node_uuid = node_uuid
+        self.conn = conn
 
-        if self.node is not None:
-            self.load_node_into_dialog(self.node.is_folder)
+        if self.node_uuid is not None:
+            self.node = self.fetch_item_data()
+            self.load_data_into_dialog()
+        else:
+            self.close()
 
         self.port_input.set_value(22)
 
@@ -77,6 +82,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             list_box = self.hostname_input.props.parent
             list_box.remove(self.hostname_input)
             list_box.remove(self.port_input)
+            self.connection_name_input.set_title('Folder Name')
             super().set_title('Add a new Folder')
 
     def on_confirm(self, Button):
@@ -87,32 +93,31 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         :type Button: Gtk.Button
         """
         match self.dialog_mode:
-            case 'new_node':
-                node = self.__create_new_node()
+            case 'new_item':
                 try:
-                    if node is not None:
-                        self.emit('node_submitted', self.node, self.folder)
+                    self.__edit_node()
+                    self.emit('refresh_parent', self.parent_uuid)
                 finally:
                     self.close()
             case 'edit_node':
                 try:
-                    if self.node.isfolder:
+                    if self.node.is_folder:
                         self.__edit_folder()
                     else:
                         self.__edit_node()
                 finally:
+                    self.emit('refresh_parent', self.parent_uuid)
                     self.close()
             case 'clone_node':
                 try:
-                    self.__clone_node(self.node.is_folder)
-                    self.emit('node_submitted', self.node, self.folder)
+                    self.__clone_node()
+                    self.emit('refresh_parent', self.parent_uuid)
                 finally:
                     self.close()
             case 'new_folder':
-                node = self.__create_new_folder()
                 try:
-                    if node is not None:
-                        self.emit('node_submitted', self.node, self.folder)
+                    self.__edit_folder()
+                    self.emit('refresh_parent', self.parent_uuid)
                 finally:
                     self.close()
 
@@ -140,129 +145,147 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             list_box.remove(self.port_input)
         pass
 
-    def __create_new_node(self) -> ObTreeNode:
+    def fetch_item_data(self):
         """
-        Create a new Item from Dialog Input.
+        Perform a database lookup of the items data and load everything into the dialog.
+        """
+        node_uuid = self.node_uuid
+        cursor = self.conn.cursor()
 
-        :return: A new Item
-        :rtype: ObTreeNode
-        """
-        """
-        Validation Notes
-        - is hostname_input
-            - valid IPv4 address
-            - valid IPv6 address
-            - valid FQDN
-        - is username set, else use current users name
-        - auth is kbd_interactive by default
-        - jump host can be empty (ignored for now)
-        - proxy can be empty (ignored for now)
-        - if connection title is empty, use ip address as title
-        - port is 22 by default
-            - Port cant be over 65535
-        """
-        try:
-            ip = netaddr.IPAddress(self.hostname_input.get_text())
-            port = self.port_input.get_value()
-            name = self.connection_name_input.get_text() or ip
-            username = self.username_input.get_text() or os.getlogin()
+        # get all data of the item from the db
+        if node_uuid is not None:
+            cursor.execute(
+                'SELECT name, is_folder, parent_id, address, port, username, password FROM connections WHERE id IS ?',
+                (node_uuid,)
+            )
+            result = cursor.fetchone()
 
-            if self.node is None:
-                self.node = ObTreeNode(
-                    name=name,
-                    uuid=str(uuid4())
+        if result is not None:
+            node = Node(
+                uuid=node_uuid,
+                name=result[0],
+                is_folder=bool(result[1]),
+                parent_uuid=result[2],
+                address=result[3],
+                port=result[4],
+                username=result[5],
+                password=result[6]
+            )
+            return node
+        else:
+            return Node(uuid=node_uuid)
+
+    def write_data_to_db(self):
+        """
+        Write config parameters to the database.
+        """
+        node = self.node
+        cursor = self.conn.cursor()
+
+        cursor.execute('SELECT name FROM connections WHERE id is ?', (node.uuid,))
+        result = cursor.fetchone()
+
+        # Item does not exist yet
+        if result is None:
+            cursor.execute(
+                'INSERT INTO connections VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                (
+                    self.node.uuid,
+                    self.node.name,
+                    int(self.node.is_folder),
+                    self.parent_uuid,
+                    self.node.address,
+                    self.node.port,
+                    self.node.username,
+                    self.node.password,
                 )
-            if ip.version == 4:
-                self.node.ip4_address = str(ip)
-            elif ip.version == 6:
-                self.node.ip6_address = str(ip)
-            self.node.username = username
-            self.node.protocol = 'ssh'
-            self.node.port = int(port)
-            self.node.auth = 'pubkey'
-            return self.node
 
-        except netaddr.AddrFormatError as e:
-            print(e)
-        return None
+            )
+        else:
+            cursor.execute(
+                'UPDATE connections SET name = ?, is_folder = ?, address = ?, username = ?, password = ? WHERE id = ?',
+                (node.name, int(node.is_folder), node.address, node.username, node.password, node.uuid)
+            )
 
-    def __create_new_folder(self) -> ObTreeNode:
+    def load_data_into_dialog(self):
         """
-        Create a new Folder from Dialog Input.
-
-        :return: A new Folder
-        :rtype: ObTreeNode
+        Perform a database lookup of the items data and load everything into the dialog.
         """
-        try:
-            name = self.connection_name_input.get_text()
-            if self.node is None and name != '':
-                self.node = ObTreeNode(
-                    name=name,
-                    uuid=str(uuid4()),
-                    is_folder=True
-                )
-            return self.node
 
-        except netaddr.AddrFormatError as e:
-            print(e)
-        return None
+        if hasattr(self, 'node'):
+            node = self.node
+            self.connection_name_input.set_text(node.name or '')
+            self.username_input.set_text(node.username or '')
+            if not self.node.is_folder:
+                self.hostname_input.set_text(node.address or '')
+            else:
+                list_box = self.hostname_input.props.parent
+                list_box.remove(self.hostname_input)
+                list_box.remove(self.port_input)
 
     def __edit_node(self):
         try:
+            node = self.node
+
             ip = netaddr.IPAddress(self.hostname_input.get_text())
-            port = self.port_input.get_value()
-            name = self.connection_name_input.get_text() or ip
-            username = self.username_input.get_text() or os.getlogin()
-            if ip.version == 4:
-                self.node.ip4_address = str(ip)
-            elif ip.version == 6:
-                self.node.ip6_address = str(ip)
-            self.node.name = name
-            self.node.username = username
-            self.node.protocol = 'ssh'
-            self.node.port = port
-            self.node.auth = 'pubkey'
+            if ip.version == 4 or ip.version == 6:
+                node.address = ip.format()
+
+            port = int(self.port_input.get_value())
+            node.port = port
+
+            node. name = self.connection_name_input.get_text() or node.address
+            username = self.username_input.get_text()
+
+            node.parent_uuid = self.parent_uuid
+
+            username = self.username_input.get_text()
+            if username != '':
+                node.username = username
+            else:
+                node.username = None
+
+            node.protocol = 'ssh'
+
+            self.write_data_to_db()
 
         except netaddr.AddrFormatError as e:
             print(e)
-        return None
 
     def __edit_folder(self):
-        pass
+        node = self.node
+        node.name = self.connection_name_input.get_text()
+        username = self.username_input.get_text()
+        if username != '':
+            node.username = username
+        else:
+            node.username = None
 
-    def __clone_node(self, is_folder):
-        try:
-            if is_folder:
-                # TO DO
-                name = self.connection_name_input.get_text()
-                if self.node is None and name != '':
-                    self.node = ObTreeNode(
-                        name=name,
-                        uuid=str(uuid4()),
-                        is_folder=True
-                    )
-                return self.node
-            else:
-                ip = netaddr.IPAddress(self.hostname_input.get_text())
-                port = self.port_input.get_value()
-                name = self.connection_name_input.get_text() or ip
-                username = self.username_input.get_text() or os.getlogin()
-                self.node = ObTreeNode(
-                    name=name,
-                    uuid=str(uuid4())
-                )
-                if ip.version == 4:
-                    self.node.ip4_address = str(ip)
-                elif ip.version == 6:
-                    self.node.ip6_address = str(ip)
-                self.node.name = name
-                self.node.username = username
-                self.node.protocol = 'ssh'
-                self.node.port = port
-                self.node.auth = 'pubkey'
-                return self.node
+        self.write_data_to_db()
 
-        except netaddr.AddrFormatError as e:
-            print(e)
-        return None
+    def __clone_node(self):
+        """
+        Sets a new uuid to the node and calls the appropriate edit method.
+        """
+        node = self.node
+        node.uuid = str(uuid4())
+
+        if node.is_folder:
+            # TO DO: recursively clone all children of the folder as well
+            self.__edit_folder()
+        else:
+            print('henlo')
+            self.__edit_node()
+
+@dataclass
+class Node():
+    """This class only holds data in the context of the dialog is discarded imediately"""
+    uuid: str
+    name: str = None
+    is_folder: bool = False
+    parent_uuid: str = None
+    address: str = None
+    port: int = None
+    username: str = None
+    password: str = None
 

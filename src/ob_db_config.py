@@ -40,8 +40,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         self.config_type = 'obelisk'
 
         self.handler = ObeliskDBHandler(db_path=self.db_path)
-        # self.handler.load_config()
-        # self.ob_list_store_model = merge_configs(self.default_handler)
+        self.active_stores = {}
 
         self.root_store = self.get_children(parent_id=None, uuid='00000000-0000-0000-0000-000000000000')
 
@@ -60,7 +59,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         TO DO:
         - Error handling
         """
-        self.default_handler.write_config()
+        self.handler.conn.commit()
 
     def prepare_model_for_write(self):
         """
@@ -102,16 +101,31 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
             print("Could't remove node")
 
     def create_child_model(self, item, user_data=None):
+        """
+        The TreeModel create_func for working with an sqlite db.
+
+        :param item: The item to run the create_func on.
+        :type item: ObTreeNode
+        :param user_data: Optional user data
+        :type user_data: Any
+        """
         if item.is_folder:
-            return self.get_children(parent_id=item.uuid)
+            store = self.get_children(parent_id=item.uuid)
+            self.active_stores[item.uuid] = store
+            return store
         return None
 
     def get_children(self, parent_id=None, uuid=None):
         """
         Fetch all Connections belonging to parent_id.
+        The uuid of the resulting Liststore can be passed.
 
-        :param parent_id: The UUID of the parent
+        :param parent_id: The UUID of the items parent
         :type parent_id: str
+        :param uuid: The root ListStores UUID
+        :type uuid: str
+        :return: An ObListStore containing all child Nodes
+        :rtype: ObListStore
         """
         cursor = self.handler.conn.cursor()
 
@@ -127,7 +141,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         else:
             cursor.execute(
                 'SELECT id, name, is_folder FROM connections WHERE parent_id = ?',
-                (parent_id,),
+                (parent_id,)
             )
 
         rows = cursor.fetchall()
@@ -141,7 +155,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
             store.append(ObTreeNode(uuid=row[0], name=row[1], is_folder=bool(row[2]), parent_id=parent_id))
         return store
 
-    def get_node_by_uuid(self, uuid):
+    def get_node_by_uuid(self, uuid:str = None):
         """
         Get an item by its UUID.
         The item may be an ObTreeNode.
@@ -151,18 +165,26 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         :return: The item or None
         :rtype: ObTreeNode, ObListStore or None
         """
-        # root_list_store = self.ob_list_store_model
+        cursor = self.handler.conn.cursor()
+        result = None
 
-        # for index in range(root_list_store.get_n_items()):
-        #     child = root_list_store.get_item(index)
-        #     if child.uuid == uuid:
-        #         return child
-        #     elif child.is_folder:
-        #         result = iter_node_by_uuid(child, uuid)
-        #         if result is not None:
-        #             return result
-        # return None
-        pass
+        if uuid is not None:
+            cursor.execute(
+                'SELECT name, is_folder, parent_id, address, port, username FROM connections WHERE id IS ?',
+                (uuid,)
+            )
+            result = cursor.fetchone()
+
+        if result is not None:
+            node = ObTreeNode(
+                uuid=uuid,
+                name=result[0],
+                is_folder=bool(result[1]),
+                parent_id=result[2]
+                )
+            return node
+        else:
+            return None
 
     def get_folder_by_child_uuid(self, uuid):
         """
@@ -174,18 +196,27 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         :return: The ObListStore or None
         :rtype: ObListStore or None
         """
-        # root_list_store = self.ob_list_store_model
+        cursor = self.handler.conn.cursor()
+        parent_id = self.get_folder_uuid_by_child_uuid(uuid)
+        result = None
 
-        # for index in range(root_list_store.get_n_items()):
-        #     child = root_list_store.get_item(index)
-        #     if child.is_folder:
-        #         result = iter_folder_by_child_uuid(child, uuid)
-        #         if result is not None:
-        #             return result
-        # return None
-        pass
+        if parent_id is not None:
+            cursor.execute(
+                'SELECT name FROM connections WHERE id IS ?',
+                (parent_id)
+            )
+            result = cursor.fetchone()
 
-    # TO DO: is this actually needed?
+        if result is not None:
+            store = ObListStore(
+                name=result[0],
+                uuid=parent_id
+            )
+            return store
+        else:
+            return None
+
+
     def get_folder_uuid_by_child_uuid(self, uuid):
         """
         Get a folder's UUID by a child's UUID.
@@ -196,16 +227,20 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         :return: The ObListStore or None
         :rtype: ObListStore or None
         """
-        # root_list_store = self.ob_list_store_model
+        cursor = self.handler.conn.cursor()
+        result = None
 
-        # for index in range(root_list_store.get_n_items()):
-        #     child = root_list_store.get_item(index)
-        #     if child.is_folder:
-        #         result = iter_folder_uuid_by_child_uuid(child, uuid)
-        #         if result is not None:
-        #             return result
-        # return None
-        pass
+        if uuid is not None:
+            cursor.execute(
+                'SELECT parent_id FROM connections WHERE id IS ?',
+                (uuid,)
+            )
+            result = cursor.fetchone()
+
+        if result is not None:
+            return result[0]
+        else:
+            return None
 
     def run_tests(self):
         """
