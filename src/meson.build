@@ -41,13 +41,16 @@ configure_file(
 
 subdir('widgets')
 subdir('config_file_handlers')
+subdir('db_handler')
 
 obelisk_sources = [
   '__init__.py',
   'main.py',
   'window.py',
-  'ob_list_view.py',
-  'ob_config.py',
+  'ob_file_list_view.py',
+  'ob_db_list_view.py',
+  'ob_file_config.py',
+  'ob_db_config.py',
   'config.yaml',
 ]
 

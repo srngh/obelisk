@@ -26,8 +26,10 @@ from pathlib import Path
 from gi.repository import Adw
 from gi.repository import GLib, Gio, Gtk, Vte
 
-from .ob_config import ObConfig
-from .ob_list_view import ObListView
+# from .ob_file_config import ObFileConfig
+# from .ob_file_list_view import ObFileListView
+from .ob_db_config import ObDBConfig
+from .ob_db_list_view import ObDBListView
 from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_term import ObTerm
 from .widgets.ob_tree_node import ObTreeNode
@@ -44,7 +46,7 @@ class ObWindow(Adw.ApplicationWindow):
     ob_paned = Gtk.Template.Child()
     # show_search_btn = Gtk.Template.Child() # needed?
     # fav_btn = Gtk.Template.Child() # needed?
-    fav_stack = Gtk.Template.Child() 
+    fav_stack = Gtk.Template.Child()
     search_bar = Gtk.Template.Child()
 
     menu_btn = Gtk.Template.Child()
@@ -63,18 +65,18 @@ class ObWindow(Adw.ApplicationWindow):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+
         # Sidebar stuff
         self.obelisk_sidebar.set_size_request(230, -1)
         self.ob_paned.set_shrink_start_child(False)
         self.ob_paned.set_resize_start_child(False)
         self.MAX_SIDEBAR_WIDTH = 350
         self.ob_paned.set_position(230)
-        
+
         self.ob_paned.connect('notify::position', self.on_paned_position_changed)
         self._saved_sidebar_width = self.ob_paned.get_position()
         self.toggle_sidebar_btn.connect('toggled', self.on_toggle_sidebar_clicked)
-        
+
         # Actions
         self.actions = {}
 
@@ -85,7 +87,6 @@ class ObWindow(Adw.ApplicationWindow):
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
             self.actions[action] = gaction
             self.add_action(gaction)
-
 
         # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
         self.menu_btn.get_popover().add_child(ThemeSwitcher(), 'themeswitcher')
@@ -100,9 +101,10 @@ class ObWindow(Adw.ApplicationWindow):
 
         # Config loading logic, pretty bad atm
         home_dir = Path.home()
-        self.config = ObConfig(
-            filename = f'{home_dir}/.config/obelisk/config_write_test.yaml',
+        self.config = ObDBConfig(
+            # filename = f'{home_dir}/.config/obelisk/config_write_test.yaml',
             # filename = f'{home_dir}/.config/obelisk/test_config.yaml',
+            db_path = f'{home_dir}/.config/obelisk/obelisk.db',
             is_default_handler = True
         )
 
@@ -110,16 +112,15 @@ class ObWindow(Adw.ApplicationWindow):
         adw_bin = Adw.Bin()
         scrolled_window = Gtk.ScrolledWindow.new()
         adw_bin.set_child(scrolled_window)
-        scrolled_window.set_child(ObListView(config=self.config, parent=adw_bin))
+        scrolled_window.set_child(ObDBListView(config=self.config, parent=adw_bin))
         self.obelisk_list_view = scrolled_window.get_child()
         self.obelisk_sidebar.set_content(adw_bin)
         self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
-        
+
         # Connecting the last couple signals
         self.add_tab_btn.connect('clicked', self.on_add_tab_btn_clicked)
         self.save_btn.connect('clicked', self.on_save_btn_clicked)
         self.add_item_btn.connect('clicked', self.on_add_item_btn_clicked)
-
 
     def _on_connect_activate(self, action, node_uuid):
         """

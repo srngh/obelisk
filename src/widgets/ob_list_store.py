@@ -19,13 +19,13 @@
 
 from gi.repository import GObject, Gio
 
+from .ob_tree_node import ObTreeNode
 
 class ObListStore(Gio.ListStore):
     __gtype_name__ = 'ObListStore'
 
     username: str
-    ip4_address: str
-    ip6_address: str
+    address: str
     description: str
     protocol: str
     port: int
@@ -35,11 +35,11 @@ class ObListStore(Gio.ListStore):
     A ListStore for organizing the TreeListStore
     """
 
-    def __init__(self, name: str, uuid: str):
-        self._name = name
+    def __init__(self, uuid: str, name: str):
         self._uuid = uuid
+        self._name = name
 
-        super().__init__()
+        super().__init__(item_type=ObTreeNode)
 
     @GObject.Property(type=str)
     def name(self) -> str:

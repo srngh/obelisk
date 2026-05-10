@@ -27,6 +27,7 @@ import netaddr
 from .ob_tree_node import ObTreeNode
 
 
+
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
 class ObEditItemDialog(Adw.PreferencesDialog):
     """

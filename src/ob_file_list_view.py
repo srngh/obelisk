@@ -26,12 +26,12 @@ from .widgets.ob_tree_expander import ObTreeExpander
 from .widgets.ob_tree_node import ObTreeNode
 
 
-class ObListView(Gtk.ListView):
+class ObFileListView(Gtk.ListView):
     """
     ObListView Class, which presents a dynamic List of nested Items.
     A ObConfig must be passed, to retrieve the fully built Data Model to present.
     """
-    __gtype_name__ = 'ObeliskListView'
+    __gtype_name__ = 'ObeliskFileListView'
 
     model = Gtk.SingleSelection()
 
