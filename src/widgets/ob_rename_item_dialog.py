@@ -21,46 +21,26 @@ from gi.repository import Adw, GObject, Gtk
 
 from .ob_tree_node import ObTreeNode
 
-
+@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_rename_item_dialog.ui')
 class ObRenameItemDialog(Adw.Dialog):
     __gtype_name__ = 'ObRenameItemDialog'
     __gsignals__ = {
         'renamed': (GObject.SignalFlags.RUN_FIRST, None, (ObTreeNode, str,))
     }
 
+    rename_entry = Gtk.Template.Child()
+    cancel_button = Gtk.Template.Child()
+    confirm_button = Gtk.Template.Child()
+
     def __init__(self, node, **kwargs):
 
         super().__init__(title='Rename')
         self.node = node
 
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        box.set_spacing(12)
-        box.set_margin_start(12)
-        box.set_margin_end(12)
-        box.set_margin_top(12)
-        box.set_margin_bottom(12)
-
-        input_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        self.entry = Gtk.Entry()
-        self.entry.set_hexpand(True)
-        self.entry.set_text(node.name)
-        input_box.append(self.entry)
-
-        button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-
-        self.cancel_button = Gtk.Button(label='Cancel')
-        self.cancel_button.add_css_class('destructive-action')
+        self.rename_entry.set_text(node.name)
         self.cancel_button.connect('clicked', self.on_cancel_activated)
-        button_box.append(self.cancel_button)
+        self.confirm_button.connect('clicked', self.on_rename_activated)
 
-        self.rename_button = Gtk.Button(label='Confirm')
-        self.rename_button.add_css_class('suggested-action')
-        self.rename_button.connect('clicked', self.on_rename_activated)
-        button_box.append(self.rename_button)
-
-        input_box.append(button_box)
-        box.append(input_box)
-        self.set_child(box)
 
     def on_rename_activated(self, widget):
         new_name = self.entry.get_text().strip()

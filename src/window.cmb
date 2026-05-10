@@ -1,9 +1,10 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
 <!DOCTYPE cambalache-project SYSTEM "cambalache-project.dtd">
-<!-- Created with Cambalache 0.97.8 -->
-<cambalache-project version="0.96.0" target_tk="gtk-4.0">
-  <ui template-class="ObWindow" filename="window.blp" sha256="98db8cd867689fe751e1fd2087b2ea670a8e4992490c927de729b7c32d1cc7b5"/>
+<!-- Created with Cambalache 1.0 -->
+<cambalache-project version="1.0.0" target_tk="gtk-4.0" depends="libadwaita-1,webkitgtk-6.0">
+  <ui template-class="ObWindow" filename="window.blp" sha256="2da42b48204173e6816bbaabc978eb4d1fb527854deed3b62b929024cdb1bc60"/>
   <ui template-class="PreferencesDialog" filename="gtk/preferences.blp" sha256="3395db18025bf11cae17e0954b11d5b1e5546c7fca71104093a335b099787f06"/>
   <ui filename="gtk/help-overlay.blp" sha256="2583bfbe7c22221fb369bccd95a9d040d247cfe18135544eb9ba12650ccc3dd5"/>
   <ui template-class="ObNewItemDialog" filename="gtk/ob_new_item_dialog.blp" sha256="03ec8f0d8e5fe2ce056466fd3649a588502ed2266b0d31b2b16e2b806eff09fc"/>
+  <ui template-class="ObRenameItemDialog" filename="gtk/ob_rename_item_dialog.blp" sha256="52c55945703d709a55182104b3f17c32e56a833389f783eed138e4967e42d817"/>
 </cambalache-project>
