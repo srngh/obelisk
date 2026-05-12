@@ -43,7 +43,13 @@ class ObRenameItemDialog(Adw.Dialog):
 
 
     def on_rename_activated(self, widget):
-        new_name = self.entry.get_text().strip()
+        """
+        Callback for confirm button.
+
+        :param widget: The widget calling this method
+        :type widget: Gtk.Button
+        """
+        new_name = self.rename_entry.get_text().strip()
         try:
             if new_name != self.node.name and new_name != '':
                 self.emit('renamed', self.node, new_name)

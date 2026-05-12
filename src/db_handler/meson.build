@@ -7,7 +7,7 @@ connection_types_dir = join_paths(pkgdatadir, 'obelisk/db_handler')
 
 sources = [
   '__init__.py',
-  'generic_item.py',
+  'generic_node.py',
   'obelisk_db_handler.py',
 ]
 

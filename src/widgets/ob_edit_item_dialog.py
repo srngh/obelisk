@@ -18,14 +18,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
-from uuid import uuid4
+import sqlite3
 from dataclasses import dataclass
+from uuid import uuid4
 
 from gi.repository import Adw, GObject, Gtk
 
 import netaddr
 
 from .ob_tree_node import ObTreeNode
+from ..db_handler.generic_node import Node
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
@@ -60,15 +62,15 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
-    def __init__(self, parent_uuid=None, node_uuid=None, conn=None, dialog_mode='new_node', **kwargs):
+    def __init__(self, parent_uuid=None, node_uuid=None, db_handler=None, dialog_mode='new_node', **kwargs):
         super().__init__(**kwargs)
         self.dialog_mode = dialog_mode
         self.parent_uuid = parent_uuid
         self.node_uuid = node_uuid
-        self.conn = conn
+        self.db_handler = db_handler
 
         if self.node_uuid is not None:
-            self.node = self.fetch_item_data()
+            self.node = self.db_handler.get_item_data(self.node_uuid)
             self.load_data_into_dialog()
         else:
             self.close()
@@ -92,6 +94,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         :param Button: The Button which is connected to this function.
         :type Button: Gtk.Button
         """
+        # TODO replace finally blocks and display an error toast upon input errors
         match self.dialog_mode:
             case 'new_item':
                 try:
@@ -130,83 +133,6 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         """
         self.close()
 
-    def load_node_into_dialog(self, is_folder):
-        """
-        Load an Items content into the dialog.
-        """
-        if not is_folder:
-            self.hostname_input.set_text(self.node.ip4_address)
-            self.connection_name_input.set_text(self.node.name)
-            self.username_input.set_text(self.node.username)
-        else:
-            self.connection_name_input.set_text(self.node.name)
-            list_box = self.hostname_input.props.parent
-            list_box.remove(self.hostname_input)
-            list_box.remove(self.port_input)
-        pass
-
-    def fetch_item_data(self):
-        """
-        Perform a database lookup of the items data and load everything into the dialog.
-        """
-        node_uuid = self.node_uuid
-        cursor = self.conn.cursor()
-
-        # get all data of the item from the db
-        if node_uuid is not None:
-            cursor.execute(
-                'SELECT name, is_folder, parent_id, address, port, username, password FROM connections WHERE id IS ?',
-                (node_uuid,)
-            )
-            result = cursor.fetchone()
-
-        if result is not None:
-            node = Node(
-                uuid=node_uuid,
-                name=result[0],
-                is_folder=bool(result[1]),
-                parent_uuid=result[2],
-                address=result[3],
-                port=result[4],
-                username=result[5],
-                password=result[6]
-            )
-            return node
-        else:
-            return Node(uuid=node_uuid)
-
-    def write_data_to_db(self):
-        """
-        Write config parameters to the database.
-        """
-        node = self.node
-        cursor = self.conn.cursor()
-
-        cursor.execute('SELECT name FROM connections WHERE id is ?', (node.uuid,))
-        result = cursor.fetchone()
-
-        # Item does not exist yet
-        if result is None:
-            cursor.execute(
-                'INSERT INTO connections VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                (
-                    self.node.uuid,
-                    self.node.name,
-                    int(self.node.is_folder),
-                    self.parent_uuid,
-                    self.node.address,
-                    self.node.port,
-                    self.node.username,
-                    self.node.password,
-                )
-
-            )
-        else:
-            cursor.execute(
-                'UPDATE connections SET name = ?, is_folder = ?, address = ?, username = ?, password = ? WHERE id = ?',
-                (node.name, int(node.is_folder), node.address, node.username, node.password, node.uuid)
-            )
-
     def load_data_into_dialog(self):
         """
         Perform a database lookup of the items data and load everything into the dialog.
@@ -226,6 +152,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     def __edit_node(self):
         try:
             node = self.node
+            node.parent_uuid =self.parent_uuid
 
             ip = netaddr.IPAddress(self.hostname_input.get_text())
             if ip.version == 4 or ip.version == 6:
@@ -247,13 +174,17 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
             node.protocol = 'ssh'
 
-            self.write_data_to_db()
+            self.db_handler.save_node_to_db(node)
 
         except netaddr.AddrFormatError as e:
             print(e)
 
     def __edit_folder(self):
+        """
+
+        """
         node = self.node
+        node.parent_uuid = self.parent_uuid
         node.name = self.connection_name_input.get_text()
         username = self.username_input.get_text()
         if username != '':
@@ -261,7 +192,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         else:
             node.username = None
 
-        self.write_data_to_db()
+        self.db_handler.save_node_to_db(node)
 
     def __clone_node(self):
         """
@@ -271,21 +202,13 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         node.uuid = str(uuid4())
 
         if node.is_folder:
-            # TO DO: recursively clone all children of the folder as well
             self.__edit_folder()
+            # TO DO: recursively clone all children of the folder as well
+            # get all items from db with parent_id == node.uuid
+            # rename every item to f"{name} (copy)"
+            # assign new uuids to every item
+            # write new items to db
+            # repeat loop for every item and so on
         else:
-            print('henlo')
             self.__edit_node()
-
-@dataclass
-class Node():
-    """This class only holds data in the context of the dialog is discarded imediately"""
-    uuid: str
-    name: str = None
-    is_folder: bool = False
-    parent_uuid: str = None
-    address: str = None
-    port: int = None
-    username: str = None
-    password: str = None
 

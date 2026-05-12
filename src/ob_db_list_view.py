@@ -264,11 +264,11 @@ class ObDBListView(Gtk.ListView):
             folder_uuid = string_list[1]
 
         if folder_uuid == '00000000-0000-0000-0000-000000000000':
-            self.item_dialog = ObEditItemDialog(parent_uuid=None, node_uuid=str(uuid4()), conn=self.config.handler.conn, dialog_mode=f'new_{item_type}')
+            self.item_dialog = ObEditItemDialog(parent_uuid=None, node_uuid=str(uuid4()), db_handler=self.config.handler, dialog_mode=f'new_{item_type}')
             self.item_dialog.connect('refresh_parent', self.__refresh_parent)
             self.item_dialog.present(self)
         elif folder_uuid != '':
-            self.item_dialog = ObEditItemDialog(parent_uuid=folder_uuid, node_uuid=str(uuid4()), conn=self.config.handler.conn, dialog_mode=f'new_{item_type}')
+            self.item_dialog = ObEditItemDialog(parent_uuid=folder_uuid, node_uuid=str(uuid4()), db_handler=self.config.handler, dialog_mode=f'new_{item_type}')
             self.item_dialog.connect('refresh_parent', self.__refresh_parent)
             self.item_dialog.present(self)
 
@@ -320,7 +320,10 @@ class ObDBListView(Gtk.ListView):
         :param name: New name for the node
         :type name: str
         """
-        node.name = name
+        cursor = self.config.handler.conn.cursor()
+
+        cursor.execute('UPDATE connections SET name = ? WHERE id = ?', (name, node.uuid))
+        self.__refresh_parent(None, node.parent_id)
 
     def _on_remove_item_activate(self, action, node_uuid):
         """
@@ -338,6 +341,7 @@ class ObDBListView(Gtk.ListView):
 
         node = self.config.get_node_by_uuid(node_uuid.get_string())
         self.config.remove_item(node)
+        self.__refresh_parent(None, node.parent_id)
 
     def _on_edit_item_activate(self, action, uuid_array):
         """
@@ -365,16 +369,17 @@ class ObDBListView(Gtk.ListView):
 
         # Folders are not editable for now, until inheritance of parameters is implemented
         if node is not None:
-            self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_id, node_uuid=node.uuid, conn=self.config.handler.conn, dialog_mode='edit_node')
+            self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_id, node_uuid=node.uuid, db_handler=self.config.handler, dialog_mode='edit_node')
             self.item_dialog.connect('refresh_parent', self.__refresh_parent)
-            self.item_dialog.present(self)
+            self.item_dialog.present(self.__refresh_parent)
 
     def __refresh_parent(self, dialog, parent_uuid):
         """
         Callback for ObEditItemDialog.
         Refreshes a Folder, so the UI represents the state of the database.
         """
-        del dialog
+        if dialog is not None:
+            del dialog
 
         if parent_uuid not in self.config.active_stores:
             if parent_uuid is None:
@@ -413,7 +418,7 @@ class ObDBListView(Gtk.ListView):
             node = self.config.get_node_by_uuid(node_uuid)
 
         if node is not None:
-            self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_id, node_uuid=node.uuid, conn=self.config.handler.conn, dialog_mode='clone_node')
+            self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_id, node_uuid=node.uuid, db_handler=self.config.handler, dialog_mode='clone_node')
             self.item_dialog.connect('refresh_parent', self.__refresh_parent)
             self.item_dialog.present(self)
 

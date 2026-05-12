@@ -92,13 +92,8 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         :param node: The node that should be removed from the model.
         :type node: ObTreeNode
         """
-        folder = self.get_folder_by_child_uuid(node.uuid)
-        found, index = folder.children.find(node)
-
-        if found:
-            folder.children.remove(index)
-        else:
-            print("Could't remove node")
+        cursor = self.handler.conn.cursor()
+        cursor.execute('DELETE FROM connections WHERE id = ?', (node.uuid,))
 
     def create_child_model(self, item, user_data=None):
         """

@@ -19,7 +19,7 @@
 
 import sqlite3
 
-# from .generic_item import Item
+from .generic_node import Node
 # from ..widgets.ob_list_store import ObListStore
 # from ..widgets.ob_tree_node import ObTreeNode
 
@@ -29,7 +29,6 @@ class ObeliskDBHandler:
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.conn = self.init_db()
-        # print(self.db_path)
 
     def init_db(self):
         conn = sqlite3.connect(self.db_path)
@@ -54,8 +53,8 @@ class ObeliskDBHandler:
         conn.commit()
         return conn
 
-    def save_nodes_to_db(self, conn, node_list):
-        cursor = conn.cursor()
+    def save_nodes_to_db(self, node):
+        cursor = self.conn.cursor()
         data_insert = [(node.id, node.name, int(node.is_folder)) for node in node_list]
 
         cursor.executemany(
@@ -67,28 +66,103 @@ class ObeliskDBHandler:
         )
         conn.commit()
 
-    def get_nodes_chunk(self, limit=100, offset=0):
+    def save_node_to_db(self, node: Node) -> bool:
+        """
+        Write a single connection node to the database, or update a node if it exists.
+
+        :param node: A node representing a connection item
+        :type node: Node
+        """
         cursor = self.conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT id, name, is_folder
-            FROM connections
-            ORDER BY name ASC
-            LIMIT ? OFFSET ?
-            """,
-            (limit, offset),
-        )
+        cursor.execute('SELECT name FROM connections WHERE id is ?', (node.uuid,))
+        result = cursor.fetchone()
 
-        # rows = cursor.fetchall()
-        pass
-        # return [Item(name=row[1], is_folder=row[2], uuid=row[3]) for row in rows]
+
+        try:
+            if result is None:
+                # Item does not exist
+                cursor.execute(
+                    'INSERT INTO connections VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    (
+                        node.uuid,
+                        node.name,
+                        int(node.is_folder),
+                        node.parent_uuid,
+                        node.address,
+                        node.port,
+                        node.username,
+                        node.password,
+                    )
+
+                )
+                return True
+            else:
+                cursor.execute(
+                    'UPDATE connections SET name = ?, is_folder = ?, address = ?, username = ?, password = ? WHERE id = ?',
+                    (node.name, int(node.is_folder), node.address, node.username, node.password, node.uuid)
+                )
+                return True
+        except sqlite3.DataError as e:
+            print(f'Encountered Error when trying to write data to database')
+            print(e)
+        except sqlite3.Error as e:
+            print(f'Encountered Sqlite Error')
+            print(e)
+
+    def get_item_data(self, node_uuid: str) -> Node:
+        """
+        Get a connection node data from the database.
+
+        :param node_uuid: The uuid of the node to look up
+        :type node_uuid: str
+        """
+        cursor = self.conn.cursor()
+
+        if node_uuid is not None:
+            cursor.execute(
+                'SELECT name, is_folder, parent_id, address, port, username, password FROM connections WHERE id IS ?',
+                (node_uuid,)
+            )
+            result = cursor.fetchone()
+
+        try:
+            if result is not None:
+                node = Node(
+                    uuid=node_uuid,
+                    name=result[0],
+                    is_folder=bool(result[1]),
+                    parent_uuid=result[2],
+                    address=result[3],
+                    port=result[4],
+                    username=result[5],
+                    password=result[6]
+                )
+                return node
+            else:
+                # If the connection doesn't exist, return a bare Node
+                return Node(uuid=node_uuid)
+        except sqlite3.Error as e:
+            print(f'Encountered Sqlite Error')
+            print(e)
     
+    def rename_item(self, node_uuid: str, new_name: str) -> bool:
+        """
+        """
+        cursor = self.conn.cursor()
+        
+        if node_uuid is not None and new_name is not None:
+            cursor.execute(
+                'UPATEDE connections SET name = ? WHERE id = ?',
+                (new_name, node_uuid)
+            )
+            return True
+        else:
+            return False
+
     def test(self):
         cursor = self.conn.cursor()
-        
         cursor.execute('SELECT id, name, is_folder FROM connections WHERE parent_id IS NULL')
-        
 
 
 
