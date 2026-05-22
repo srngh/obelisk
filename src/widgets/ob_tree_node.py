@@ -33,12 +33,13 @@ class ObTreeNode(GObject.GObject):
     port: int = 22
     auth: str = ''
 
-    def __init__(self, uuid: str, name: str, is_folder=False, parent_id=None):
+    def __init__(self, uuid: str, name: str, is_folder=False, parent_uuid=None, auth_uuid=None):
         super().__init__()
         self.uuid = uuid
         self.name = name
         self.is_folder = is_folder
-        self.parent_id = parent_id
+        self.parent_uuid = parent_uuid
+        self.auth_uuid = auth_uuid
         # self.children = Gio.ListStore.new(ObTreeNode) if is_folder else None
 
     # def __repr__(self):

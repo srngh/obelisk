@@ -29,8 +29,10 @@ from gi.repository import Adw, GLib, Gdk, Gtk, Vte
 class ObTerm(Vte.Terminal):
     __gtype_name__ = 'ObTerm'
 
-    def __init__(self, **kwargs):
+    def __init__(self, db_handler=None, **kwargs):
         super().__init__(**kwargs)
+        self.db_handler = db_handler
+        print(self.db_handler.db_path)
         self.style_manager = Adw.StyleManager.get_default()
         self._theme_signal_id = self.style_manager.connect('notify::dark', self.__on_theme_changed)
         self.update_colors()
@@ -165,6 +167,7 @@ class ObTerm(Vte.Terminal):
         :param tab_view: The TabView, where the terminal is spawned in
         :type tab_view: Adw.TabView
         """
+        auth = self.db_handler.get_auth_data(item.auth_uuid)
         page = tab_view.add_page(self)
         page.set_title(item.name)
         self._page = page
@@ -172,7 +175,7 @@ class ObTerm(Vte.Terminal):
 
         ssh_command = [
             '/usr/bin/ssh',
-            f'{item.username}@{item.ip4_address}',
+            f'{auth.username}@{item.address}',
             '-p',
             f'{item.port}'
             ]

@@ -28,6 +28,7 @@ import netaddr
 
 from .ob_tree_node import ObTreeNode
 from ..db_handler.generic_node import Node
+from ..db_handler.generic_auth import Auth
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
@@ -71,6 +72,10 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
         if self.node_uuid is not None:
             self.node = self.db_handler.get_item_data(self.node_uuid)
+            if hasattr(self.node, 'auth_uuid'):
+                self.auth = self.db_handler.get_auth_data(self.node.auth_uuid)
+            else:
+                self.auth = self.db_handler.get_auth_data()
             self.load_data_into_dialog()
         else:
             self.close()
@@ -140,8 +145,9 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
         if hasattr(self, 'node'):
             node = self.node
+            auth = self.auth
             self.connection_name_input.set_text(node.name or '')
-            self.username_input.set_text(node.username or '')
+            self.username_input.set_text(auth.username or '')
             if not self.node.is_folder:
                 self.hostname_input.set_text(node.address or '')
             else:
@@ -150,8 +156,12 @@ class ObEditItemDialog(Adw.PreferencesDialog):
                 list_box.remove(self.port_input)
 
     def __edit_node(self):
+        """
+        Take user input, validate and sanitize it and write it to the database. 
+        """
         try:
             node = self.node
+            auth = self.auth
             node.parent_uuid =self.parent_uuid
 
             ip = netaddr.IPAddress(self.hostname_input.get_text())
@@ -161,54 +171,96 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             port = int(self.port_input.get_value())
             node.port = port
 
-            node. name = self.connection_name_input.get_text() or node.address
+            node.name = self.connection_name_input.get_text() or node.address
             username = self.username_input.get_text()
 
             node.parent_uuid = self.parent_uuid
 
             username = self.username_input.get_text()
             if username != '':
-                node.username = username
+                auth.username = username
             else:
-                node.username = None
+                auth.username = None
 
             node.protocol = 'ssh'
 
-            self.db_handler.save_node_to_db(node)
+            node.auth_uuid = auth.auth_uuid
+
+            if self.db_handler.save_auth_to_db(auth):
+                self.db_handler.save_node_to_db(node)
 
         except netaddr.AddrFormatError as e:
             print(e)
 
     def __edit_folder(self):
         """
-
+        Take user input, validate and sanitize it and write it to the database.
         """
         node = self.node
+        auth = self.auth
         node.parent_uuid = self.parent_uuid
         node.name = self.connection_name_input.get_text()
         username = self.username_input.get_text()
         if username != '':
-            node.username = username
+            auth.username = username
         else:
-            node.username = None
+            auth.username = None
 
-        self.db_handler.save_node_to_db(node)
+        node.auth_uuid = auth.auth_uuid
+
+        if self.db_handler.save_auth_to_db(auth):
+            self.db_handler.save_node_to_db(node)
 
     def __clone_node(self):
         """
         Sets a new uuid to the node and calls the appropriate edit method.
         """
         node = self.node
+        auth = self.auth
+        old_node_uuid = node.uuid
         node.uuid = str(uuid4())
+        auth.auth_uuid = str(uuid4())
 
         if node.is_folder:
             self.__edit_folder()
-            # TO DO: recursively clone all children of the folder as well
-            # get all items from db with parent_id == node.uuid
-            # rename every item to f"{name} (copy)"
-            # assign new uuids to every item
-            # write new items to db
-            # repeat loop for every item and so on
+            self.__recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
         else:
             self.__edit_node()
 
+    def __recursive_copy_func(self, old_parent_uuid='', new_parent_uuid=''):
+        """
+        Iterates over all node which are children of the copied folder.
+        Creates a copy of all children and linked auth objects.
+
+        :param old_parent_uuid: The uuid of the copied node
+        :type old_parent_uuid: str
+        :param new_parent_uuid: The uuid of the newly created node
+        :type new_parent_uuid: str
+        """
+        if con_list==[]:
+            con_list = self.db_handler.get_child_items(old_parent_uuid)
+
+        for child in con_list:
+            old_node_uuid = child[0]
+            node = Node(
+                uuid=child[0],
+                parent_uuid=new_parent_uuid,
+                name=child[2],
+                is_folder=child[3],
+                address=child[4],
+                port=child[5],
+                auth_uuid=child[8]
+            )
+
+            auth = self.db_handler.get_auth_data(node.auth_uuid)
+            auth.auth_uuid = str(uuid4())
+            self.db_handler.save_auth_to_db(auth)
+
+            # alter data of copied node
+            node.name = f'{node.name} - copy'
+            node.uuid = str(uuid4())
+
+            self.db_handler.save_node_to_db(node)
+
+            if node.is_folder:
+                self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)

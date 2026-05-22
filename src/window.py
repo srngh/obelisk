@@ -42,7 +42,6 @@ class ObWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'ObWindow'
 
     # Template Elements
-    # split_view = Gtk.Template.Child()
     ob_paned = Gtk.Template.Child()
     # show_search_btn = Gtk.Template.Child() # needed?
     # fav_btn = Gtk.Template.Child() # needed?
@@ -53,7 +52,6 @@ class ObWindow(Adw.ApplicationWindow):
     tab_view = Gtk.Template.Child()
     add_tab_btn = Gtk.Template.Child()
     save_btn = Gtk.Template.Child()
-    add_item_btn = Gtk.Template.Child()
 
     # Sidebar related Widgets
     toggle_sidebar_btn = Gtk.Template.Child()
@@ -102,8 +100,6 @@ class ObWindow(Adw.ApplicationWindow):
         # Config loading logic, pretty bad atm
         home_dir = Path.home()
         self.config = ObDBConfig(
-            # filename = f'{home_dir}/.config/obelisk/config_write_test.yaml',
-            # filename = f'{home_dir}/.config/obelisk/test_config.yaml',
             db_path = f'{home_dir}/.config/obelisk/obelisk.db',
             is_default_handler = True
         )
@@ -120,7 +116,6 @@ class ObWindow(Adw.ApplicationWindow):
         # Connecting the last couple signals
         self.add_tab_btn.connect('clicked', self.on_add_tab_btn_clicked)
         self.save_btn.connect('clicked', self.on_save_btn_clicked)
-        self.add_item_btn.connect('clicked', self.on_add_item_btn_clicked)
 
     def _on_connect_activate(self, action, node_uuid):
         """
@@ -139,7 +134,7 @@ class ObWindow(Adw.ApplicationWindow):
         node = self.config.get_node_by_uuid(node_uuid.get_string())
 
         if not node.is_folder:
-            term = ObTerm()
+            term = ObTerm(db_handler=self.config.db_handler)
             term.spawn_ssh_session(node, self.tab_view)
             term.grab_focus()
 
@@ -158,6 +153,8 @@ class ObWindow(Adw.ApplicationWindow):
             term = ObTerm()
             term.spawn_ssh_session(item, self.tab_view)
             term.grab_focus()
+        else:
+            item.expand() # it don't work like this
 
     # Sidebar UI Callbacks
 
@@ -197,28 +194,8 @@ class ObWindow(Adw.ApplicationWindow):
         """
         print('clicked tab add button')
 
-        term = ObTerm()
+        term = ObTerm(db_handler=self.config.db_handler)
 
         term.spawn_bash(self.tab_view)
         term.grab_focus()
-
-    # remove this on next commit. item creation is stable enough already
-    def on_add_item_btn_clicked(self, Button):
-        """
-        Creates a new item in the sidebar
-        Mostly for testing and debugging, this is pretty hacky atm.
-        """
-        print('clicked item add button')
-        # list_store = self.config.selection_model.get_model().get_model()
-        node = ObTreeNode(name='testconnection', uuid=str(uuid.uuid4()))
-        node.username = 'bob'
-        node.ip4_address = '10.1.1.1'
-        node.description = 'added via the debug button'
-        node.port = 22
-        node.protocol = 'ssh'
-        node.auth = 'pubkey'
-
-        parent = self.config.get_folder_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
-        self.config.add_item(node, parent)
-        print(node)
 

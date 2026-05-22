@@ -12,6 +12,6 @@ class Node():
     parent_uuid: str = None
     address: str = None
     port: int = None
-    username: str = None
-    password: str = None
+    auth_uuid: str = None
+
 

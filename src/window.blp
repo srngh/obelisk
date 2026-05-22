@@ -111,22 +111,6 @@ template $ObWindow: Adw.ApplicationWindow {
           clicked => $on_add_tab_btn_clicked();
         }
 
-        [end]
-        Button add_item_btn {
-          has-frame: false;
-          icon-name: "add";
-          receives-default: false;
-          tooltip-text: "Add a new item";
-          clicked => $on_add_item_btn_clicked();
-        }
-
-        [start]
-        MenuButton debug_btn {
-          direction: right;
-          icon-name: "document-properties-symbolic";
-          menu-model: test_list_view_item_menu;
-        }
-
         [start]
         Button save_btn {
           icon-name: "document-save-symbolic";
