@@ -437,15 +437,14 @@ class ObDBListView(Gtk.ListView):
     def on_drop(self, drop_target, dragged_value, x, y, list_item):
         target_node = list_item.get_child()._bound_node
         dragged_node = dragged_value
+        old_parent_uuid = dragged_node.parent_uuid
 
         if target_node == dragged_node:
             return False
 
-        print(f'{dragged_node.name} to be dropped into {target_node.name}')
-
-        self.config.remove_item(dragged_node)
         self.config.add_item(dragged_node, target_node)
         self.__refresh_parent(dialog=None, parent_uuid=target_node.uuid)
+        self.__refresh_parent(dialog=None, parent_uuid=old_parent_uuid)
         return True
 
 

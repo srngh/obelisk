@@ -112,8 +112,8 @@ class ObeliskDBHandler:
                 return True
             else:
                 cursor.execute(
-                    'UPDATE connections SET name = ?, is_folder = ?, address = ? WHERE uuid = ?',
-                    (node.name, int(node.is_folder), node.address, node.uuid)
+                    'UPDATE connections SET parent_uuid = ?, name = ?, is_folder = ?, address = ?, port = ?, protocol = ?, use_parent_auth = ?, auth_uuid = ? WHERE uuid = ?',
+                    (node.parent_uuid, node.name, int(node.is_folder), node.address, node.port, 'ssh', 0, node.auth_uuid, node.uuid)
                 )
                 return True
         except sqlite3.DataError as e:

@@ -75,7 +75,8 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
 
     def add_item(self, tree_node, folder):
         """
-        Pass an ObTreeNode and the parent Node
+        Add a node to a folder.
+        If the node alread exist, it will be reassigned to the specified folder.
 
         :param node: The node to add to the model
         :type node: ObTreeNode
@@ -83,17 +84,14 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         :type folder: ObTreeNode
         """
         node = self.db_handler.get_item_data(node_uuid=tree_node.uuid)
-        print(node.uuid)
         auth = self.db_handler.get_auth_data(auth_uuid=node.auth_uuid)
-        print(auth.auth_uuid)
+
         if folder.uuid == '00000000-0000-0000-0000-000000000000':
             self.ob_list_store_model.append(tree_node)
             node.parent_uuid = None
             self.db_handler.save_node_to_db(node)
         else:
-            # folder.append(tree_node)
             node.parent_uuid = folder.uuid
-            print(node)
             self.db_handler.save_node_to_db(node)
 
     def remove_item(self, tree_node):
