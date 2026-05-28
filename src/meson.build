@@ -1,5 +1,6 @@
 pkgdatadir = get_option('prefix') / get_option('datadir') / meson.project_name()
 moduledir = pkgdatadir / 'obelisk'
+# bin_dir = ${FLATPAK_DEST}/bin/
 gnome = import('gnome')
 
 blueprints = custom_target('blueprints',
@@ -56,3 +57,9 @@ obelisk_sources = [
 ]
 
 install_data(obelisk_sources, install_dir: moduledir)
+
+custom_binaries = [
+  'ssh-client',
+]
+
+install_data(custom_binaries, install_dir: '/app/bin/')

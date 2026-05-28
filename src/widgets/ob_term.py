@@ -18,6 +18,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
+import json
+import tempfile
 
 import gi
 
@@ -32,7 +34,7 @@ class ObTerm(Vte.Terminal):
     def __init__(self, db_handler=None, **kwargs):
         super().__init__(**kwargs)
         self.db_handler = db_handler
-        print(self.db_handler.db_path)
+        # print(self.db_handler.db_path)
         self.style_manager = Adw.StyleManager.get_default()
         self._theme_signal_id = self.style_manager.connect('notify::dark', self.__on_theme_changed)
         self.update_colors()
@@ -157,6 +159,7 @@ class ObTerm(Vte.Terminal):
             None,
             None
         )
+        
 
     def spawn_ssh_session(self, item, tab_view):
         """
@@ -167,7 +170,9 @@ class ObTerm(Vte.Terminal):
         :param tab_view: The TabView, where the terminal is spawned in
         :type tab_view: Adw.TabView
         """
-        auth = self.db_handler.get_auth_data(item.auth_uuid)
+        # print(item)
+        node = self.db_handler.get_item_data(item.uuid)
+        auth = self.db_handler.get_auth_data(node.auth_uuid)
         page = tab_view.add_page(self)
         page.set_title(item.name)
         self._page = page
@@ -175,9 +180,9 @@ class ObTerm(Vte.Terminal):
 
         ssh_command = [
             '/usr/bin/ssh',
-            f'{auth.username}@{item.address}',
+            f'{auth.username}@{node.address}',
             '-p',
-            f'{item.port}'
+            f'{node.port}'
             ]
 
         self.spawn_async(
@@ -194,10 +199,65 @@ class ObTerm(Vte.Terminal):
             None
         )
 
+    def spawn_go_ssh_session(self, item, tab_view):
+        """
+        Spawn a SSH Session with the systems default SSH Client.
+
+        :param item: The connection item
+        :type item: ObTreeNode
+        :param tab_view: The TabView, where the terminal is spawned in
+        :type tab_view: Adw.TabView
+        """
+        # print(item)
+        node = self.db_handler.get_item_data(item.uuid)
+        auth = self.db_handler.get_auth_data(node.auth_uuid)
+        page = tab_view.add_page(self)
+        page.set_title(item.name)
+        self._page = page
+        self._tab_view = tab_view
+
+        config = {
+            "username": auth.username,
+            "address": node.address,
+            "port": str(node.port),
+            "password": auth.password,
+            "private_key_path": "/home/user/.ssh/id_ed25519",
+            "jump_hosts": [] # Ready for future expansion!
+        }
+        config_bytes = json.dumps(config).encode('utf-8')
+
+        # print(config_bytes)
+
+        # Create a temporary file in the RAM-backed runtime dir
+        runtime_dir = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
+        fd, temp_path = tempfile.mkstemp(dir=runtime_dir, prefix="ssh_cfg_")
+        
+        with os.fdopen(fd, 'w') as f:
+            json.dump(config, f)
+
+        env = GLib.get_environ()
+        env.append(f"SSH_CONFIG_PATH={temp_path}")
+
+        combined_flags = GLib.SpawnFlags.LEAVE_DESCRIPTORS_OPEN 
+
+        self.spawn_async(
+            Vte.PtyFlags.DEFAULT,
+            None,
+            ['/app/bin/ssh-client'],
+            env,
+            combined_flags,
+            None,
+            None,
+            -1,
+            None,
+            self.on_terminal_spawn,
+            None
+        )
+
     def on_terminal_spawn(self, terminal, pid, error, *args):
         """
         Triggered on Terminal spawn.
-        """
+        """      
         if error:
             print(f'error: {error.message}')
         else:

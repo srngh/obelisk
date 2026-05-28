@@ -422,6 +422,7 @@ class ObDBListView(Gtk.ListView):
 
     # Drag and Drop Methods
     def on_drag_prepare(self, drag_source, x, y, list_item):
+        # print(list_item)
         widget = list_item.get_child()
         dragged_node = widget._bound_node
 
@@ -471,8 +472,3 @@ class ObTreeWidget(Gtk.Box):
         item = self.expander.props.item
         item.disconnect_by_func(self.expander.on_item_n_items_notify)
 
-
-#if not node.is_folder:
-#    image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
-#    image.set_icon_size(1)
-#    widget.insert_child_after(image, widget.expander)

@@ -150,11 +150,11 @@ class ObWindow(Adw.ApplicationWindow):
         item = list_view.get_model()[index].get_item()
 
         if not item.is_folder:
-            term = ObTerm()
-            term.spawn_ssh_session(item, self.tab_view)
+            term = ObTerm(db_handler=self.config.db_handler)
+            term.spawn_go_ssh_session(item, self.tab_view)
             term.grab_focus()
         else:
-            item.expand() # it don't work like this
+            print(list_view.get_model()[index].get_object()) # bit broken
 
     # Sidebar UI Callbacks
 
@@ -196,6 +196,6 @@ class ObWindow(Adw.ApplicationWindow):
 
         term = ObTerm(db_handler=self.config.db_handler)
 
-        term.spawn_bash(self.tab_view)
+        term.spawn_sh(self.tab_view)
         term.grab_focus()
 

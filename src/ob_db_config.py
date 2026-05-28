@@ -103,7 +103,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         :type node: ObTreeNode
         """
         cursor = self.db_handler.conn.cursor()
-        print(tree_node.uuid)
+        # print(tree_node.uuid)
         node = self.db_handler.get_item_data(tree_node.uuid)
         auth = self.db_handler.get_auth_data(node.auth_uuid)
         cursor.execute('DELETE FROM connections WHERE uuid = ?', (node.uuid,))

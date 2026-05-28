@@ -201,6 +201,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         node.parent_uuid = self.parent_uuid
         node.name = self.connection_name_input.get_text()
         username = self.username_input.get_text()
+        node.is_folder = True
         if username != '':
             auth.username = username
         else:
