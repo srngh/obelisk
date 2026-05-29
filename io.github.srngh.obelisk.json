@@ -11,8 +11,8 @@
         "--device=dri",
         "--socket=wayland",
         "--filesystem=home",
-        "--filesystem=host-os",
-        "--talk-name=org.freedesktop.Flatpak"
+        "--talk-name=org.freedesktop.Flatpak",
+        "--talk-name=org.freedesktop.secrets"
     ],
     "cleanup" : [
         "/include",
@@ -68,7 +68,7 @@
                 {
                     "type" : "git",
                     "url" : "https://gitlab.gnome.org/GNOME/vte.git",
-                    "branch" : "master"
+                    "tag": "0.78.5"
                 }
             ]
         },

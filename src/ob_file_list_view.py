@@ -1,6 +1,6 @@
-# obelisk_tree_list_view.py
+# obelisk_file_list_view.py
 #
-# Copyright 2025 simhof
+# Copyright 2026 simhof
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

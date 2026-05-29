@@ -1,4 +1,4 @@
-# ob_rename_item_popover.py
+# ob_rename_item_dialog.py
 #
 # Copyright 2026 simhof
 #

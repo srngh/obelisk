@@ -4,7 +4,7 @@ from dataclasses import dataclass
 class Auth():
     """
     This is an ephemeral dataclass.
-    Only used by the ObEditItemDialog to structure.
+    Only used by the ObEditItemDialog structure.
     """
     auth_uuid: str
     username: str = None

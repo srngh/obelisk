@@ -4,7 +4,7 @@ from dataclasses import dataclass
 class Node():
     """
     This is an ephemeral dataclass.
-    Only used by the ObEditItemDialog to structure.
+    Only used by the ObEditItemDialog structure.
     """
     uuid: str
     name: str = None
