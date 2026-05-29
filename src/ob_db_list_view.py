@@ -17,6 +17,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
 from uuid import uuid4
 from gi.repository import GLib, GObject, Gdk, Gio, Gtk
 
@@ -26,6 +27,8 @@ from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_rename_item_dialog import ObRenameItemDialog
 from .widgets.ob_tree_expander import ObTreeExpander
 from .widgets.ob_tree_node import ObTreeNode
+
+logger = logging.getLogger(__name__)
 
 
 class ObDBListView(Gtk.ListView):
@@ -265,11 +268,11 @@ class ObDBListView(Gtk.ListView):
 
         if folder_uuid == '00000000-0000-0000-0000-000000000000':
             self.item_dialog = ObEditItemDialog(parent_uuid=None, node_uuid=str(uuid4()), db_handler=self.config.db_handler, dialog_mode=f'new_{item_type}')
-            self.item_dialog.connect('refresh_parent', self.__refresh_parent)
+            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
         elif folder_uuid != '':
             self.item_dialog = ObEditItemDialog(parent_uuid=folder_uuid, node_uuid=str(uuid4()), db_handler=self.config.db_handler, dialog_mode=f'new_{item_type}')
-            self.item_dialog.connect('refresh_parent', self.__refresh_parent)
+            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
 
     def __on_new_item_create(self, dialog, node, folder):
@@ -321,7 +324,7 @@ class ObDBListView(Gtk.ListView):
         cursor = self.config.db_handler.conn.cursor()
 
         cursor.execute('UPDATE connections SET name = ? WHERE uuid = ?', (name, node.uuid))
-        self.__refresh_parent(None, node.parent_uuid)
+        self.__refresh_folder(None, node.parent_uuid)
 
     def _on_remove_item_activate(self, action, node_uuid):
         """
@@ -339,7 +342,7 @@ class ObDBListView(Gtk.ListView):
 
         node = self.config.get_node_by_uuid(node_uuid.get_string())
         self.config.remove_item(node)
-        self.__refresh_parent(None, node.parent_uuid)
+        self.__refresh_folder(None, node.parent_uuid)
 
     def _on_edit_item_activate(self, action, uuid_array):
         """
@@ -368,28 +371,76 @@ class ObDBListView(Gtk.ListView):
         # Folders are not editable for now, until inheritance of parameters is implemented
         if node is not None:
             self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_uuid, node_uuid=node.uuid, db_handler=self.config.db_handler, dialog_mode='edit_node')
-            self.item_dialog.connect('refresh_parent', self.__refresh_parent)
+            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
 
-    def __refresh_parent(self, dialog, parent_uuid):
+    def __refresh_folder(self, dialog, parent_uuid):
         """
         Callback for ObEditItemDialog.
-        Refreshes a Folder, so the UI represents the state of the database.
+        Refreshes a folder, so the UI represents the state of the database.
+        May also be called from different places than a dialog.
+        parent_uuid may be omitted to refresh all folders.
+
+        :param dialog: The dialog calling this method
+        :type dialog: Adw.Dialog
+        :param parent_uuid: The UUID of the folder that should be refreshed
+        :type parent_uuid: str
         """
         if dialog is not None:
             del dialog
 
+        expanded_folders = self.__capture_expanded_states()
+      
         if parent_uuid not in self.config.active_stores:
-            if parent_uuid is None:
-                new_data = self.config.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
-                self.config.root_store.splice(0, self.config.root_store.get_n_items(), new_data)
-            return
+             if parent_uuid is None:
+                 new_children = self.config.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
+                 self.config.root_store.splice(0, self.config.root_store.get_n_items(), new_children)
+                 self.__re_expand_folders(expanded_folders=expanded_folders)
+             return
 
         store = self.config.active_stores[parent_uuid]
 
         new_children = self.config.get_children(parent_uuid)
 
         store.splice(0, store.get_n_items(), new_children)
+        
+        self.__re_expand_folders(expanded_folders=expanded_folders)
+
+    def __capture_expanded_states(self) -> set:
+        """
+        Capture the currently opened folders and return their UUIDs in a set
+        """
+        expanded_folders = set()
+        for i in range(self.config.tree_list_model.get_n_items()):
+            row = self.config.tree_list_model.get_row(i)
+            if row:
+                node = row.get_item()
+                if node and node.is_folder and row.get_expanded():
+                    expanded_folders.add(node.uuid)
+        return expanded_folders
+
+
+    def __re_expand_folders(self, expanded_folders: set):
+        """
+        This function should only be called from self.__refresh_folder.
+        It makes sure to re-expand folders after a UI refresh.
+
+        :param expanded_folders: The folder which have been in expanded state.
+        :type expanded_folders: Set
+        """
+        tree_model_len = self.config.tree_list_model.get_n_items()
+        for i in range(tree_model_len - 1, -1, -1):
+            row = self.config.tree_list_model.get_row(i)
+            if row:
+                node = row.get_item()
+                print(f"Checking if {node.name} was expanded")
+                if node and node.uuid in expanded_folders and not row.get_expanded():
+                    row.set_expanded(True)
+                    print(f"Expanding row {node.name}")
+        
+        if self.config.tree_list_model.get_n_items() != tree_model_len:
+            # print(f"running another re_expand")
+            self.__re_expand_folders(expanded_folders=expanded_folders)
 
     def _on_clone_item_activate(self, action, uuid_array):
         """
@@ -417,12 +468,12 @@ class ObDBListView(Gtk.ListView):
 
         if node is not None:
             self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_uuid, node_uuid=node.uuid, db_handler=self.config.db_handler, dialog_mode='clone_node')
-            self.item_dialog.connect('refresh_parent', self.__refresh_parent)
+            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
 
     # Drag and Drop Methods
     def on_drag_prepare(self, drag_source, x, y, list_item):
-        # print(list_item)
+        logger.debug(list_item)
         widget = list_item.get_child()
         dragged_node = widget._bound_node
 
@@ -444,8 +495,8 @@ class ObDBListView(Gtk.ListView):
             return False
 
         self.config.add_item(dragged_node, target_node)
-        self.__refresh_parent(dialog=None, parent_uuid=target_node.uuid)
-        self.__refresh_parent(dialog=None, parent_uuid=old_parent_uuid)
+        self.__refresh_folder(dialog=None, parent_uuid=target_node.uuid)
+        self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
         return True
 
 
@@ -454,7 +505,7 @@ class ObTreeWidget(Gtk.Box):
 
     def __init__(self):
         super().__init__(
-            spacing=2
+            spacing=6
         )
         self.expander = ObTreeExpander()
         self.image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')

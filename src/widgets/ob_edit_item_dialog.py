@@ -47,7 +47,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
     __gsignals__ = {
         'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObTreeNode)),
-        'refresh_parent': (GObject.SignalFlags.RUN_LAST, None, (str,)),
+        'refresh_folder': (GObject.SignalFlags.RUN_LAST, None, (str,)),
     }
 
     # Template Elements
@@ -104,7 +104,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             case 'new_item':
                 try:
                     self.__edit_node()
-                    self.emit('refresh_parent', self.parent_uuid)
+                    self.emit('refresh_folder', self.parent_uuid)
                 finally:
                     self.close()
             case 'edit_node':
@@ -114,18 +114,18 @@ class ObEditItemDialog(Adw.PreferencesDialog):
                     else:
                         self.__edit_node()
                 finally:
-                    self.emit('refresh_parent', self.parent_uuid)
+                    self.emit('refresh_folder', self.parent_uuid)
                     self.close()
             case 'clone_node':
                 try:
                     self.__clone_node()
-                    self.emit('refresh_parent', self.parent_uuid)
+                    self.emit('refresh_folder', self.parent_uuid)
                 finally:
                     self.close()
             case 'new_folder':
                 try:
                     self.__edit_folder()
-                    self.emit('refresh_parent', self.parent_uuid)
+                    self.emit('refresh_folder', self.parent_uuid)
                 finally:
                     self.close()
 
@@ -238,8 +238,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         :param new_parent_uuid: The uuid of the newly created node
         :type new_parent_uuid: str
         """
-        if con_list==[]:
-            con_list = self.db_handler.get_child_items(old_parent_uuid)
+        con_list = self.db_handler.get_child_items(old_parent_uuid)
 
         for child in con_list:
             old_node_uuid = child[0]

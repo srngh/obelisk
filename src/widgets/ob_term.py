@@ -208,7 +208,6 @@ class ObTerm(Vte.Terminal):
         :param tab_view: The TabView, where the terminal is spawned in
         :type tab_view: Adw.TabView
         """
-        # print(item)
         node = self.db_handler.get_item_data(item.uuid)
         auth = self.db_handler.get_auth_data(node.auth_uuid)
         page = tab_view.add_page(self)
@@ -222,11 +221,9 @@ class ObTerm(Vte.Terminal):
             "port": str(node.port),
             "password": auth.password,
             "private_key_path": "/home/user/.ssh/id_ed25519",
-            "jump_hosts": [] # Ready for future expansion!
+            "jump_hosts": []
         }
         config_bytes = json.dumps(config).encode('utf-8')
-
-        # print(config_bytes)
 
         # Create a temporary file in the RAM-backed runtime dir
         runtime_dir = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
@@ -238,7 +235,7 @@ class ObTerm(Vte.Terminal):
         env = GLib.get_environ()
         env.append(f"SSH_CONFIG_PATH={temp_path}")
 
-        combined_flags = GLib.SpawnFlags.LEAVE_DESCRIPTORS_OPEN 
+        combined_flags = GLib.SpawnFlags.DO_NOT_REAP_CHILD 
 
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
@@ -257,11 +254,11 @@ class ObTerm(Vte.Terminal):
     def on_terminal_spawn(self, terminal, pid, error, *args):
         """
         Triggered on Terminal spawn.
-        """      
+        """
+        print(pid)
         if error:
             print(f'error: {error.message}')
         else:
-            terminal.watch_child(pid)
             terminal.connect('child-exited', self.on_command_exited)
 
     def on_command_exited(self, terminal, status):

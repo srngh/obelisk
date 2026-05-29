@@ -154,7 +154,7 @@ class ObWindow(Adw.ApplicationWindow):
             term.spawn_go_ssh_session(item, self.tab_view)
             term.grab_focus()
         else:
-            print(list_view.get_model()[index].get_object()) # bit broken
+            print(self.config.tree_list_model.get_row[index].set_expanded()) # bit broken
 
     # Sidebar UI Callbacks
 
