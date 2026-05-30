@@ -31,6 +31,7 @@ from gi.repository import Adw, Gio
 from .widgets.ob_term import ObTerm
 from .widgets.preferences import Preferences
 from .window import ObWindow
+from .initialize_backend import get_data_home, get_master_dek, get_config
 
 
 class ObeliskApplication(Adw.Application):
@@ -43,19 +44,36 @@ class ObeliskApplication(Adw.Application):
 
     def __init__(self):
         super().__init__(application_id='io.github.srngh.obelisk', flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
+
+        self.secret_key = None
+        self.home = None
+        self.config = get_config()
+    
+    def do_startup(self):
+        """
+        Called before the application is displayed.
+        """
+        Adw.Application.do_startup(self)
+        if self.secret_key == None:
+            self.secret_key = get_master_dek()
+
+        if self.home == None:
+            self.home = get_data_home()
+
         self.create_action('quit', lambda *_: self.quit(), ['<primary>q'])
         self.create_action('about', self.on_about_action)
         self.create_action('preferences', self.on_preferences_action)
 
-    def do_activate(self):
-        """Called when the application is activated.
 
-        We raise the application's main window, creating it if
-        necessary.
+    def do_activate(self):
+        """
+        Called when the application is activated.
+
+        We raise the application's main window, creating it if necessary.
         """
         win = self.props.active_window
         if not win:
-            win = ObWindow(application=self)
+            win = ObWindow(config=self.config, application=self)
         win.present()
 
     def on_about_action(self, widget, _):
@@ -65,17 +83,20 @@ class ObeliskApplication(Adw.Application):
                                 developer_name='simhof',
                                 version='0.0.1',
                                 developers=['simhof'],
-                                copyright='© 2025 simhof')
+                                copyright='© 2026 simhof')
         about.present()
 
     def on_preferences_action(self, widget, _):
-        """Callback for the app.preferences action."""
+        """
+        Callback for the app.preferences action.
+        """
         print('preferences has been clicked')
         pref = Preferences()
         pref.present()
 
     def create_action(self, name, callback, shortcuts=None):
-        """Add an application action.
+        """
+        Add an application action.
 
         Args:
             name: the name of the action
@@ -88,8 +109,6 @@ class ObeliskApplication(Adw.Application):
         self.add_action(action)
         if shortcuts:
             self.set_accels_for_action(f'app.{name}', shortcuts)
-
-
 
 def main(version):
     """The application's entry point."""

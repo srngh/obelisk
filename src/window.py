@@ -26,9 +26,6 @@ from pathlib import Path
 from gi.repository import Adw
 from gi.repository import GLib, Gio, Gtk, Vte
 
-# from .ob_file_config import ObFileConfig
-# from .ob_file_list_view import ObFileListView
-from .ob_db_config import ObDBConfig
 from .ob_db_list_view import ObDBListView
 from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_term import ObTerm
@@ -61,8 +58,10 @@ class ObWindow(Adw.ApplicationWindow):
     # GSettings
     _settings = Gio.Settings(schema_id='io.github.srngh.obelisk')
 
-    def __init__(self, **kwargs):
+    def __init__(self, config=None, **kwargs):
         super().__init__(**kwargs)
+
+        self.config = config
 
         # Sidebar stuff
         self.obelisk_sidebar.set_size_request(230, -1)
@@ -96,13 +95,6 @@ class ObWindow(Adw.ApplicationWindow):
                             'default-height', Gio.SettingsBindFlags.DEFAULT)
         self._settings.bind('window-maximized', self,
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
-
-        # Config loading logic, pretty bad atm
-        home_dir = Path.home()
-        self.config = ObDBConfig(
-            db_path = f'{home_dir}/.config/obelisk/obelisk.db',
-            is_default_handler = True
-        )
 
         # Wrapping the ListView in a Bin makes the ContextMenu a better size
         adw_bin = Adw.Bin()
