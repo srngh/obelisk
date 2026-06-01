@@ -1,0 +1,1 @@
+ALTER TABLE authentication RENAME key_file to priv_key_file;

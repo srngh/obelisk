@@ -1,0 +1,1 @@
+ALTER TABLE authentication ADD COLUMN pref_method TEXT;

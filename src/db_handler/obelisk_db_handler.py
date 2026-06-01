@@ -17,6 +17,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import os
 from pathlib import Path
 import sqlite3
 from uuid import uuid4
@@ -24,11 +25,15 @@ from uuid import uuid4
 from .generic_node import Node
 from .generic_auth import Auth
 
+MIGRATIONS_DIR = '/app/share/obelisk/obelisk/db_handler/migrations'
+
 class ObeliskDBHandler:
 
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.conn = self.init_db()
+
+        self.migrate()
 
 
     def init_db(self):
@@ -60,10 +65,53 @@ class ObeliskDBHandler:
                 FOREIGN KEY (auth_uuid) REFERENCES authentication (auth_uuid)
             )
         """)
+        
 
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_name ON connections(name)')
         conn.commit()
         return conn
+    
+    def get_applied_migrations(self):
+        cursor = self.conn.cursor()
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                version TEXT PRIMARY KEY
+            )
+            """
+        )
+
+        versions = cursor.execute(
+            'SELECT version FROM schema_migrations'
+        )
+
+        return {row[0] for row in cursor.fetchall()}
+
+    def apply_migration(self, version, sql):
+        conn = self.conn
+        print(f'Applying migration {version}...')
+        conn.executescript(sql)
+        conn.execute('INSERT INTO schema_migrations (version) VALUES (?)', (version,))
+        conn.commit()
+        print(f'Migration {version} applied.')
+
+    def load_migration_file(self, filename):
+        with open(os.path.join(MIGRATIONS_DIR, filename), 'r') as f:
+            return f.read()
+    
+    def migrate(self):
+        applied = self.get_applied_migrations()
+        migrations = sorted(f for f in os.listdir(MIGRATIONS_DIR) if f.endswith('.sql'))
+        
+        for migration_file in migrations:
+            version = migration_file.split('_')[0]
+            if version not in applied:
+                sql = self.load_migration_file(migration_file)
+                self.apply_migration(version, sql)
+            else:
+                print(f'Migration {version} already applied')
+
 
     def save_nodes_to_db(self, node_list):
         cursor = self.conn.cursor()
@@ -90,12 +138,13 @@ class ObeliskDBHandler:
         cursor.execute('SELECT name FROM connections WHERE uuid is ?', (node.uuid,))
         result = cursor.fetchone()
 
-
+        print(node.is_jumphost)
+        print(int(node.is_jumphost))
         try:
             if result is None:
                 # Item does not exist
                 cursor.execute(
-                    'INSERT INTO connections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO connections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     (
                         node.uuid,
                         node.parent_uuid,
@@ -104,16 +153,41 @@ class ObeliskDBHandler:
                         node.address,
                         node.port,
                         'ssh',
-                        0,
-                        node.auth_uuid
+                        int(node.use_parent_auth),
+                        node.auth_uuid,
+                        int(node.is_jumphost),
+                        node.use_jumphost
                     )
 
                 )
                 return True
             else:
                 cursor.execute(
-                    'UPDATE connections SET parent_uuid = ?, name = ?, is_folder = ?, address = ?, port = ?, protocol = ?, use_parent_auth = ?, auth_uuid = ? WHERE uuid = ?',
-                    (node.parent_uuid, node.name, int(node.is_folder), node.address, node.port, 'ssh', 0, node.auth_uuid, node.uuid)
+                    """
+                    UPDATE connections
+                    SET parent_uuid = ?,
+                    name = ?,
+                    is_folder = ?,
+                    address = ?,
+                    port = ?,
+                    protocol = ?,
+                    use_parent_auth = ?,
+                    auth_uuid = ?,
+                    is_jumphost = ?,
+                    use_jumphost = ?
+                    WHERE uuid = ?
+                    """,
+                    (node.parent_uuid,
+                    node.name,
+                    int(node.is_folder),
+                    node.address,
+                    node.port,
+                    'ssh',
+                    int(node.use_parent_auth),
+                    node.auth_uuid,
+                    int(node.is_jumphost),
+                    node.use_jumphost,
+                    node.uuid)
                 )
                 return True
         except sqlite3.DataError as e:
@@ -138,19 +212,34 @@ class ObeliskDBHandler:
         try:
             if result is None:
                 cursor.execute(
-                    'INSERT INTO authentication VALUES (?, ?, ?, ?)',
+                    'INSERT INTO authentication VALUES (?, ?, ?, ?, ?, ?)',
                     (
                         auth.auth_uuid,
                         auth.username,
                         auth.password,
-                        auth.key_file
+                        auth.key_file,
+                        auth.pref_method,
+                        int(auth.ignost_host_key)
                     )
                 )
                 return True
             else:
                 cursor.execute(
-                    'UPDATE authentication SET username = ?, password = ?, key_file = ? WHERE auth_uuid = ?',
-                    (auth.username, auth.password, auth.key_file, auth.auth_uuid)
+                    """
+                    UPDATE authentication
+                    SET username = ?,
+                    password = ?,
+                    priv_key_file = ?,
+                    pref_method = ?,
+                    ignore_host_key = ?
+                    WHERE auth_uuid = ?
+                    """,
+                    (auth.username,
+                    auth.password,
+                    auth.priv_key_file,
+                    auth.pref_method,
+                    auth.ignost_host_key,
+                    auth.auth_uuid)
                 )
                 return True
         except sqlite3.DataError as e:
@@ -174,7 +263,18 @@ class ObeliskDBHandler:
 
         if node_uuid is not None:
             cursor.execute(
-                'SELECT name, is_folder, parent_uuid, address, port, auth_uuid FROM connections WHERE uuid IS ?',
+                """
+                SELECT name,
+                is_folder,
+                parent_uuid,
+                address,
+                port,
+                auth_uuid,
+                use_parent_auth,
+                is_jumphost,
+                use_jumphost
+                FROM connections WHERE uuid IS ?
+                """,
                 (node_uuid,)
             )
             result = cursor.fetchone()
@@ -188,7 +288,10 @@ class ObeliskDBHandler:
                     parent_uuid=result[2],
                     address=result[3],
                     port=result[4],
-                    auth_uuid=result[5]
+                    auth_uuid=result[5],
+                    use_parent_auth=result[6],
+                    is_jumphost=bool(result[7]),
+                    use_jumphost=result[8]
                 )
                 return node
             else:
@@ -210,7 +313,14 @@ class ObeliskDBHandler:
 
         if auth_uuid is not None:
             cursor.execute(
-                'SELECT username, password, key_file FROM authentication WHERE auth_uuid IS ?',
+                """
+                SELECT username,
+                password,
+                priv_key_file,
+                pref_method,
+                ignore_host_key
+                FROM authentication WHERE auth_uuid IS ?
+                """,
                 (auth_uuid,)
             )
             result = cursor.fetchone()
@@ -223,7 +333,9 @@ class ObeliskDBHandler:
                     auth_uuid=auth_uuid,
                     username=result[0],
                     password=result[1],
-                    key_file=result[2],
+                    priv_key_file=result[2],
+                    pref_method=result[3],
+                    ignost_host_key=result[4]
                 )
                 return auth
 
@@ -250,10 +362,10 @@ class ObeliskDBHandler:
         else:
             return False
 
-    def test(self):
+    def test_query(self):
         cursor = self.conn.cursor()
         cursor.execute('SELECT uuid, name, is_folder FROM connections WHERE parent_uuid IS NULL')
-
+        
     def get_child_items(self, node_uuid) -> list:
         """
         Get all child items of a folder.

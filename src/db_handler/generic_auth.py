@@ -9,5 +9,7 @@ class Auth():
     auth_uuid: str
     username: str = None
     password: str = None
-    key_file: str = None
-
+    priv_key_file: str = None
+    pref_method: str = None
+    ignost_host_key: bool = None
+    

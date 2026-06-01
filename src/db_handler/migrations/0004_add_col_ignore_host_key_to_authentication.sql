@@ -1,0 +1,1 @@
+ALTER TABLE authentication ADD COLUMN ignore_host_key INTEGER NOT NULL DEFAULT 0;

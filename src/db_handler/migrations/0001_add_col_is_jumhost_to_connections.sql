@@ -1,0 +1,1 @@
+ALTER TABLE connections ADD COLUMN is_jumphost INTEGER NOT NULL DEFAULT 0;

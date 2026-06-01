@@ -13,5 +13,7 @@ class Node():
     address: str = None
     port: int = None
     auth_uuid: str = None
-
+    use_parent_auth: bool = None
+    is_jumphost: bool = None
+    use_jumphost: str = None
 

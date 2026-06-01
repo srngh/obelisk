@@ -5,6 +5,8 @@
 pkgdatadir = join_paths(get_option('prefix'), get_option('datadir'), meson.project_name())
 connection_types_dir = join_paths(pkgdatadir, 'obelisk/db_handler')
 
+subdir('migrations')
+
 sources = [
   '__init__.py',
   'generic_node.py',
