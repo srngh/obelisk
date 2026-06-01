@@ -79,8 +79,12 @@ def get_config() -> ObDBConfig:
     home_config_dir = f"{home_dir}/.config"
     obelisk_config_dir = f"{home_dir}/.config/obelisk"
     
+    # if Path(home_config_dir).exists() and not Path(obelisk_config_dir).exists() and os.access(home_config_dir, os.W_OK):
     if Path(home_config_dir).exists() and not Path(obelisk_config_dir).exists() and os.access(home_config_dir, os.W_OK):
         Path.mkdir(obelisk_config_dir)
+        print(f"Created {obelisk_config_dir}")
+    elif Path(obelisk_config_dir).exists() and os.access(home_config_dir, os.W_OK):
+        print(f"{obelisk_config_dir} exists and is writable")
     else:
         print(f"Could not find {obelisk_config_dir} or create it")
 

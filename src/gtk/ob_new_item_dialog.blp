@@ -24,10 +24,6 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
         title: "Hostname";
       }
 
-      Adw.EntryRow username_input {
-        title: "Username";
-      }
-
       Adw.SpinRow port_input {
         adjustment: Adjustment {
           lower: 1;
@@ -41,6 +37,25 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
         title: _("Port");
       }
 
+      Adw.SwitchRow is_jumphost {
+        subtitle: "Can be used as jumphost by other connections";
+        title: "Jumphost";
+      }
+
+      Adw.ComboRow use_jumphost {
+        subtitle: "Select a jumphost";
+        title: "Use a jumphost";
+      }
+    }
+
+    Adw.PreferencesGroup {
+      title: "Authentication";
+
+      Adw.SwitchRow use_parent_auth {
+        subtitle: "From parent folder";
+        title: "Inherit Auth Settings";
+      }
+
       Adw.ComboRow auth_method {
         halign: baseline;
         height-request: -1;
@@ -52,12 +67,16 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
         valign: fill;
       }
 
-      Adw.EntryRow jumphost_input {
-        title: "Jump Host";
+      Adw.EntryRow username_input {
+        title: "Username";
       }
 
-      Adw.EntryRow proxy_input {
-        title: "Proxy";
+      Adw.PasswordEntryRow password_input {
+        title: "Password";
+      }
+
+      Adw.EntryRow priv_key_input {
+        title: "Private Key Path";
       }
     }
 
@@ -90,7 +109,7 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
 StringList auth_menu {
   strings [
     "Keyboard Interactive",
-    "Password Authentication",
-    "Public Key Authentication",
+    "Password",
+    "Public Key",
   ]
 }

@@ -201,7 +201,7 @@ class ObTerm(Vte.Terminal):
 
     def spawn_go_ssh_session(self, item, tab_view):
         """
-        Spawn a SSH Session with the systems default SSH Client.
+        Spawn a SSH Session with the obelisk SSH Client.
 
         :param item: The connection item
         :type item: ObTreeNode
@@ -220,13 +220,14 @@ class ObTerm(Vte.Terminal):
             "address": node.address,
             "port": str(node.port),
             "password": auth.password,
-            "private_key_path": "/home/user/.ssh/id_ed25519",
-            "jump_hosts": []
+            "private_key_path": auth.key_file,
+            "jump_hosts": None
         }
         config_bytes = json.dumps(config).encode('utf-8')
 
         # Create a temporary file in the RAM-backed runtime dir
         runtime_dir = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
+        print(runtime_dir)
         fd, temp_path = tempfile.mkstemp(dir=runtime_dir, prefix="ssh_cfg_")
         
         with os.fdopen(fd, 'w') as f:

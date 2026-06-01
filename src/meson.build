@@ -53,7 +53,7 @@ obelisk_sources = [
   'ob_db_list_view.py',
   'ob_file_config.py',
   'ob_db_config.py',
-  'config.yaml',
+  'initialize_backend.py',
 ]
 
 install_data(obelisk_sources, install_dir: moduledir)

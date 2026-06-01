@@ -1,4 +1,4 @@
-# new_item_dialog.py
+# ob_edit_item_dialog.py
 #
 # Copyright 2026 simhof
 #
@@ -35,7 +35,7 @@ from ..db_handler.generic_auth import Auth
 class ObEditItemDialog(Adw.PreferencesDialog):
     """
     A Dialog to create and edit Items.
-    A Folder must be passed, so it is clear where to insert a new Item later on.
+    A Folder UUID must be passed, so it is clear where to insert a new Item later on.
     An Item may be passed, if it should be edited.
 
     :param folder: The folder where the returned item should be attached to
@@ -51,15 +51,21 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     }
 
     # Template Elements
+    ## Connection Settings
+    connection_name_input = Gtk.Template.Child()
     hostname_input = Gtk.Template.Child()
-    connection_name_input = Gtk.Template.Child()
-    auth_method = Gtk.Template.Child()
-    jumphost_input = Gtk.Template.Child()
-    proxy_input = Gtk.Template.Child()
-    connection_name_input = Gtk.Template.Child()
     port_input = Gtk.Template.Child()
-    username_input = Gtk.Template.Child()
+    is_jumphost = Gtk.Template.Child()
+    use_jumphost = Gtk.Template.Child()
 
+    ## Authentication Settings
+    use_parent_auth = Gtk.Template.Child()
+    auth_method = Gtk.Template.Child()
+    username_input = Gtk.Template.Child()
+    password_input = Gtk.Template.Child()
+    priv_key_input = Gtk.Template.Child()
+
+    ## Buttons
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
@@ -75,6 +81,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             if hasattr(self.node, 'auth_uuid'):
                 self.auth = self.db_handler.get_auth_data(self.node.auth_uuid)
             else:
+                # What the hell is this?
                 self.auth = self.db_handler.get_auth_data()
             self.load_data_into_dialog()
         else:
@@ -146,27 +153,65 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         if hasattr(self, 'node'):
             node = self.node
             auth = self.auth
+            
             self.connection_name_input.set_text(node.name or '')
             self.username_input.set_text(auth.username or '')
+            self.port_input.set_value(float(node.port))
+
+            # TODO
+            # build a stringlist from db query 
+            # SELECT name, uuid FROM connections WHERE is_jumphost = 1;
+            # setup factory methods for use_jumphost comborow
+
+            
+            # use the applications secret_key to decrypt the password
+            self.password_input.set_text(auth.password or '')
+            self.priv_key_input.set_text(auth.priv_key_file or '')
+            
             if not self.node.is_folder:
                 self.hostname_input.set_text(node.address or '')
             else:
                 list_box = self.hostname_input.props.parent
                 list_box.remove(self.hostname_input)
                 list_box.remove(self.port_input)
+            
+            print(node.is_jumphost)
+            print(int(node.is_jumphost))
+            self.is_jumphost.set_active(bool(node.is_jumphost))
+            
+            # TODO
+            # - auth_method choose appropriate method from model
+            # - is_jumphost set value
+            # - use_jumphost set value -> lookup jumphost name
 
     def __edit_node(self):
         """
         Take user input, validate and sanitize it and write it to the database. 
         """
         try:
+            # DB Lookup
             node = self.node
             auth = self.auth
-            node.parent_uuid =self.parent_uuid
+
+            # Data Validation and assignment
+            node.parent_uuid = self.parent_uuid
 
             ip = netaddr.IPAddress(self.hostname_input.get_text())
             if ip.version == 4 or ip.version == 6:
                 node.address = ip.format()
+            # TODO: validate fqdns
+
+            node.is_jumphost = self.is_jumphost.get_active()
+            print(f"jumphost value: {node.is_jumphost}")
+
+            #node.use_jumphost = self.use_jumphost.get_text()
+            #print(f"jumphost value: {node.is_jumphost}")
+
+
+            # - is_jumphost input
+            # - use_jumphost input and DB lookup
+            # - priv_key input
+
 
             port = int(self.port_input.get_value())
             node.port = port
@@ -182,10 +227,21 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             else:
                 auth.username = None
 
-            node.protocol = 'ssh'
+            password = self.password_input.get_text()
+            if password != '':
+                # use the applications secret_key to encrypt the password
+                auth.password = password
+            else:
+                auth.password = None
+
+            if node.is_folder == False:
+                node.protocol = 'ssh'
+            else:
+                node.protocol = None
 
             node.auth_uuid = auth.auth_uuid
 
+            # Write new Data to DB
             if self.db_handler.save_auth_to_db(auth):
                 self.db_handler.save_node_to_db(node)
 

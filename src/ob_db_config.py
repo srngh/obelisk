@@ -33,7 +33,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
     This class holds the configuration of a loaded config file.
     """
 
-    def __init__(self, is_default_handler: bool, db_path: str = None, **kwargs):
+    def __init__(self, db_path: str = None, **kwargs):
         super().__init__(**kwargs)
         self.autosave = False
         self.db_path = db_path
@@ -56,9 +56,6 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
     def save(self):
         """
         Write the current configuration to file
-
-        TO DO:
-        - Error handling
         """
         # add a cleanup method to remove orphaned auth entries
         self.db_handler.conn.commit()
