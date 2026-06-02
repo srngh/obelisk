@@ -33,14 +33,14 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
     This class holds the configuration of a loaded config file.
     """
 
-    def __init__(self, db_path: str = None, **kwargs):
+    def __init__(self, db_handler: ObeliskDBHandler = None, **kwargs):
         super().__init__(**kwargs)
         self.autosave = False
-        self.db_path = db_path
+        self.db_handler = db_handler
         self.config_type = 'obelisk'
         self.initialize_config_path()
 
-        self.db_handler = ObeliskDBHandler(db_path=self.db_path)
+        # self.db_handler = ObeliskDBHandler(db_path=self.db_path)
         self.active_stores = {}
 
         self.root_store = self.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')

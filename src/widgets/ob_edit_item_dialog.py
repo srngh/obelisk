@@ -140,7 +140,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         """
         Close the Dialog.
 
-        :param Button: The Button which is connected to this function.
+        :param Button: The Button calling this function.
         :type Button: Gtk.Button
         """
         self.close()
@@ -154,35 +154,35 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             node = self.node
             auth = self.auth
             
+            # Connection Settings
             self.connection_name_input.set_text(node.name or '')
-            self.username_input.set_text(auth.username or '')
-            self.port_input.set_value(float(node.port))
 
-            # TODO
-            # build a stringlist from db query 
-            # SELECT name, uuid FROM connections WHERE is_jumphost = 1;
-            # setup factory methods for use_jumphost comborow
-
-            
-            # use the applications secret_key to decrypt the password
-            self.password_input.set_text(auth.password or '')
-            self.priv_key_input.set_text(auth.priv_key_file or '')
-            
             if not self.node.is_folder:
                 self.hostname_input.set_text(node.address or '')
             else:
                 list_box = self.hostname_input.props.parent
                 list_box.remove(self.hostname_input)
                 list_box.remove(self.port_input)
-            
-            print(node.is_jumphost)
-            print(int(node.is_jumphost))
+
+            self.port_input.set_value(float(node.port))
+
             self.is_jumphost.set_active(bool(node.is_jumphost))
-            
+
             # TODO
-            # - auth_method choose appropriate method from model
-            # - is_jumphost set value
-            # - use_jumphost set value -> lookup jumphost name
+            # build a stringlist from db query 
+            # SELECT name, uuid FROM connections WHERE is_jumphost = 1;
+            # setup factory methods for use_jumphost comborow
+
+            # Authentication Settings
+            self.use_parent_auth.set_active(bool(node.use_parent_auth))
+
+            # pref_method choose appropriate method from model
+
+            self.username_input.set_text(auth.username or '')
+
+            self.password_input.set_text(auth.password or '')
+
+            self.priv_key_input.set_text(auth.priv_key_file or '')
 
     def __edit_node(self):
         """
@@ -193,33 +193,33 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             node = self.node
             auth = self.auth
 
-            # Data Validation and assignment
             node.parent_uuid = self.parent_uuid
+            node.auth_uuid = auth.auth_uuid
 
+            if node.is_folder == False:
+                node.protocol = 'ssh'
+            else:
+                node.protocol = None
+
+            # Connection Settings
             ip = netaddr.IPAddress(self.hostname_input.get_text())
             if ip.version == 4 or ip.version == 6:
                 node.address = ip.format()
             # TODO: validate fqdns
 
+            node.name = self.connection_name_input.get_text() or node.address
+
+            node.port = int(self.port_input.get_value())
+
             node.is_jumphost = self.is_jumphost.get_active()
-            print(f"jumphost value: {node.is_jumphost}")
 
             #node.use_jumphost = self.use_jumphost.get_text()
             #print(f"jumphost value: {node.is_jumphost}")
 
+            # Authentication Settings
+            node.use_parent_auth = self.use_parent_auth.get_active()
 
-            # - is_jumphost input
-            # - use_jumphost input and DB lookup
-            # - priv_key input
-
-
-            port = int(self.port_input.get_value())
-            node.port = port
-
-            node.name = self.connection_name_input.get_text() or node.address
-            username = self.username_input.get_text()
-
-            node.parent_uuid = self.parent_uuid
+            # pref_method
 
             username = self.username_input.get_text()
             if username != '':
@@ -234,12 +234,8 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             else:
                 auth.password = None
 
-            if node.is_folder == False:
-                node.protocol = 'ssh'
-            else:
-                node.protocol = None
+            node.priv_key_file = self.priv_key_input.get_text()
 
-            node.auth_uuid = auth.auth_uuid
 
             # Write new Data to DB
             if self.db_handler.save_auth_to_db(auth):
@@ -254,7 +250,9 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         """
         node = self.node
         auth = self.auth
+
         node.parent_uuid = self.parent_uuid
+
         node.name = self.connection_name_input.get_text()
         username = self.username_input.get_text()
         node.is_folder = True

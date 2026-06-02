@@ -23,6 +23,7 @@ import keyring
 import os
 
 from .ob_db_config import ObDBConfig
+from .db_handler.obelisk_db_handler import ObeliskDBHandler
 
 def get_data_home() -> str:
     """
@@ -75,29 +76,43 @@ def get_config() -> ObDBConfig:
     :rtype: ObDBConfig
     """
 
-    home_dir = Path.home()
-    home_config_dir = f"{home_dir}/.config"
-    obelisk_config_dir = f"{home_dir}/.config/obelisk"
+    DB_HANDLER = get_db_handler()
+
+    config = ObDBConfig(db_handler=DB_HANDLER)
+    return config
+
+def get_db_handler() -> ObeliskDBHandler:
+    """
+    Get an ObeliskDBHandler which manages the database interactions.
+    :return: ObeliskDBHandler
+    :rtype: ObeliskDBHandler
+    """
+
+    HOME_DIR = Path.home()
+    HOME_CONFIG_DIR = f"{HOME_DIR}/.config"
+    OBELISK_CONFIG_DIR = f"{HOME_DIR}/.config/obelisk"
+    SECRET_KEY = get_master_dek()
     
-    # if Path(home_config_dir).exists() and not Path(obelisk_config_dir).exists() and os.access(home_config_dir, os.W_OK):
-    if Path(home_config_dir).exists() and not Path(obelisk_config_dir).exists() and os.access(home_config_dir, os.W_OK):
-        Path.mkdir(obelisk_config_dir)
-        print(f"Created {obelisk_config_dir}")
-    elif Path(obelisk_config_dir).exists() and os.access(home_config_dir, os.W_OK):
-        print(f"{obelisk_config_dir} exists and is writable")
+    if Path(HOME_CONFIG_DIR).exists() and not Path(OBELISK_CONFIG_DIR).exists() and os.access(HOME_CONFIG_DIR, os.W_OK):
+        Path.mkdir(OBELISK_CONFIG_DIR)
+        print(f"Created {OBELISK_CONFIG_DIR}")
+    elif Path(OBELISK_CONFIG_DIR).exists() and os.access(HOME_CONFIG_DIR, os.W_OK):
+        print(f"{OBELISK_CONFIG_DIR} exists and is writable")
     else:
-        print(f"Could not find {obelisk_config_dir} or create it")
+        print(f"Could not find {OBELISK_CONFIG_DIR} or create it")
 
 
-    if Path(obelisk_config_dir).exists() and os.access(f"{obelisk_config_dir}", os.W_OK):
-        config = ObDBConfig(
-            db_path = f'{obelisk_config_dir}/obelisk.db'
+    if Path(OBELISK_CONFIG_DIR).exists() and os.access(f"{OBELISK_CONFIG_DIR}", os.W_OK):
+        db_handler = ObeliskDBHandler(
+            db_path = f'{OBELISK_CONFIG_DIR}/obelisk.db',
+            secret_key=SECRET_KEY
         )
-        return config
+        return db_handler
     else:
-        data_dir = get_data_home()
-        config = ObDBConfig(
-            db_path = f'{data_dir}/obelisk.db'
+        DATA_DIR = get_data_home()
+        db_handler = ObeliskDBHandler(
+            db_path = f'{DATA_DIR}/obelisk.db',
+            secret_key=SECRET_KEY
         )
-        print(f"Falling back to placing the db in {data_dir}")
-        return config
+        print(f"Falling back to placing the db in {DATA_DIR}")
+        return db_handler

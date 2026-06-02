@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 import sqlite3
 from uuid import uuid4
+from cryptography.fernet import Fernet
 
 from .generic_node import Node
 from .generic_auth import Auth
@@ -29,9 +30,10 @@ MIGRATIONS_DIR = '/app/share/obelisk/obelisk/db_handler/migrations'
 
 class ObeliskDBHandler:
 
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, secret_key: str):
         self.db_path = db_path
         self.conn = self.init_db()
+        self.Fernet = Fernet(secret_key.encode())
 
         self.migrate()
 
@@ -258,8 +260,6 @@ class ObeliskDBHandler:
         :type node_uuid: str
         """
         cursor = self.conn.cursor()
-
-        print(node_uuid)
 
         if node_uuid is not None:
             cursor.execute(
