@@ -10,6 +10,12 @@ template $ObRenameItemDialog: Adw.Dialog {
     orientation: vertical;
     spacing: 12;
 
+    Label {
+      halign: start;
+      label: "<b>Rename</b>";
+      use-markup: true;
+    }
+
     Box {
       Entry rename_entry {
         hexpand: true;

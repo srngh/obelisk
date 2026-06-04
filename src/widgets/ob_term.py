@@ -220,7 +220,7 @@ class ObTerm(Vte.Terminal):
             "address": node.address,
             "port": str(node.port),
             "password": auth.password,
-            "private_key_path": auth.key_file,
+            "private_key_path": auth.priv_key_file,
             "jump_hosts": None
         }
         config_bytes = json.dumps(config).encode('utf-8')

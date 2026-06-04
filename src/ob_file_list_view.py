@@ -448,7 +448,7 @@ class ObTreeWidget(Gtk.Box):
 
     def __init__(self):
         super().__init__(
-            spacing=2
+            spacing=6
         )
         self.expander = ObTreeExpander()
         self.image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')

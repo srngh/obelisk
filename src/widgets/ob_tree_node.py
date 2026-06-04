@@ -26,13 +26,6 @@ class ObTreeNode(GObject.GObject):
     uuid = GObject.Property(type=str)
     name = GObject.Property(type=str)
 
-    username: str = ''
-    address: str
-    description: str = ''
-    protocol: str = ''
-    port: int = 22
-    auth: str = ''
-
     def __init__(self, uuid: str, name: str, is_folder=False, parent_uuid=None, auth_uuid=None):
         super().__init__()
         self.uuid = uuid
@@ -40,11 +33,3 @@ class ObTreeNode(GObject.GObject):
         self.is_folder = is_folder
         self.parent_uuid = parent_uuid
         self.auth_uuid = auth_uuid
-        # self.children = Gio.ListStore.new(ObTreeNode) if is_folder else None
-
-    # def __repr__(self):
-    #     return f'{self.name}, {self.uuid}'
-
-    # def add_child(self, child_node):
-    #     if self.children is not None:
-    #         self.children.append(child_node)
