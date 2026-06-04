@@ -22,7 +22,7 @@ import sqlite3
 from dataclasses import dataclass
 from uuid import uuid4
 
-from gi.repository import Adw, GObject, Gtk
+from gi.repository import Adw, GObject, Gio, Gtk
 
 import netaddr
 
@@ -100,8 +100,12 @@ class ObEditItemDialog(Adw.PreferencesDialog):
                 list_box.remove(self.is_jumphost)
                 self.connection_name_input.set_title('Folder Name')
                 super().set_title('Add a new Folder')
-            case 'edit_node':
-                super().set_title('Edit Connection')
+            case 'edit_node':                
+                match self.node.is_folder:
+                    case True:
+                        super().set_title('Edit Folder')
+                    case False:
+                        super().set_title('Edit Connection')
             case 'clone_node':
                 match self.node.is_folder:
                     case True:
@@ -177,8 +181,9 @@ class ObEditItemDialog(Adw.PreferencesDialog):
                 list_box = self.hostname_input.props.parent
                 list_box.remove(self.hostname_input)
                 list_box.remove(self.port_input)
+                list_box.remove(self.is_jumphost)
 
-            
+            self.setup_jumphost_comborow()
             # TODO
             # build a stringlist from db query 
             # SELECT name, uuid FROM connections WHERE is_jumphost = 1;
@@ -194,6 +199,35 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             self.password_input.set_text(auth.password or '')
 
             self.priv_key_input.set_text(auth.priv_key_file or '')
+    
+    def setup_jumphost_comborow(self):
+        """
+        """
+        j = self.db_handler.get_jumphosts()
+        store = Gio.ListStore()
+        store.append(ObTreeNode(uuid=None, name="No Jumphost"))
+
+        for row in j:
+            node = ObTreeNode(uuid=row[0], name=row[1])
+            store.append(node)
+        
+        factory = Gtk.SignalListItemFactory()
+        factory.connect('setup', self.on_comborow_setup)
+        factory.connect('bind', self.on_comborow_bind)
+
+        self.use_jumphost.set_model(store)
+        self.use_jumphost.set_factory(factory)
+
+
+    def on_comborow_setup(self, factory, list_item):
+        label = Gtk.Label()
+        list_item.set_child(label)
+
+    def on_comborow_bind(self, factory, list_item):
+        node = list_item.get_item()
+        label = list_item.get_child()
+        label.set_label(node.name)
+
 
     def __edit_node(self):
         """
@@ -238,7 +272,6 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
             password = self.password_input.get_text()
             if password != '':
-                # use the applications secret_key to encrypt the password
                 auth.password = password
             else:
                 auth.password = None
@@ -267,16 +300,34 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         auth = self.auth
 
         node.parent_uuid = self.parent_uuid
+        node.auth_uuid = auth.auth_uuid
 
         node.name = self.connection_name_input.get_text()
         username = self.username_input.get_text()
         node.is_folder = True
+        node.is_jumphost = False
+
+        node.use_parent_auth = self.use_parent_auth.get_active()
+        
         if username != '':
             auth.username = username
         else:
             auth.username = None
 
-        node.auth_uuid = auth.auth_uuid
+        password = self.password_input.get_text()
+        if password != '':
+            auth.password = password
+        else:
+            auth.password = None
+
+        priv_key_file = self.priv_key_input.get_text()
+        if priv_key_file != '':
+            auth.priv_key_file = priv_key_file
+        else:
+            auth.priv_key_file = None
+
+        auth.ignost_host_key = True
+
 
         if self.db_handler.save_auth_to_db(auth):
             self.db_handler.save_node_to_db(node)

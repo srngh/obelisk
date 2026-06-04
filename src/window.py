@@ -127,7 +127,7 @@ class ObWindow(Adw.ApplicationWindow):
 
         if not node.is_folder:
             term = ObTerm(db_handler=self.config.db_handler)
-            term.spawn_ssh_session(node, self.tab_view)
+            term.spawn_go_ssh_session(item, self.tab_view)
             term.grab_focus()
 
     def on_sidebar_item_activated(self, list_view, index):

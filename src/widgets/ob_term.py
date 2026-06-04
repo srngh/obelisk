@@ -209,7 +209,9 @@ class ObTerm(Vte.Terminal):
         :type tab_view: Adw.TabView
         """
         node = self.db_handler.get_item_data(item.uuid)
-        auth = self.db_handler.get_auth_data(node.auth_uuid)
+        #auth = self.db_handler.get_auth_data(node.auth_uuid)
+        auth = self.db_handler.get_matching_auth_data(node.uuid)
+        print(auth)
         page = tab_view.add_page(self)
         page.set_title(item.name)
         self._page = page
@@ -225,9 +227,9 @@ class ObTerm(Vte.Terminal):
         }
         config_bytes = json.dumps(config).encode('utf-8')
 
-        # Create a temporary file in the RAM-backed runtime dir
+        # Create a temporary file in the runtime dir
         runtime_dir = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
-        print(runtime_dir)
+        # print(runtime_dir)
         fd, temp_path = tempfile.mkstemp(dir=runtime_dir, prefix="ssh_cfg_")
         
         with os.fdopen(fd, 'w') as f:

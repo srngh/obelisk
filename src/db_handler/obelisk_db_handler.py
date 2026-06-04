@@ -114,7 +114,6 @@ class ObeliskDBHandler:
             else:
                 print(f'Migration {version} already applied')
 
-
     def save_nodes_to_db(self, node_list):
         cursor = self.conn.cursor()
         data_insert = [(node.uuid, node.name, int(node.is_folder)) for node in node_list]
@@ -217,7 +216,7 @@ class ObeliskDBHandler:
                     (
                         auth.auth_uuid,
                         auth.username,
-                        auth.password,
+                        self.encrypt(auth.password),
                         auth.priv_key_file,
                         auth.pref_method,
                         int(auth.ignost_host_key)
@@ -236,7 +235,7 @@ class ObeliskDBHandler:
                     WHERE auth_uuid = ?
                     """,
                     (auth.username,
-                    self.Fernet.encrypt(auth.password.encode()).decode(),
+                    self.encrypt(auth.password),
                     auth.priv_key_file,
                     auth.pref_method,
                     auth.ignost_host_key,
@@ -341,15 +340,57 @@ class ObeliskDBHandler:
         except sqlite3.Error as e:
             print(f'Encountered Sqlite Error')
             print(e)
-    
+
+    def get_matching_auth_data(self, node_uuid: str) ->Auth:
+        """
+        Get parameters for an authentication Object by uuid.
+        The returned data is wrapped as a dataclass for convenience.
+
+        Iterating through parent auth data when use_parent_auth is true.
+        This will follow use_parent_auth of folders as well.
+        """
+        node = self.get_item_data(node_uuid=node_uuid)
+
+        if node.use_parent_auth == True:
+            auth = self.get_matching_auth_data(node.parent_uuid)
+            return auth
+        else:
+            auth = self.get_auth_data(node.auth_uuid)
+            return auth
+
+    def get_jumphosts(self):
+        cursor = self.conn.cursor()
+
+        result = cursor.execute(
+            """
+            SELECT uuid, name
+            FROM connections
+            WHERE is_jumphost IS 1
+            """
+        )
+        return [row for row in result]
+
+    def encrypt(self, field) -> str:
+        """
+        encrypt sensitive fields
+        """
+        print(f'got {field}')
+        if field is not None and type(field) is str:
+            print(f'writing {self.Fernet.encrypt(field.encode()).decode()} to db')
+            return self.Fernet.encrypt(field.encode()).decode()
+        elif field is not None and type(field) is bytes:
+            return self.Fernet.encrypt(field).decode()
+        else:
+            return None
+
     def decrypt(self, field) -> str:
         """
-        decrypt sensitice fields
+        decrypt sensitive fields
         """
-        if field is not None and type(field) is bytes:
-            return self.Fernet.decrypt(field).decode()
-        elif field is not None and type(field) is str:
+        if field is not None and type(field) is str:
             return self.Fernet.decrypt(field.encode()).decode()
+        elif field is not None and type(field) is bytes:
+            return self.Fernet.decrypt(field).decode()
         else:
             return None
 
