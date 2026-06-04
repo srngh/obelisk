@@ -7,7 +7,6 @@ widgetsdir = join_paths(pkgdatadir, 'obelisk/widgets')
 
 sources = [
   '__init__.py',
-  'interactive_shell.py',
   'ob_context_menu.py',
   'ob_edit_item_dialog.py',
   'ob_term.py',
