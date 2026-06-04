@@ -203,7 +203,6 @@ class ObeliskDBHandler:
         :param auth: An auth object representing an Authentication strategy
         :type auth: Auth
         """
-        print(auth)
         cursor = self.conn.cursor()
 
         cursor.execute('SELECT username FROM authentication WHERE auth_uuid is ?', (auth.auth_uuid,))

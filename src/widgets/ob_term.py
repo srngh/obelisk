@@ -219,8 +219,7 @@ class ObTerm(Vte.Terminal):
 
         config = {
             "username": auth.username,
-            "address": node.address,
-            "port": str(node.port),
+            "address": f"{node.address}:{str(node.port)}",
             "password": auth.password,
             "private_key_path": auth.priv_key_file,
             "jump_hosts": None
