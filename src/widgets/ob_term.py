@@ -139,65 +139,6 @@ class ObTerm(Vte.Terminal):
             self.on_terminal_spawn,
             None
         )
-        # pty = self.get_pty()
-        # pid = pty.spawn(finish)
-
-    def spawn_ssh(self):
-        """
-        This is just a testing function and will be removed soon.
-        """
-        self.spawn_async(
-            Vte.PtyFlags.DEFAULT,
-            os.environ['HOME'],
-            ['/usr/bin/python3', '/app/share/obelisk/obelisk/widgets/shell.py'],
-            None,
-            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-            None,
-            None,
-            -1,
-            None,
-            None,
-            None
-        )
-        
-
-    def spawn_ssh_session(self, item, tab_view):
-        """
-        Spawn a SSH Session with the systems default SSH Client.
-
-        :param item: The connection item
-        :type item: ObTreeNode
-        :param tab_view: The TabView, where the terminal is spawned in
-        :type tab_view: Adw.TabView
-        """
-        # print(item)
-        node = self.db_handler.get_item_data(item.uuid)
-        auth = self.db_handler.get_auth_data(node.auth_uuid)
-        page = tab_view.add_page(self)
-        page.set_title(item.name)
-        self._page = page
-        self._tab_view = tab_view
-
-        ssh_command = [
-            '/usr/bin/ssh',
-            f'{auth.username}@{node.address}',
-            '-p',
-            f'{node.port}'
-            ]
-
-        self.spawn_async(
-            Vte.PtyFlags.DEFAULT,
-            None,
-            ssh_command,
-            None,
-            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-            None,
-            None,
-            -1,
-            None,
-            self.on_terminal_spawn,
-            None
-        )
 
     def spawn_go_ssh_session(self, item, tab_view):
         """
