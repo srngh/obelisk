@@ -92,12 +92,24 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         self.confirm_button.connect('clicked', self.on_confirm)
         self.cancel_button.connect('clicked', self.on_cancel)
 
-        if self.dialog_mode == 'new_folder':
-            list_box = self.hostname_input.props.parent
-            list_box.remove(self.hostname_input)
-            list_box.remove(self.port_input)
-            self.connection_name_input.set_title('Folder Name')
-            super().set_title('Add a new Folder')
+        match self.dialog_mode:
+            case 'new_folder':
+                list_box = self.hostname_input.props.parent
+                list_box.remove(self.hostname_input)
+                list_box.remove(self.port_input)
+                list_box.remove(self.is_jumphost)
+                self.connection_name_input.set_title('Folder Name')
+                super().set_title('Add a new Folder')
+            case 'edit_node':
+                super().set_title('Edit Connection')
+            case 'clone_node':
+                match self.node.is_folder:
+                    case True:
+                        super().set_title('Clone Folder')
+                    case False:
+                        super().set_title('Clone Connection')
+
+
 
     def on_confirm(self, Button):
         """
@@ -157,17 +169,16 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             # Connection Settings
             self.connection_name_input.set_text(node.name or '')
 
-            if not self.node.is_folder:
+            if not self.node.is_folder and self.node is not None:
                 self.hostname_input.set_text(node.address or '')
+                self.port_input.set_value(node.port or 22 )
+                self.is_jumphost.set_active(bool(node.is_jumphost))
             else:
                 list_box = self.hostname_input.props.parent
                 list_box.remove(self.hostname_input)
                 list_box.remove(self.port_input)
 
-            self.port_input.set_value(float(node.port))
-
-            self.is_jumphost.set_active(bool(node.is_jumphost))
-
+            
             # TODO
             # build a stringlist from db query 
             # SELECT name, uuid FROM connections WHERE is_jumphost = 1;
@@ -219,8 +230,6 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             # Authentication Settings
             node.use_parent_auth = self.use_parent_auth.get_active()
 
-            # pref_method
-
             username = self.username_input.get_text()
             if username != '':
                 auth.username = username
@@ -234,7 +243,13 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             else:
                 auth.password = None
 
-            node.priv_key_file = self.priv_key_input.get_text()
+            priv_key_file = self.priv_key_input.get_text()
+            if priv_key_file != '':
+                auth.priv_key_file = priv_key_file
+            else:
+                auth.priv_key_file = None
+
+            auth.ignost_host_key = True
 
 
             # Write new Data to DB

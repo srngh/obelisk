@@ -140,8 +140,6 @@ class ObeliskDBHandler:
         cursor.execute('SELECT name FROM connections WHERE uuid is ?', (node.uuid,))
         result = cursor.fetchone()
 
-        print(node.is_jumphost)
-        print(int(node.is_jumphost))
         try:
             if result is None:
                 # Item does not exist
@@ -206,6 +204,7 @@ class ObeliskDBHandler:
         :param auth: An auth object representing an Authentication strategy
         :type auth: Auth
         """
+        print(auth)
         cursor = self.conn.cursor()
 
         cursor.execute('SELECT username FROM authentication WHERE auth_uuid is ?', (auth.auth_uuid,))
@@ -219,7 +218,7 @@ class ObeliskDBHandler:
                         auth.auth_uuid,
                         auth.username,
                         auth.password,
-                        auth.key_file,
+                        auth.priv_key_file,
                         auth.pref_method,
                         int(auth.ignost_host_key)
                     )
@@ -237,7 +236,7 @@ class ObeliskDBHandler:
                     WHERE auth_uuid = ?
                     """,
                     (auth.username,
-                    auth.password,
+                    self.Fernet.encrypt(auth.password.encode()).decode(),
                     auth.priv_key_file,
                     auth.pref_method,
                     auth.ignost_host_key,
@@ -332,7 +331,7 @@ class ObeliskDBHandler:
                 auth = Auth(
                     auth_uuid=auth_uuid,
                     username=result[0],
-                    password=result[1],
+                    password=self.decrypt(result[1]),
                     priv_key_file=result[2],
                     pref_method=result[3],
                     ignost_host_key=result[4]
@@ -342,6 +341,17 @@ class ObeliskDBHandler:
         except sqlite3.Error as e:
             print(f'Encountered Sqlite Error')
             print(e)
+    
+    def decrypt(self, field) -> str:
+        """
+        decrypt sensitice fields
+        """
+        if field is not None and type(field) is bytes:
+            return self.Fernet.decrypt(field).decode()
+        elif field is not None and type(field) is str:
+            return self.Fernet.decrypt(field.encode()).decode()
+        else:
+            return None
 
     def rename_item(self, node_uuid: str, new_name: str) -> bool:
         """
