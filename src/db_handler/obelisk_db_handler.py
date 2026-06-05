@@ -373,9 +373,7 @@ class ObeliskDBHandler:
         """
         encrypt sensitive fields
         """
-        print(f'got {field}')
         if field is not None and type(field) is str:
-            print(f'writing {self.Fernet.encrypt(field.encode()).decode()} to db')
             return self.Fernet.encrypt(field.encode()).decode()
         elif field is not None and type(field) is bytes:
             return self.Fernet.encrypt(field).decode()

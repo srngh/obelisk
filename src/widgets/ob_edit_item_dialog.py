@@ -202,10 +202,12 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     
     def setup_jumphost_comborow(self):
         """
+        Setup the factory for the jumphost comborow.
         """
         j = self.db_handler.get_jumphosts()
+        empty_jump = ObTreeNode(uuid=None, name="No Jumphost")
         store = Gio.ListStore()
-        store.append(ObTreeNode(uuid=None, name="No Jumphost"))
+        store.append(empty_jump)
 
         for row in j:
             node = ObTreeNode(uuid=row[0], name=row[1])
@@ -218,6 +220,21 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         self.use_jumphost.set_model(store)
         self.use_jumphost.set_factory(factory)
 
+        if self.node.use_jumphost is not None:
+            jump_node = ObTreeNode(uuid=self.node.use_jumphost, name='')
+        else:
+            jump_node = empty_jump
+
+        res = store.find_with_equal_func(jump_node, equal_func=self.eq_func)
+
+        # res is a tuple like (True, index) or (False)
+        if len(res) == 2:
+            pos = res[1]
+        else:
+            # e.g. jumphost is referenced which no longer exists in list of jumphosts
+            pos = 0
+    
+        self.use_jumphost.set_selected(pos)
 
     def on_comborow_setup(self, factory, list_item):
         label = Gtk.Label()
@@ -228,6 +245,10 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         label = list_item.get_child()
         label.set_label(node.name)
 
+    def eq_func(self, jump_node, tree_node) -> bool:
+        if jump_node.uuid == tree_node.uuid:
+            return True
+        return False
 
     def __edit_node(self):
         """
@@ -257,6 +278,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             node.port = int(self.port_input.get_value())
 
             node.is_jumphost = self.is_jumphost.get_active()
+            node.use_jumphost = self.__validate_use_jumphost()
 
             #node.use_jumphost = self.use_jumphost.get_text()
             #print(f"jumphost value: {node.is_jumphost}")
@@ -264,23 +286,9 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             # Authentication Settings
             node.use_parent_auth = self.use_parent_auth.get_active()
 
-            username = self.username_input.get_text()
-            if username != '':
-                auth.username = username
-            else:
-                auth.username = None
-
-            password = self.password_input.get_text()
-            if password != '':
-                auth.password = password
-            else:
-                auth.password = None
-
-            priv_key_file = self.priv_key_input.get_text()
-            if priv_key_file != '':
-                auth.priv_key_file = priv_key_file
-            else:
-                auth.priv_key_file = None
+            auth.username = self.__validate_username()
+            auth.password = self.__validate_password()
+            auth.priv_key_file = self.__validate_priv_key()
 
             auth.ignost_host_key = True
 
@@ -306,25 +314,13 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         username = self.username_input.get_text()
         node.is_folder = True
         node.is_jumphost = False
+        node.use_jumphost = self.__validate_use_jumphost()
 
         node.use_parent_auth = self.use_parent_auth.get_active()
         
-        if username != '':
-            auth.username = username
-        else:
-            auth.username = None
-
-        password = self.password_input.get_text()
-        if password != '':
-            auth.password = password
-        else:
-            auth.password = None
-
-        priv_key_file = self.priv_key_input.get_text()
-        if priv_key_file != '':
-            auth.priv_key_file = priv_key_file
-        else:
-            auth.priv_key_file = None
+        auth.username = self.__validate_username()
+        auth.password = self.__validate_password()
+        auth.priv_key_file = self.__validate_priv_key()
 
         auth.ignost_host_key = True
 
@@ -384,3 +380,41 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
             if node.is_folder:
                 self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+
+    def __validate_username(self) -> str:
+        """
+        Helper function to standardize types of input fields.
+        """
+        var = self.username_input.get_text()
+        if var != '':
+            return var
+        else:
+            return None
+
+    def __validate_password(self) -> str:
+        """
+        Helper function to standardize types of input fields.
+        """
+        var = self.password_input.get_text()
+        if var != '':
+            return var
+        else:
+            return None
+
+    def __validate_priv_key(self) -> str:
+        """
+        Helper function to standardize types of input fields.
+        """
+        var = self.priv_key_input.get_text()
+        if var != '':
+            return var
+        else:
+            return None
+    
+    def __validate_use_jumphost(self) -> str:
+        """
+        Helper function to standardize types of input fields.
+        """
+        item = self.use_jumphost.get_selected_item()
+        print(item)
+        return item.uuid
