@@ -54,7 +54,8 @@ sudo dnf install meson msgfmt git cmake glib2-devel gtk4 python3-gobject libadwa
 ```
 
 #### 3. Open the project in Gnome Builder and run it
-![Screenshot of running Obelisk from Gnome Builder](https://github.com/srngh/obelisk/assets/images/screenshot.png?raw=true)
-
+<p align="center">
+<img src="https://github.com/srngh/obelisk/blob/main/assets/images/screenshot.png?raw=true"/>
+</p>
 If the project doesn't build properly, feel free to get in touch at @soern:matrix.org.
 
