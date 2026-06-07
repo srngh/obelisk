@@ -1,6 +1,6 @@
-# ob_config.py
+# ob_file_config.py
 #
-# Copyright 2025 simhof
+# Copyright 2026 simhof
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,8 +29,8 @@ from .widgets.ob_list_store import ObListStore
 from .widgets.ob_tree_node import ObTreeNode
 
 
-class ObConfig(GObject.Object, Gio.ListModel):
-    __gtype_name__ = 'ObConfig'
+class ObFileConfig(GObject.Object, Gio.ListModel):
+    __gtype_name__ = 'ObFileConfig'
     """
     This class holds the configuration of a loaded config file.
     """

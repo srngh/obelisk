@@ -10,6 +10,7 @@
     <file preprocess="xml-stripblanks">gtk/preferences.ui</file>
     <file preprocess="xml-stripblanks">gtk/theme_switcher.ui</file>
     <file preprocess="xml-stripblanks">gtk/ob_new_item_dialog.ui</file>
+    <file preprocess="xml-stripblanks">gtk/ob_rename_item_dialog.ui</file>
 
     <!-- Icons -->
     <file preprocess="xml-stripblanks">icons/scalable/actions/starred-symbolic.svg</file>
@@ -27,5 +28,6 @@
     <file preprocess="xml-stripblanks">icons/scalable/actions/document-save-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/folder-open-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/folder-closed-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/gtk-authentication-symbolic.svg</file>
   </gresource>
 </gresources>

@@ -1,6 +1,6 @@
 # window.py
 #
-# Copyright 2025 simhof
+# Copyright 2026 simhof
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,7 @@ from pathlib import Path
 from gi.repository import Adw
 from gi.repository import GLib, Gio, Gtk, Vte
 
-from .ob_config import ObConfig
-from .ob_list_view import ObListView
+from .ob_db_list_view import ObDBListView
 from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_term import ObTerm
 from .widgets.ob_tree_node import ObTreeNode
@@ -40,18 +39,16 @@ class ObWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'ObWindow'
 
     # Template Elements
-    # split_view = Gtk.Template.Child()
     ob_paned = Gtk.Template.Child()
     # show_search_btn = Gtk.Template.Child() # needed?
     # fav_btn = Gtk.Template.Child() # needed?
-    fav_stack = Gtk.Template.Child() 
+    fav_stack = Gtk.Template.Child()
     search_bar = Gtk.Template.Child()
 
     menu_btn = Gtk.Template.Child()
     tab_view = Gtk.Template.Child()
     add_tab_btn = Gtk.Template.Child()
     save_btn = Gtk.Template.Child()
-    add_item_btn = Gtk.Template.Child()
 
     # Sidebar related Widgets
     toggle_sidebar_btn = Gtk.Template.Child()
@@ -61,20 +58,22 @@ class ObWindow(Adw.ApplicationWindow):
     # GSettings
     _settings = Gio.Settings(schema_id='io.github.srngh.obelisk')
 
-    def __init__(self, **kwargs):
+    def __init__(self, config=None, **kwargs):
         super().__init__(**kwargs)
-        
+
+        self.config = config
+
         # Sidebar stuff
         self.obelisk_sidebar.set_size_request(230, -1)
         self.ob_paned.set_shrink_start_child(False)
         self.ob_paned.set_resize_start_child(False)
         self.MAX_SIDEBAR_WIDTH = 350
         self.ob_paned.set_position(230)
-        
+
         self.ob_paned.connect('notify::position', self.on_paned_position_changed)
         self._saved_sidebar_width = self.ob_paned.get_position()
         self.toggle_sidebar_btn.connect('toggled', self.on_toggle_sidebar_clicked)
-        
+
         # Actions
         self.actions = {}
 
@@ -85,7 +84,6 @@ class ObWindow(Adw.ApplicationWindow):
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
             self.actions[action] = gaction
             self.add_action(gaction)
-
 
         # Theme (Adapted from https://gitlab.gnome.org/tijder/blueprintgtk/)
         self.menu_btn.get_popover().add_child(ThemeSwitcher(), 'themeswitcher')
@@ -98,28 +96,18 @@ class ObWindow(Adw.ApplicationWindow):
         self._settings.bind('window-maximized', self,
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
 
-        # Config loading logic, pretty bad atm
-        home_dir = Path.home()
-        self.config = ObConfig(
-            filename = f'{home_dir}/.config/obelisk/config_write_test.yaml',
-            # filename = f'{home_dir}/.config/obelisk/test_config.yaml',
-            is_default_handler = True
-        )
-
         # Wrapping the ListView in a Bin makes the ContextMenu a better size
         adw_bin = Adw.Bin()
         scrolled_window = Gtk.ScrolledWindow.new()
         adw_bin.set_child(scrolled_window)
-        scrolled_window.set_child(ObListView(config=self.config, parent=adw_bin))
+        scrolled_window.set_child(ObDBListView(config=self.config, parent=adw_bin))
         self.obelisk_list_view = scrolled_window.get_child()
         self.obelisk_sidebar.set_content(adw_bin)
         self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
-        
+
         # Connecting the last couple signals
         self.add_tab_btn.connect('clicked', self.on_add_tab_btn_clicked)
         self.save_btn.connect('clicked', self.on_save_btn_clicked)
-        self.add_item_btn.connect('clicked', self.on_add_item_btn_clicked)
-
 
     def _on_connect_activate(self, action, node_uuid):
         """
@@ -138,8 +126,8 @@ class ObWindow(Adw.ApplicationWindow):
         node = self.config.get_node_by_uuid(node_uuid.get_string())
 
         if not node.is_folder:
-            term = ObTerm()
-            term.spawn_ssh_session(node, self.tab_view)
+            term = ObTerm(db_handler=self.config.db_handler)
+            term.spawn_go_ssh_session(item, self.tab_view)
             term.grab_focus()
 
     def on_sidebar_item_activated(self, list_view, index):
@@ -154,9 +142,11 @@ class ObWindow(Adw.ApplicationWindow):
         item = list_view.get_model()[index].get_item()
 
         if not item.is_folder:
-            term = ObTerm()
-            term.spawn_ssh_session(item, self.tab_view)
+            term = ObTerm(db_handler=self.config.db_handler)
+            term.spawn_go_ssh_session(item, self.tab_view)
             term.grab_focus()
+        else:
+            print(self.config.tree_list_model.get_row[index].set_expanded()) # bit broken
 
     # Sidebar UI Callbacks
 
@@ -196,28 +186,8 @@ class ObWindow(Adw.ApplicationWindow):
         """
         print('clicked tab add button')
 
-        term = ObTerm()
+        term = ObTerm(db_handler=self.config.db_handler)
 
-        term.spawn_bash(self.tab_view)
+        term.spawn_sh(self.tab_view)
         term.grab_focus()
-
-    # remove this on next commit. item creation is stable enough already
-    def on_add_item_btn_clicked(self, Button):
-        """
-        Creates a new item in the sidebar
-        Mostly for testing and debugging, this is pretty hacky atm.
-        """
-        print('clicked item add button')
-        # list_store = self.config.selection_model.get_model().get_model()
-        node = ObTreeNode(name='testconnection', uuid=str(uuid.uuid4()))
-        node.username = 'bob'
-        node.ip4_address = '10.1.1.1'
-        node.description = 'added via the debug button'
-        node.port = 22
-        node.protocol = 'ssh'
-        node.auth = 'pubkey'
-
-        parent = self.config.get_folder_by_child_uuid('563840e6-5a1d-49b8-a530-32311034967f')
-        self.config.add_item(node, parent)
-        print(node)
 

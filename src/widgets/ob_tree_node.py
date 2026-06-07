@@ -1,6 +1,6 @@
 # ob_tree_node.py
 #
-# Copyright 2025 simhof
+# Copyright 2026 simhof
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,26 +23,13 @@ from gi.repository import GObject, Gio
 class ObTreeNode(GObject.GObject):
     __gtype_name__ = 'ObTreeNode'
 
-    name = GObject.Property(type=str)
     uuid = GObject.Property(type=str)
+    name = GObject.Property(type=str)
 
-    username: str = ''
-    ip4_address: str
-    description: str = ''
-    protocol: str = 'ssh'
-    port: int = 22
-    auth: str = ''
-
-    def __init__(self, name: str, uuid: str, is_folder=False):
+    def __init__(self, uuid: str, name: str, is_folder=False, parent_uuid=None, auth_uuid=None):
         super().__init__()
-        self.name = name
         self.uuid = uuid
+        self.name = name
         self.is_folder = is_folder
-        self.children = Gio.ListStore.new(ObTreeNode) if is_folder else None
-
-    def __repr__(self):
-        return f'{self.name}, {self.uuid}'
-
-    def add_child(self, child_node):
-        if self.children is not None:
-            self.children.append(child_node)
+        self.parent_uuid = parent_uuid
+        self.auth_uuid = auth_uuid

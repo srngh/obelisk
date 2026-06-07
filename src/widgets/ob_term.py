@@ -1,6 +1,6 @@
 # obelisk_term.py
 #
-# Copyright 2025 simhof
+# Copyright 2026 simhof
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
+import json
+import tempfile
 
 import gi
 
@@ -29,8 +31,10 @@ from gi.repository import Adw, GLib, Gdk, Gtk, Vte
 class ObTerm(Vte.Terminal):
     __gtype_name__ = 'ObTerm'
 
-    def __init__(self, **kwargs):
+    def __init__(self, db_handler=None, **kwargs):
         super().__init__(**kwargs)
+        self.db_handler = db_handler
+        # print(self.db_handler.db_path)
         self.style_manager = Adw.StyleManager.get_default()
         self._theme_signal_id = self.style_manager.connect('notify::dark', self.__on_theme_changed)
         self.update_colors()
@@ -135,30 +139,10 @@ class ObTerm(Vte.Terminal):
             self.on_terminal_spawn,
             None
         )
-        # pty = self.get_pty()
-        # pid = pty.spawn(finish)
 
-    def spawn_ssh(self):
+    def spawn_go_ssh_session(self, item, tab_view):
         """
-        This is just a testing function and will be removed soon.
-        """
-        self.spawn_async(
-            Vte.PtyFlags.DEFAULT,
-            os.environ['HOME'],
-            ['/usr/bin/python3', '/app/share/obelisk/obelisk/widgets/shell.py'],
-            None,
-            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-            None,
-            None,
-            -1,
-            None,
-            None,
-            None
-        )
-
-    def spawn_ssh_session(self, item, tab_view):
-        """
-        Spawn a SSH Session with the systems default SSH Client.
+        Spawn a SSH Session with the obelisk SSH Client.
 
         :param item: The connection item
         :type item: ObTreeNode
@@ -170,19 +154,26 @@ class ObTerm(Vte.Terminal):
         self._page = page
         self._tab_view = tab_view
 
-        ssh_command = [
-            '/usr/bin/ssh',
-            f'{item.username}@{item.ip4_address}',
-            '-p',
-            f'{item.port}'
-            ]
+        config = self.build_config(item_uuid=item.uuid)
+
+        runtime_dir = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
+
+        fd, temp_path = tempfile.mkstemp(dir=runtime_dir, prefix="ssh_cfg_")
+        
+        with os.fdopen(fd, 'w') as f:
+            json.dump(config, f)
+
+        env = GLib.get_environ()
+        env.append(f"SSH_CONFIG_PATH={temp_path}")
+
+        combined_flags = GLib.SpawnFlags.DO_NOT_REAP_CHILD 
 
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             None,
-            ssh_command,
-            None,
-            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            ['/app/bin/ssh-client'],
+            env,
+            combined_flags,
             None,
             None,
             -1,
@@ -198,8 +189,49 @@ class ObTerm(Vte.Terminal):
         if error:
             print(f'error: {error.message}')
         else:
-            terminal.watch_child(pid)
             terminal.connect('child-exited', self.on_command_exited)
 
-    def on_command_exited(self, terminal, status):
+
+    def on_command_exited(self, terminal, exit_code):
+        """
+        Callback for when the child process exits.
+        Closes the tab page where the terminal was spawnd, thus cleaning up the terminal as well.
+        
+        :param terminal: The terminal widget calling this method.
+        :type terminal: ObTerm
+        :param exit_code: Exit Code of the child process
+        :type exit_code: int
+        """
         self._tab_view.close_page(self._page)
+
+
+    def build_config(self, item_uuid):
+        """
+        Builds the config json object with all recursive lookups.
+
+        :param item: The connections UUID
+        :type item: str
+        """
+        node = self.db_handler.get_item_data(item_uuid)
+        auth = self.db_handler.get_matching_auth_data(node.uuid)
+
+        jump_config = None
+
+        # skips jumphost lookup, if parent inherit is checked
+        if node.use_jumphost is not None and not node.use_parent_jumphost:
+            jump_config = self.build_config(item_uuid=node.use_jumphost)
+        
+        if node.use_parent_jumphost:
+            jump_config = self.build_config(item_uuid=node.parent_uuid)
+
+        if not node.is_folder:
+            config = {
+                "username": auth.username,
+                "address": f"{node.address}:{str(node.port)}",
+                "password": auth.password,
+                "private_key_path": auth.priv_key_file,
+                "jump_host": jump_config
+            }
+            return config
+        else:
+            return jump_config

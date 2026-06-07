@@ -3,3 +3,6 @@ builddir
 
 subprojects
 
+# temporary, until I move the code of obelisk-ssh-client to a github repo
+ssh-client
+

@@ -1,6 +1,6 @@
-# obelisk_tree_list_view.py
+# obelisk_file_list_view.py
 #
-# Copyright 2025 simhof
+# Copyright 2026 simhof
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,12 +26,12 @@ from .widgets.ob_tree_expander import ObTreeExpander
 from .widgets.ob_tree_node import ObTreeNode
 
 
-class ObListView(Gtk.ListView):
+class ObFileListView(Gtk.ListView):
     """
     ObListView Class, which presents a dynamic List of nested Items.
     A ObConfig must be passed, to retrieve the fully built Data Model to present.
     """
-    __gtype_name__ = 'ObeliskListView'
+    __gtype_name__ = 'ObeliskFileListView'
 
     model = Gtk.SingleSelection()
 
@@ -448,7 +448,7 @@ class ObTreeWidget(Gtk.Box):
 
     def __init__(self):
         super().__init__(
-            spacing=2
+            spacing=6
         )
         self.expander = ObTreeExpander()
         self.image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')

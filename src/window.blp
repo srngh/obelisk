@@ -74,9 +74,9 @@ template $ObWindow: Adw.ApplicationWindow {
         [top]
         Adw.TabBar tab_bar {
           autohide: false;
+
           start-action-widget: Adw.TabButton {
             view: tab_view;
-
           };
 
           view: tab_view;
@@ -109,22 +109,6 @@ template $ObWindow: Adw.ApplicationWindow {
           receives-default: false;
           tooltip-text: "Add a new tab";
           clicked => $on_add_tab_btn_clicked();
-        }
-        
-        [end]
-        Button add_item_btn {
-          has-frame: false;
-          icon-name: "add";
-          receives-default: false;
-          tooltip-text: "Add a new item";
-          clicked => $on_add_item_btn_clicked();
-        }
-
-        [start]
-        MenuButton debug_btn {
-          direction: right;
-          icon-name: "document-properties-symbolic";
-          menu-model: test_list_view_item_menu;
         }
 
         [start]
@@ -159,15 +143,6 @@ menu primary_menu {
     item {
       action: "app.about";
       label: "_About Obelisk";
-    }
-  }
-}
-
-menu debug_menu {
-  section {
-    item {
-      action: "win.new_item";
-      label: "_New Item";
     }
   }
 }

@@ -1,6 +1,6 @@
 # ob_context_menu.py
 #
-# Copyright 2025 simhof
+# Copyright 2026 simhof
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,30 +44,39 @@ class ObContextMenu(Gtk.PopoverMenu):
         model.append_section(None, section_1)
 
         section_2 = Gio.Menu.new()
-        menu_edit_item = Gio.MenuItem.new('_Edit Item', 'list_view.edit_item')
-        menu_edit_item.set_action_and_target_value('list_view.edit_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
-        section_2.append_item(menu_edit_item)
-
-        menu_clone_item = Gio.MenuItem.new('_Clone Item', 'list_view.clone_item')
-        menu_clone_item.set_action_and_target_value('list_view.clone_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
-        section_2.append_item(menu_clone_item)
 
         if self.folder_uuid != '00000000-0000-0000-0000-000000000000' or self.node_uuid != '':
+            menu_edit_item = Gio.MenuItem.new('_Edit Item', 'list_view.edit_item')
+            menu_edit_item.set_action_and_target_value('list_view.edit_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
+
+            menu_clone_item = Gio.MenuItem.new('_Clone Item', 'list_view.clone_item')
+            menu_clone_item.set_action_and_target_value('list_view.clone_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
+
             menu_rename_item = Gio.MenuItem.new('_Rename', 'list_view.rename_item')
             menu_rename_item.set_action_and_target_value('list_view.rename_item', GLib.Variant.new_string(self.node_uuid))
-        else:
-            menu_rename_item = Gio.MenuItem.new('_Rename', 'list_view.empty')
-        section_2.append_item(menu_rename_item)
 
-        menu_remove_item = Gio.MenuItem.new('_Remove Item', 'list_view.remove_item')
-        menu_remove_item.set_action_and_target_value('list_view.remove_item', GLib.Variant.new_string(self.node_uuid))
+            menu_remove_item = Gio.MenuItem.new('_Remove Item', 'list_view.remove_item')
+            menu_remove_item.set_action_and_target_value('list_view.remove_item', GLib.Variant.new_string(self.node_uuid))
+        else:
+            menu_edit_item = Gio.MenuItem.new('_Edit Item', 'list_view.empty')
+            menu_clone_item = Gio.MenuItem.new('_Clone Item', 'list_view.empty')
+            menu_rename_item = Gio.MenuItem.new('_Rename', 'list_view.empty')
+            menu_remove_item = Gio.MenuItem.new('_Remove Item', 'list_view.empty')
+
+        section_2.append_item(menu_edit_item)
+        section_2.append_item(menu_clone_item)
+        section_2.append_item(menu_rename_item)
         section_2.append_item(menu_remove_item)
 
         model.append_section(None, section_2)
 
         section_3 = Gio.Menu.new()
-        connect_item = Gio.MenuItem.new('_Connect', 'win.connect')
-        connect_item.set_action_and_target_value('win.connect', GLib.Variant.new_string(self.node_uuid))
+
+        if self.folder_uuid != '00000000-0000-0000-0000-000000000000' or self.node_uuid != '':
+            connect_item = Gio.MenuItem.new('_Connect', 'win.connect')
+            connect_item.set_action_and_target_value('win.connect', GLib.Variant.new_string(self.node_uuid))
+        else:
+            connect_item = Gio.MenuItem.new('_Connect', 'list_view.empty')
         section_3.append_item(connect_item)
         model.append_section(None, section_3)
 

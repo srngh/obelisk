@@ -1,5 +1,6 @@
 pkgdatadir = get_option('prefix') / get_option('datadir') / meson.project_name()
 moduledir = pkgdatadir / 'obelisk'
+# bin_dir = ${FLATPAK_DEST}/bin/
 gnome = import('gnome')
 
 blueprints = custom_target('blueprints',
@@ -9,6 +10,7 @@ blueprints = custom_target('blueprints',
     'gtk/preferences.blp',
     'gtk/theme_switcher.blp',
     'gtk/ob_new_item_dialog.blp',
+    'gtk/ob_rename_item_dialog.blp',
   ),
   output: '.',
   command: [find_program('blueprint-compiler'), 'batch-compile', '@OUTPUT@', '@CURRENT_SOURCE_DIR@', '@INPUT@'],
@@ -41,14 +43,23 @@ configure_file(
 
 subdir('widgets')
 subdir('config_file_handlers')
+subdir('db_handler')
 
 obelisk_sources = [
   '__init__.py',
   'main.py',
   'window.py',
-  'ob_list_view.py',
-  'ob_config.py',
-  'config.yaml',
+  'ob_file_list_view.py',
+  'ob_db_list_view.py',
+  'ob_file_config.py',
+  'ob_db_config.py',
+  'initialize_backend.py',
 ]
 
 install_data(obelisk_sources, install_dir: moduledir)
+
+custom_binaries = [
+  'ssh-client',
+]
+
+install_data(custom_binaries, install_dir: '/app/bin/')

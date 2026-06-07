@@ -1,0 +1,45 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ObRenameItemDialog: Adw.Dialog {
+  Box {
+    margin-bottom: 12;
+    margin-end: 12;
+    margin-start: 12;
+    margin-top: 12;
+    orientation: vertical;
+    spacing: 12;
+
+    Label {
+      halign: start;
+      label: "<b>Rename</b>";
+      use-markup: true;
+    }
+
+    Box {
+      Entry rename_entry {
+        hexpand: true;
+      }
+    }
+
+    Box {
+      spacing: 12;
+
+      Button cancel_button {
+        css-classes: [
+          "destructive-action",
+        ];
+
+        label: "Cancel";
+      }
+
+      Button confirm_button {
+        css-classes: [
+          "suggested-action",
+        ];
+
+        label: "Confirm";
+      }
+    }
+  }
+}
