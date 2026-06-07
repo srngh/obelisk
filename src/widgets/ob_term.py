@@ -216,20 +216,22 @@ class ObTerm(Vte.Terminal):
         auth = self.db_handler.get_matching_auth_data(node.uuid)
 
         jump_config = None
-        if node.use_jumphost is not None:
+
+        # skips jumphost lookup, if parent inherit is checked
+        if node.use_jumphost is not None and not node.use_parent_jumphost:
             jump_config = self.build_config(item_uuid=node.use_jumphost)
         
-        # side effect of overriding node.use_jumphost lookup
         if node.use_parent_jumphost:
             jump_config = self.build_config(item_uuid=node.parent_uuid)
 
-        config = {
-            "username": auth.username,
-            "address": f"{node.address}:{str(node.port)}",
-            "password": auth.password,
-            "private_key_path": auth.priv_key_file,
-            "jump_host": jump_config
-        }
-        
-        return config
-
+        if not node.is_folder:
+            config = {
+                "username": auth.username,
+                "address": f"{node.address}:{str(node.port)}",
+                "password": auth.password,
+                "private_key_path": auth.priv_key_file,
+                "jump_host": jump_config
+            }
+            return config
+        else:
+            return jump_config

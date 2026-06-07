@@ -178,7 +178,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
             if not self.node.is_folder and self.node is not None:
                 self.hostname_input.set_text(node.address or '')
-                self.port_input.set_value(float(node.port) or 22.0 )
+                self.port_input.set_value(node.port or 22.0 )
                 self.is_jumphost.set_active(bool(node.is_jumphost))
             else:
                 list_box = self.hostname_input.props.parent
@@ -314,6 +314,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         node.is_folder = True
         node.is_jumphost = False
         node.use_jumphost = self.__validate_use_jumphost()
+        node.use_parent_jumphost = self.inherit_jumphost.get_active()
 
         node.use_parent_auth = self.use_parent_auth.get_active()
         
@@ -364,7 +365,11 @@ class ObEditItemDialog(Adw.PreferencesDialog):
                 is_folder=child[3],
                 address=child[4],
                 port=child[5],
-                auth_uuid=child[8]
+                use_parent_auth=child[7],
+                auth_uuid=child[8],
+                is_jumphost=child[9],
+                use_jumphost=child[10],
+                use_parent_jumphost=child[11]
             )
 
             auth = self.db_handler.get_auth_data(node.auth_uuid)
@@ -415,5 +420,4 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         Helper function to standardize types of input fields.
         """
         item = self.use_jumphost.get_selected_item()
-        print(item)
         return item.uuid
