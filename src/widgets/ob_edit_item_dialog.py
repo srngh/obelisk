@@ -90,8 +90,6 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         else:
             self.close()
 
-        self.port_input.set_value(22)
-
         self.confirm_button.connect('clicked', self.on_confirm)
         self.cancel_button.connect('clicked', self.on_cancel)
         self.confirm_button_2.connect('clicked', self.on_confirm)
@@ -178,9 +176,13 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             # Connection Settings
             self.connection_name_input.set_text(node.name or '')
 
+            print(node.port)
+            print(node)
+            self.port_input.set_value(float(node.port))
             if not self.node.is_folder and self.node is not None:
                 self.hostname_input.set_text(node.address or '')
-                self.port_input.set_value(node.port or 22 )
+                print(node.port)
+                self.port_input.set_value(float(node.port) or 22.0 )
                 self.is_jumphost.set_active(bool(node.is_jumphost))
             else:
                 list_box = self.hostname_input.props.parent
@@ -265,7 +267,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             node.parent_uuid = self.parent_uuid
             node.auth_uuid = auth.auth_uuid
 
-            if node.is_folder == False:
+            if not node.is_folder:
                 node.protocol = 'ssh'
             else:
                 node.protocol = None
@@ -313,7 +315,6 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         node.auth_uuid = auth.auth_uuid
 
         node.name = self.connection_name_input.get_text()
-        username = self.username_input.get_text()
         node.is_folder = True
         node.is_jumphost = False
         node.use_jumphost = self.__validate_use_jumphost()

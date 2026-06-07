@@ -149,9 +149,6 @@ class ObTerm(Vte.Terminal):
         :param tab_view: The TabView, where the terminal is spawned in
         :type tab_view: Adw.TabView
         """
-        # node = self.db_handler.get_item_data(item.uuid)
-        # auth = self.db_handler.get_matching_auth_data(node.uuid)
-
         page = tab_view.add_page(self)
         page.set_title(item.name)
         self._page = page
