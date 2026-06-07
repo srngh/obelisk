@@ -231,7 +231,7 @@ class ObTerm(Vte.Terminal):
             "address": f"{node.address}:{str(node.port)}",
             "password": auth.password,
             "private_key_path": auth.priv_key_file,
-            "jump_hosts": jump_config
+            "jump_host": jump_config
         }
         
         return config
