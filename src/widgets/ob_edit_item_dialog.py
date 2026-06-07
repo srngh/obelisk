@@ -176,12 +176,8 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             # Connection Settings
             self.connection_name_input.set_text(node.name or '')
 
-            print(node.port)
-            print(node)
-            self.port_input.set_value(float(node.port))
             if not self.node.is_folder and self.node is not None:
                 self.hostname_input.set_text(node.address or '')
-                print(node.port)
                 self.port_input.set_value(float(node.port) or 22.0 )
                 self.is_jumphost.set_active(bool(node.is_jumphost))
             else:
