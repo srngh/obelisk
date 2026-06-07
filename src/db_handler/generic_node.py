@@ -16,4 +16,5 @@ class Node():
     use_parent_auth: bool = None
     is_jumphost: bool = None
     use_jumphost: str = None
+    use_parent_jumphost: bool = None
 

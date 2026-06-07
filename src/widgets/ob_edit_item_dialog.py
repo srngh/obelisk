@@ -57,6 +57,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     port_input = Gtk.Template.Child()
     is_jumphost = Gtk.Template.Child()
     use_jumphost = Gtk.Template.Child()
+    inherit_jumphost = Gtk.Template.Child()
 
     ## Authentication Settings
     use_parent_auth = Gtk.Template.Child()
@@ -68,6 +69,8 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     ## Buttons
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
+    cancel_button_2 = Gtk.Template.Child()
+    confirm_button_2 = Gtk.Template.Child()
 
     def __init__(self, parent_uuid=None, node_uuid=None, db_handler=None, dialog_mode='new_node', **kwargs):
         super().__init__(**kwargs)
@@ -91,6 +94,8 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
         self.confirm_button.connect('clicked', self.on_confirm)
         self.cancel_button.connect('clicked', self.on_cancel)
+        self.confirm_button_2.connect('clicked', self.on_confirm)
+        self.cancel_button_2.connect('clicked', self.on_cancel)
 
         match self.dialog_mode:
             case 'new_folder':
@@ -184,10 +189,8 @@ class ObEditItemDialog(Adw.PreferencesDialog):
                 list_box.remove(self.is_jumphost)
 
             self.setup_jumphost_comborow()
-            # TODO
-            # build a stringlist from db query 
-            # SELECT name, uuid FROM connections WHERE is_jumphost = 1;
-            # setup factory methods for use_jumphost comborow
+
+            self.inherit_jumphost.set_active(bool(node.use_parent_jumphost))
 
             # Authentication Settings
             self.use_parent_auth.set_active(bool(node.use_parent_auth))
@@ -280,8 +283,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             node.is_jumphost = self.is_jumphost.get_active()
             node.use_jumphost = self.__validate_use_jumphost()
 
-            #node.use_jumphost = self.use_jumphost.get_text()
-            #print(f"jumphost value: {node.is_jumphost}")
+            node.use_parent_jumphost = self.inherit_jumphost.get_active()
 
             # Authentication Settings
             node.use_parent_auth = self.use_parent_auth.get_active()

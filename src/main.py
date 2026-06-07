@@ -31,7 +31,7 @@ from gi.repository import Adw, Gio
 from .widgets.ob_term import ObTerm
 from .widgets.preferences import Preferences
 from .window import ObWindow
-from .initialize_backend import get_data_home, get_master_dek, get_config
+from .initialize_backend import get_data_home, get_config
 
 
 class ObeliskApplication(Adw.Application):
@@ -45,7 +45,6 @@ class ObeliskApplication(Adw.Application):
     def __init__(self):
         super().__init__(application_id='io.github.srngh.obelisk', flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
 
-        self.secret_key = None
         self.home = None
         self.config = get_config()
     
@@ -54,8 +53,6 @@ class ObeliskApplication(Adw.Application):
         Called before the application is displayed.
         """
         Adw.Application.do_startup(self)
-        if self.secret_key == None:
-            self.secret_key = get_master_dek()
 
         if self.home == None:
             self.home = get_data_home()

@@ -28,5 +28,6 @@
     <file preprocess="xml-stripblanks">icons/scalable/actions/document-save-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/folder-open-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/folder-closed-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/gtk-authentication-symbolic.svg</file>
   </gresource>
 </gresources>

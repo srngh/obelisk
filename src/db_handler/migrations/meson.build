@@ -11,6 +11,7 @@ sources = [
   '0003_add_col_pref_method_to_authentication.sql',
   '0004_add_col_ignore_host_key_to_authentication.sql',
   '0005_rename_col_key_file.sql',
+  '0006_add_col_us_parent_jumphost_to_connections.sql',
 ]
 
 install_data(sources, install_dir: migrations_dir)

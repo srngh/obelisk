@@ -433,13 +433,10 @@ class ObDBListView(Gtk.ListView):
             row = self.config.tree_list_model.get_row(i)
             if row:
                 node = row.get_item()
-                print(f"Checking if {node.name} was expanded")
                 if node and node.uuid in expanded_folders and not row.get_expanded():
                     row.set_expanded(True)
-                    print(f"Expanding row {node.name}")
         
         if self.config.tree_list_model.get_n_items() != tree_model_len:
-            # print(f"running another re_expand")
             self.__re_expand_folders(expanded_folders=expanded_folders)
 
     def _on_clone_item_activate(self, action, uuid_array):

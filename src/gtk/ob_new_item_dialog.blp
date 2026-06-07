@@ -46,7 +46,42 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
         subtitle: "Select a jumphost";
         title: "Use jumphost";
       }
+
+      Adw.SwitchRow inherit_jumphost {
+        subtitle: "Use the parent folders jumphost settings";
+        title: "Inherit Jumphost";
+      }
     }
+
+    Adw.PreferencesGroup {
+      Box {
+        halign: fill;
+
+        Button cancel_button {
+          css-classes: [
+            "destructive-action",
+          ];
+
+          halign: start;
+          height-request: -1;
+          hexpand: true;
+          label: "Cancel";
+        }
+
+        Button confirm_button {
+          halign: end;
+          height-request: -1;
+          hexpand: false;
+          label: "Confirm";
+        }
+      }
+    }
+  }
+
+  Adw.PreferencesPage auth_settings_page {
+    icon-name: "gtk-authentication-symbolic";
+    name: "auth";
+    title: "Authentication";
 
     Adw.PreferencesGroup {
       title: "Authentication";
@@ -84,7 +119,7 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
       Box {
         halign: fill;
 
-        Button cancel_button {
+        Button cancel_button_2 {
           css-classes: [
             "destructive-action",
           ];
@@ -95,7 +130,7 @@ template $ObNewItemDialog: Adw.PreferencesDialog {
           label: "Cancel";
         }
 
-        Button confirm_button {
+        Button confirm_button_2 {
           halign: end;
           height-request: -1;
           hexpand: false;

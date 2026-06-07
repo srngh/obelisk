@@ -68,7 +68,7 @@ class ObeliskDBHandler:
             )
         """)
         
-
+ 
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_name ON connections(name)')
         conn.commit()
         return conn
@@ -125,7 +125,7 @@ class ObeliskDBHandler:
             """,
             data_insert,
         )
-        conn.commit()
+        self.conn.commit()
 
     def save_node_to_db(self, node: Node) -> bool:
         """
@@ -143,7 +143,7 @@ class ObeliskDBHandler:
             if result is None:
                 # Item does not exist
                 cursor.execute(
-                    'INSERT INTO connections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO connections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     (
                         node.uuid,
                         node.parent_uuid,
@@ -155,7 +155,8 @@ class ObeliskDBHandler:
                         int(node.use_parent_auth),
                         node.auth_uuid,
                         int(node.is_jumphost),
-                        node.use_jumphost
+                        node.use_jumphost,
+                        int(node.use_parent_jumphost)
                     )
 
                 )
@@ -173,7 +174,8 @@ class ObeliskDBHandler:
                     use_parent_auth = ?,
                     auth_uuid = ?,
                     is_jumphost = ?,
-                    use_jumphost = ?
+                    use_jumphost = ?,
+                    use_parent_jumphost = ?
                     WHERE uuid = ?
                     """,
                     (node.parent_uuid,
@@ -186,6 +188,7 @@ class ObeliskDBHandler:
                     node.auth_uuid,
                     int(node.is_jumphost),
                     node.use_jumphost,
+                    int(node.use_parent_jumphost),
                     node.uuid)
                 )
                 return True
@@ -269,7 +272,8 @@ class ObeliskDBHandler:
                 auth_uuid,
                 use_parent_auth,
                 is_jumphost,
-                use_jumphost
+                use_jumphost,
+                use_parent_jumphost
                 FROM connections WHERE uuid IS ?
                 """,
                 (node_uuid,)
@@ -288,7 +292,8 @@ class ObeliskDBHandler:
                     auth_uuid=result[5],
                     use_parent_auth=result[6],
                     is_jumphost=bool(result[7]),
-                    use_jumphost=result[8]
+                    use_jumphost=result[8],
+                    use_parent_jumphost=result[9]
                 )
                 return node
             else:

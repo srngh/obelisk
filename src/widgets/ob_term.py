@@ -149,27 +149,18 @@ class ObTerm(Vte.Terminal):
         :param tab_view: The TabView, where the terminal is spawned in
         :type tab_view: Adw.TabView
         """
-        node = self.db_handler.get_item_data(item.uuid)
-        #auth = self.db_handler.get_auth_data(node.auth_uuid)
-        auth = self.db_handler.get_matching_auth_data(node.uuid)
-        print(auth)
+        # node = self.db_handler.get_item_data(item.uuid)
+        # auth = self.db_handler.get_matching_auth_data(node.uuid)
+
         page = tab_view.add_page(self)
         page.set_title(item.name)
         self._page = page
         self._tab_view = tab_view
 
-        config = {
-            "username": auth.username,
-            "address": f"{node.address}:{str(node.port)}",
-            "password": auth.password,
-            "private_key_path": auth.priv_key_file,
-            "jump_hosts": None
-        }
-        config_bytes = json.dumps(config).encode('utf-8')
+        config = self.build_config(item_uuid=item.uuid)
 
-        # Create a temporary file in the runtime dir
         runtime_dir = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
-        # print(runtime_dir)
+
         fd, temp_path = tempfile.mkstemp(dir=runtime_dir, prefix="ssh_cfg_")
         
         with os.fdopen(fd, 'w') as f:
@@ -198,11 +189,50 @@ class ObTerm(Vte.Terminal):
         """
         Triggered on Terminal spawn.
         """
-        print(pid)
         if error:
             print(f'error: {error.message}')
         else:
             terminal.connect('child-exited', self.on_command_exited)
 
-    def on_command_exited(self, terminal, status):
+
+    def on_command_exited(self, terminal, exit_code):
+        """
+        Callback for when the child process exits.
+        Closes the tab page where the terminal was spawnd, thus cleaning up the terminal as well.
+        
+        :param terminal: The terminal widget calling this method.
+        :type terminal: ObTerm
+        :param exit_code: Exit Code of the child process
+        :type exit_code: int
+        """
         self._tab_view.close_page(self._page)
+
+
+    def build_config(self, item_uuid):
+        """
+        Builds the config json object with all recursive lookups.
+
+        :param item: The connections UUID
+        :type item: str
+        """
+        node = self.db_handler.get_item_data(item_uuid)
+        auth = self.db_handler.get_matching_auth_data(node.uuid)
+
+        jump_config = None
+        if node.use_jumphost is not None:
+            jump_config = self.build_config(item_uuid=node.use_jumphost)
+        
+        # side effect of overriding node.use_jumphost lookup
+        if node.use_parent_jumphost:
+            jump_config = self.build_config(item_uuid=node.parent_uuid)
+
+        config = {
+            "username": auth.username,
+            "address": f"{node.address}:{str(node.port)}",
+            "password": auth.password,
+            "private_key_path": auth.priv_key_file,
+            "jump_hosts": jump_config
+        }
+        
+        return config
+
