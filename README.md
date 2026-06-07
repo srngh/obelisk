@@ -30,7 +30,8 @@ These are the features I need or want.
 - [ ] Different Config Backends to import / export connections
 - [ ] Convert Configs from other backends to the obelisk format (sqlite)
 - [ ] Loading Several Configs at the same time without conflicts
-- [ ] Password backends (Keyring, password managers)
+- [x] System Keyring for storing encryption key
+- [ ] Password backends (password managers)
 
 ### Nice to have
 - [ ] Split View Terminals
@@ -52,6 +53,8 @@ cd obelisk
 ```bash
 sudo dnf install meson msgfmt git cmake glib2-devel gtk4 python3-gobject libadwaita desktop-file-utils vte291-gtk4 python3-pip gobject-introspection
 ```
+
+Until I have set up a release on [obelisk-ssh-client](https://github.com/srngh/obelisk-ssh-client), you should compile it manually (go build ssh-client.go) and copy the binary to src/.
 
 #### 3. Open the project in Gnome Builder and run it
 <p align="center">
