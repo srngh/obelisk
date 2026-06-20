@@ -58,8 +58,8 @@ obelisk_sources = [
 
 install_data(obelisk_sources, install_dir: moduledir)
 
-custom_binaries = [
-  'ssh-client',
-]
+# custom_binaries = [
+#   'ssh-client',
+# ]
 
-install_data(custom_binaries, install_dir: '/app/bin/')
+# install_data(custom_binaries, install_dir: '/app/bin/')
