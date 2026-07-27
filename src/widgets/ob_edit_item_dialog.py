@@ -32,7 +32,7 @@ from ..db_handler.generic_auth import Auth
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_edit_item_dialog.ui')
-class ObEditItemDialog(Adw.PreferencesDialog):
+class ObEditItemDialog(Adw.Dialog):
     """
     A Dialog to create and edit Items.
     A Folder UUID must be passed, so it is clear where to insert a new Item later on.
@@ -69,8 +69,8 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     ## Buttons
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
-    cancel_button_2 = Gtk.Template.Child()
-    confirm_button_2 = Gtk.Template.Child()
+    # cancel_button_2 = Gtk.Template.Child()
+    # confirm_button_2 = Gtk.Template.Child()
 
     def __init__(self, parent_uuid=None, node_uuid=None, db_handler=None, dialog_mode='new_node', **kwargs):
         super().__init__(**kwargs)
@@ -92,8 +92,8 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
         self.confirm_button.connect('clicked', self.on_confirm)
         self.cancel_button.connect('clicked', self.on_cancel)
-        self.confirm_button_2.connect('clicked', self.on_confirm)
-        self.cancel_button_2.connect('clicked', self.on_cancel)
+        # self.confirm_button_2.connect('clicked', self.on_confirm)
+        # self.cancel_button_2.connect('clicked', self.on_cancel)
 
         match self.dialog_mode:
             case 'new_folder':
