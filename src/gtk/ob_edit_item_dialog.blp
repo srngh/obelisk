@@ -5,10 +5,10 @@ template $ObEditItemDialog: Adw.PreferencesDialog {
   presentation-mode: floating;
   title: "Add a new Connection";
 
-  Adw.PreferencesPage ssh_settings_page {
+  Adw.PreferencesPage con_settings_page {
     icon-name: "network-transmit-receive-symbolic";
-    name: "ssh";
-    title: "SSH";
+    name: "con";
+    title: "Connection";
 
     Adw.PreferencesGroup {
       margin-start: 0;
@@ -17,7 +17,7 @@ template $ObEditItemDialog: Adw.PreferencesDialog {
       title: "Connection Settings";
 
       Adw.EntryRow connection_name_input {
-        title: "Connection Name";
+        title: "Connection Title";
       }
 
       Adw.EntryRow hostname_input {
@@ -37,6 +37,9 @@ template $ObEditItemDialog: Adw.PreferencesDialog {
         title: _("Port");
       }
 
+    }
+
+    Adw.PreferencesGroup {
       Adw.SwitchRow is_jumphost {
         subtitle: "Can be used as jumphost by other connections";
         title: "Is Jumphost";
@@ -83,13 +86,10 @@ template $ObEditItemDialog: Adw.PreferencesDialog {
     name: "auth";
     title: "Authentication";
 
+
+
     Adw.PreferencesGroup {
       title: "Authentication";
-
-      Adw.SwitchRow use_parent_auth {
-        subtitle: "From parent folder";
-        title: "Inherit Auth Settings";
-      }
 
       Adw.ComboRow auth_method {
         halign: baseline;
@@ -112,6 +112,14 @@ template $ObEditItemDialog: Adw.PreferencesDialog {
 
       Adw.EntryRow priv_key_input {
         title: "Private Key Path";
+      }
+    }
+
+    Adw.PreferencesGroup {
+
+      Adw.SwitchRow use_parent_auth {
+        subtitle: "From parent folder";
+        title: "Inherit Auth Settings";
       }
     }
 
