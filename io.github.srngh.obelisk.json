@@ -92,6 +92,20 @@
             ]
         },
         {
+            "name" : "ssh-client",
+            "buildsystem" : "simple",
+            "build-commands" : [
+                "install -Dm0744 ssh-client -t ${FLATPAK_DEST}/bin/"
+            ],
+            "sources" : [
+                {
+                    "type" : "file",
+                    "url" : "https://github.com/srngh/obelisk-ssh-client/releases/download/v0.0.1/ssh-client",
+                    "sha256" : "3928c944d7397c80ff7bd07fa8957e91970de35aa4cc585d4df195ba3b173693"
+                }
+            ]
+        },
+        {
             "name" : "obelisk",
             "builddir" : true,
             "buildsystem" : "meson",
