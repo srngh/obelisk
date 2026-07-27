@@ -97,5 +97,21 @@ dropdown, dropdown box, dropdown > entry, dropdown > button {
 
 expander { -gtk-icon-source: -gtk-icontheme("folder-closed-symbolic"); color: #f6d32d; }
 expander:checked { -gtk-icon-source: -gtk-icontheme("folder-open-symbolic"); color: #33d17a;}
+
 listview {background-color: rgba(0, 0, 0, 0);}
-row {padding-top: 0.4em; padding-left: 1.3em;}
+row {padding-top: 0.4em; padding-left: 0.78em;}
+
+listview > row {
+    margin: 2px 8px;
+    border-radius: 6px;
+}
+
+listview > row:hover {
+    background-color: alpha(@window_fg_color, 0.05);
+}
+
+listview > row:selected, 
+listview > row:selected:focus {
+    background-color: alpha(@window_fg_color, 0.1);
+    color: @window_fg_color; /* Keeps text from turning white like it does on blue */
+}
