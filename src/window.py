@@ -146,7 +146,10 @@ class ObWindow(Adw.ApplicationWindow):
             term.spawn_go_ssh_session(item, self.tab_view)
             term.grab_focus()
         else:
-            print(self.config.tree_list_model.get_row[index].set_expanded()) # bit broken
+            row = self.config.tree_list_model.get_row(index)
+            expanded_state = row.get_expanded()
+            row.set_expanded(not expanded_state)
+
 
     # Sidebar UI Callbacks
 
