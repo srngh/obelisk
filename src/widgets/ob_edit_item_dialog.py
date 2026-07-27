@@ -31,7 +31,7 @@ from ..db_handler.generic_node import Node
 from ..db_handler.generic_auth import Auth
 
 
-@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
+@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_edit_item_dialog.ui')
 class ObEditItemDialog(Adw.PreferencesDialog):
     """
     A Dialog to create and edit Items.
@@ -43,7 +43,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     :param item: The item that will be edited
     :type item: ObTreeNode
     """
-    __gtype_name__ = 'ObNewItemDialog'
+    __gtype_name__ = 'ObEditItemDialog'
 
     __gsignals__ = {
         'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObTreeNode)),
