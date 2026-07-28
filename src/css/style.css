@@ -115,3 +115,24 @@ listview > row:selected:focus {
     background-color: alpha(@window_fg_color, 0.1);
     color: @window_fg_color; /* Keeps text from turning white like it does on blue */
 }
+
+list {background-color: rgba(0, 0, 0, 0);}
+
+list> row {
+    margin: 2px 8px;
+    border-radius: 6px;
+}
+
+list > row:hover {
+    background-color: alpha(@window_fg_color, 0.05);
+}
+
+list > row:selected, 
+list > row:selected:focus {
+    background-color: alpha(@window_fg_color, 0.1);
+    color: @window_fg_color; /* Keeps text from turning white like it does on blue */
+}
+
+.folder {
+  color:#f6d32d;
+}

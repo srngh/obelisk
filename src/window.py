@@ -41,7 +41,8 @@ class ObWindow(Adw.ApplicationWindow):
     # Template Elements
     ob_paned = Gtk.Template.Child()
     # show_search_btn = Gtk.Template.Child() # needed?
-    search_bar = Gtk.Template.Child()
+    # search_bar = Gtk.Template.Child()
+    search_entry = Gtk.Template.Child()
 
     menu_btn = Gtk.Template.Child()
     tab_view = Gtk.Template.Child()
@@ -51,6 +52,7 @@ class ObWindow(Adw.ApplicationWindow):
     # Sidebar related Widgets
     toggle_sidebar_btn = Gtk.Template.Child()
     obelisk_sidebar = Gtk.Template.Child()
+    obelisk_sidebar_viewstack = Gtk.Template.Child()
 
 
     # GSettings
@@ -61,7 +63,7 @@ class ObWindow(Adw.ApplicationWindow):
 
         self.config = config
 
-        # Sidebar stuff
+        # Sidebar dimensions
         self.obelisk_sidebar.set_size_request(230, -1)
         self.ob_paned.set_shrink_start_child(False)
         self.ob_paned.set_resize_start_child(False)
@@ -71,6 +73,8 @@ class ObWindow(Adw.ApplicationWindow):
         self.ob_paned.connect('notify::position', self.on_paned_position_changed)
         self._saved_sidebar_width = self.ob_paned.get_position()
         self.toggle_sidebar_btn.connect('toggled', self.on_toggle_sidebar_clicked)
+
+        self.search_entry.connect('search-changed', self.on_search_changed)
 
         # Actions
         self.actions = {}
@@ -95,17 +99,106 @@ class ObWindow(Adw.ApplicationWindow):
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
 
         # Wrapping the ListView in a Bin makes the ContextMenu a better size
-        adw_bin = Adw.Bin()
+        ob_list_view_bin = Adw.Bin()
         scrolled_window = Gtk.ScrolledWindow.new()
-        adw_bin.set_child(scrolled_window)
-        scrolled_window.set_child(ObDBListView(config=self.config, parent=adw_bin))
-        self.obelisk_list_view = scrolled_window.get_child()
-        self.obelisk_sidebar.set_content(adw_bin)
+        ob_list_view_bin.set_child(scrolled_window)
+        self.obelisk_list_view = ObDBListView(config=self.config, parent=ob_list_view_bin)
         self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
+        scrolled_window.set_child(self.obelisk_list_view)
+
+        self.obelisk_sidebar_viewstack.add_named(ob_list_view_bin, "tree")
+
+        self.search_list_box = Gtk.ListBox.new()
+        ob_search_list_box_bin = Adw.Bin()
+        ob_search_list_box_bin.set_child(Gtk.ScrolledWindow.new())
+        ob_search_list_box_bin.get_child().set_child(self.search_list_box)
+
+        self.obelisk_sidebar_viewstack.add_named(ob_search_list_box_bin, "search")
+
+        self.obelisk_sidebar_viewstack.set_visible_child_name("tree")
 
         # Connecting the last couple signals
         self.add_tab_btn.connect('clicked', self.on_add_tab_btn_clicked)
         self.save_btn.connect('clicked', self.on_save_btn_clicked)
+
+        # Search related
+        self._search_timeout_id = None
+        self.search_list_box.connect("row-activated", self.on_row_activated)
+
+    def on_search_changed(self, entry):
+        if self._search_timeout_id:
+            GLib.source_remove(self._search_timeout_id)
+
+        self._search_timeout_id = GLib.timeout_add(
+            250, self._perform_search, entry.get_text().strip()
+        )
+
+    def _perform_search(self, query):
+        """
+        Query database for matching names
+        """
+        self._search_timeout_id = None
+
+        if not query:
+            self._clear_list_box()
+            self.obelisk_sidebar_viewstack.set_visible_child_name("tree")
+            return False
+
+        self.obelisk_sidebar_viewstack.set_visible_child_name("search")
+        self._clear_list_box()
+
+        # TODO: Perform consecutive searches, when there are more the x=100 results
+        cursor = self.config.db_handler.conn.cursor()
+        cursor.execute(
+            "SELECT uuid, name, is_folder FROM connections WHERE name LIKE ?", (f"%{query}%",)
+        )
+        results = cursor.fetchall()
+
+        for uuid, name, is_folder in results:
+            row = self._create_result_row(uuid, name, is_folder)
+            self.search_list_box.append(row)
+
+    def _create_result_row(self, uuid, name, is_folder):
+        """
+        Creates a ListBoxRow for the Search ListBox.
+        """
+        row = Gtk.ListBoxRow()
+        box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        row.set_child(box)
+
+        row.uuid = uuid
+        row.is_folder = is_folder
+
+        if not is_folder:
+            image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
+        else:
+            image = Gtk.Image.new_from_icon_name('folder-open-symbolic')
+            image.add_css_class("folder")
+
+        box.append(image)
+
+        label = Gtk.Label(label=name, xalign=0)
+
+        box.append(label)
+        return row
+
+    def _clear_list_box(self):
+        """
+        Remove all rows from the Search ListBox.
+        """
+        while True:
+            row = self.search_list_box.get_row_at_index(0)
+            if row is None:
+                break
+            self.search_list_box.remove(row)
+
+    def on_row_activated(self, list_box, row):
+        if row and not row.is_folder:
+            node = self.config.get_node_by_uuid(row.uuid)
+            term = ObTerm(db_handler=self.config.db_handler)
+            term.spawn_go_ssh_session(node, self.tab_view)
+            term.grab_focus()
+
 
     def _on_connect_activate(self, action, node_uuid):
         """
@@ -125,7 +218,7 @@ class ObWindow(Adw.ApplicationWindow):
 
         if not node.is_folder:
             term = ObTerm(db_handler=self.config.db_handler)
-            term.spawn_go_ssh_session(item, self.tab_view)
+            term.spawn_go_ssh_session(node, self.tab_view)
             term.grab_focus()
 
     def on_sidebar_item_activated(self, list_view, index):
