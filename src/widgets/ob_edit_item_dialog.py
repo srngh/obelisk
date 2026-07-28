@@ -17,9 +17,6 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import os
-import sqlite3
-from dataclasses import dataclass
 from uuid import uuid4
 
 from gi.repository import Adw, GObject, Gio, Gtk
@@ -28,20 +25,21 @@ import netaddr
 
 from .ob_tree_node import ObTreeNode
 from ..db_handler.generic_node import Node
-from ..db_handler.generic_auth import Auth
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_edit_item_dialog.ui')
 class ObEditItemDialog(Adw.Dialog):
     """
     A Dialog to create and edit Items.
-    A Folder UUID must be passed, so it is clear where to insert a new Item later on.
-    An Item may be passed, if it should be edited.
 
-    :param folder: The folder where the returned item should be attached to
-    :type folder: ObListStore
-    :param item: The item that will be edited
-    :type item: ObTreeNode
+    :param parent_uuid: Parent UUID of the item
+    :type parent_uuid: str
+    :param node_uuid: The item to edit
+    :type node_uuid: str
+    :param db_handler: The database handler which takes care of transactions
+    :type db_handler: ObeliskDBHandler
+    :param dialog_mode: The mode of this dialog, can be "new_node", "new_folder", "edit_node" or "clone_node"
+    :type dialog_mode: str
     """
     __gtype_name__ = 'ObEditItemDialog'
 
@@ -69,8 +67,6 @@ class ObEditItemDialog(Adw.Dialog):
     ## Buttons
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
-    # cancel_button_2 = Gtk.Template.Child()
-    # confirm_button_2 = Gtk.Template.Child()
 
     def __init__(self, parent_uuid=None, node_uuid=None, db_handler=None, dialog_mode='new_node', **kwargs):
         super().__init__(**kwargs)
@@ -83,17 +79,12 @@ class ObEditItemDialog(Adw.Dialog):
             self.node = self.db_handler.get_item_data(self.node_uuid)
             if hasattr(self.node, 'auth_uuid'):
                 self.auth = self.db_handler.get_auth_data(self.node.auth_uuid)
-            else:
-                # What the hell is this?
-                self.auth = self.db_handler.get_auth_data()
             self.load_data_into_dialog()
         else:
             self.close()
 
         self.confirm_button.connect('clicked', self.on_confirm)
         self.cancel_button.connect('clicked', self.on_cancel)
-        # self.confirm_button_2.connect('clicked', self.on_confirm)
-        # self.cancel_button_2.connect('clicked', self.on_cancel)
 
         match self.dialog_mode:
             case 'new_folder':
@@ -122,7 +113,7 @@ class ObEditItemDialog(Adw.Dialog):
         """
         Create a new item or raise a toast (soon) informing the user which input is missing / wrong.
 
-        :param Button: The Button which is connected to this function.
+        :param Button: The Button calling this function.
         :type Button: Gtk.Button
         """
         # TODO replace finally blocks and display an error toast upon input errors
@@ -203,7 +194,7 @@ class ObEditItemDialog(Adw.Dialog):
     
     def setup_jumphost_comborow(self):
         """
-        Setup the factory for the jumphost comborow.
+        Setup function for the jumphost comborow.
         """
         j = self.db_handler.get_jumphosts()
         empty_jump = ObTreeNode(uuid=None, name="No Jumphost")
@@ -221,6 +212,7 @@ class ObEditItemDialog(Adw.Dialog):
         self.use_jumphost.set_model(store)
         self.use_jumphost.set_factory(factory)
 
+        # Clear jumphost selection
         if self.node.use_jumphost is not None:
             jump_node = ObTreeNode(uuid=self.node.use_jumphost, name='')
         else:
@@ -238,15 +230,24 @@ class ObEditItemDialog(Adw.Dialog):
         self.use_jumphost.set_selected(pos)
 
     def on_comborow_setup(self, factory, list_item):
+        """
+        Setup function for the comborow factory.
+        """
         label = Gtk.Label()
         list_item.set_child(label)
 
     def on_comborow_bind(self, factory, list_item):
+        """
+        Bind function for the comborow factory.
+        """
         node = list_item.get_item()
         label = list_item.get_child()
         label.set_label(node.name)
 
     def eq_func(self, jump_node, tree_node) -> bool:
+        """
+        Custom equal function for comparing a selected jumphost to all available jumphosts.
+        """
         if jump_node.uuid == tree_node.uuid:
             return True
         return False
@@ -346,7 +347,7 @@ class ObEditItemDialog(Adw.Dialog):
 
     def __recursive_copy_func(self, old_parent_uuid='', new_parent_uuid=''):
         """
-        Iterates over all node which are children of the copied folder.
+        Iterates over all nodes which are children of the copied folder.
         Creates a copy of all children and linked auth objects.
 
         :param old_parent_uuid: The uuid of the copied node

@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 class ObDBListView(Gtk.ListView):
     """
     ObListView Class, which presents a dynamic List of nested Items.
-    A ObConfig must be passed, to retrieve the fully built Data Model to present.
+    An ObConfig must be passed, to retrieve the fully built Data Model to present.
     """
     __gtype_name__ = 'ObeliskDBListView'
 
