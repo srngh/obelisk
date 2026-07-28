@@ -41,8 +41,6 @@ class ObWindow(Adw.ApplicationWindow):
     # Template Elements
     ob_paned = Gtk.Template.Child()
     # show_search_btn = Gtk.Template.Child() # needed?
-    # fav_btn = Gtk.Template.Child() # needed?
-    fav_stack = Gtk.Template.Child()
     search_bar = Gtk.Template.Child()
 
     menu_btn = Gtk.Template.Child()

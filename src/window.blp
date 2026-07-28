@@ -33,26 +33,6 @@ template $ObWindow: Adw.ApplicationWindow {
           tooltip-text: "Show/hide searchbar";
           activate => $show_search_btn();
         }
-
-        [end]
-        MenuButton fav_btn {
-          icon-name: "starred-symbolic";
-
-          popover: Popover {
-            child: Adw.ViewStack fav_stack {
-              visible: true;
-              width-request: 300;
-
-              Adw.ViewStackPage empty {
-                child: Adw.StatusPage {
-                  description: "Add your favorite Connections here by clicking the star button beside the title";
-                  icon-name: "starred-symbolic";
-                  title: "No Connections";
-                };
-              }
-            };
-          };
-        }
       }
 
       [top]
