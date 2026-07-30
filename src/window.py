@@ -19,18 +19,11 @@
 
 # from pprint import pprint
 
-import os
-import uuid
-from pathlib import Path
-
 from gi.repository import Adw
-from gi.repository import GLib, Gio, Gtk, Vte
+from gi.repository import GLib, Gio, Gtk
 
 from .ob_db_list_view import ObDBListView
-from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_term import ObTerm
-from .widgets.ob_tree_node import ObTreeNode
-from .widgets.ob_rename_item_dialog import ObRenameItemDialog
 from .widgets.theme_switcher import ThemeSwitcher
 
 
@@ -40,8 +33,7 @@ class ObWindow(Adw.ApplicationWindow):
 
     # Template Elements
     ob_paned = Gtk.Template.Child()
-    # show_search_btn = Gtk.Template.Child() # needed?
-    # search_bar = Gtk.Template.Child()
+    show_search_btn = Gtk.Template.Child()
     search_entry = Gtk.Template.Child()
 
     menu_btn = Gtk.Template.Child()
@@ -125,6 +117,39 @@ class ObWindow(Adw.ApplicationWindow):
         self._search_timeout_id = None
         self.search_list_box.connect("row-activated", self.on_row_activated)
 
+        # Shortcut Things
+        self.shortcut_controller = Gtk.ShortcutController.new()
+        self.shortcut_controller.set_scope(Gtk.ShortcutScope.GLOBAL)
+        self.add_controller(self.shortcut_controller)
+
+        self._setup_keybinds()
+
+    def _setup_keybinds(self):
+        """
+        Helper Method for adding all global keyboard shortcuts.
+        """
+        self._add_shortcut("<Ctrl>f", self.__on_shortcut_focus_search)
+
+    def _add_shortcut(self, accel_string, callback):
+        """
+        Create a shortcut and add it to the window's shortcut controller.
+        """
+        trigger = Gtk.ShortcutTrigger.parse_string(accel_string)
+        action = Gtk.CallbackAction.new(callback)
+        shortcut = Gtk.Shortcut.new(trigger, action)
+
+        self.shortcut_controller.add_shortcut(shortcut)
+
+    def __on_shortcut_focus_search(self, widget, args):
+        """
+        Callback for <Ctrl>f shortcut. Toggles the show_search_btns active state.
+        The SearchBars search-mode-enabled is bound to the show_search_btns active state.
+        """
+        active = self.show_search_btn.get_active()
+        self.show_search_btn.set_active(not active)
+        return True
+
+
     def on_search_changed(self, entry):
         if self._search_timeout_id:
             GLib.source_remove(self._search_timeout_id)
@@ -172,7 +197,7 @@ class ObWindow(Adw.ApplicationWindow):
         if not is_folder:
             image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
         else:
-            image = Gtk.Image.new_from_icon_name('folder-open-symbolic')
+            image = Gtk.Image.new_from_icon_name('folder-closed-symbolic')
             image.add_css_class("folder")
 
         box.append(image)
@@ -193,6 +218,9 @@ class ObWindow(Adw.ApplicationWindow):
             self.search_list_box.remove(row)
 
     def on_row_activated(self, list_box, row):
+        """
+        Callback for the row-activated Signal of the search ListBox.
+        """
         if row and not row.is_folder:
             node = self.config.get_node_by_uuid(row.uuid)
             term = ObTerm(db_handler=self.config.db_handler)

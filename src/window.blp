@@ -38,12 +38,12 @@ template $ObWindow: Adw.ApplicationWindow {
       }
 
       [top]
-      SearchBar search_bar {
+      SearchBar {
         child: SearchEntry search_entry {
           placeholder-text: "Search Connections…";
         };
 
-        search-mode-enabled: bind show_search_btn.active no-sync-create;
+        search-mode-enabled: bind show_search_btn.active bidirectional;
       }
     }
 
