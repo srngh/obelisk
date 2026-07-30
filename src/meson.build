@@ -49,10 +49,8 @@ obelisk_sources = [
   '__init__.py',
   'main.py',
   'window.py',
-  'ob_file_list_view.py',
-  'ob_db_list_view.py',
-  'ob_file_config.py',
-  'ob_db_config.py',
+  'ob_list_view.py',
+  'ob_config.py',
   'initialize_backend.py',
 ]
 

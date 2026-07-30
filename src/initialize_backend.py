@@ -22,7 +22,7 @@ from cryptography import fernet
 import keyring
 import os
 
-from .ob_db_config import ObDBConfig
+from .ob_config import ObDBConfig
 from .db_handler.obelisk_db_handler import ObeliskDBHandler
 
 def get_data_home() -> str:

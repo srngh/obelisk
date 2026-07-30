@@ -22,7 +22,7 @@
 from gi.repository import Adw
 from gi.repository import GLib, Gio, Gtk
 
-from .ob_db_list_view import ObDBListView
+from .ob_list_view import ObDBListView
 from .widgets.ob_term import ObTerm
 from .widgets.theme_switcher import ThemeSwitcher
 
