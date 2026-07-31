@@ -44,7 +44,6 @@ class ObEditItemDialog(Adw.Dialog):
     __gtype_name__ = 'ObEditItemDialog'
 
     __gsignals__ = {
-        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObTreeNode)),
         'refresh_folder': (GObject.SignalFlags.RUN_LAST, None, (str,)),
     }
 

@@ -275,20 +275,6 @@ class ObDBListView(Gtk.ListView):
             self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
 
-    def __on_new_item_create(self, dialog, node, folder):
-        """
-        Callback for the node_submitted Signal from ObEditItemDialog.
-
-        :param dialog: Dialog which sends the signal
-        :type dialog: ObEditItemDialog
-        :param node: Node returned by the Dialog
-        :type node: ObTreeNode
-        :param folder: Parent Folder / ListStore of the new Node
-        :type folder: ObListStore
-        """
-        del dialog
-        self.config.add_item(node, folder)
-
     def _on_rename_item_activate(self, action, node_uuid):
         """
         Callback for the list_view.rename_item action.
