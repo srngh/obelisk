@@ -375,18 +375,21 @@ class ObDBListView(Gtk.ListView):
         if dialog is not None:
             del dialog
 
+        win = self.get_root()
+        win.on_search_changed(win.search_entry)
+
         expanded_folders = self.__capture_expanded_states()
       
         if parent_uuid not in self.config.active_stores:
              if parent_uuid is None:
-                 new_children = self.config.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
+                 new_children = self.config.tree_model.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
                  self.config.root_store.splice(0, self.config.root_store.get_n_items(), new_children)
                  self.__re_expand_folders(expanded_folders=expanded_folders)
              return
 
         store = self.config.active_stores[parent_uuid]
 
-        new_children = self.config.get_children(parent_uuid)
+        new_children = self.config.tree_model.get_children(parent_uuid)
 
         store.splice(0, store.get_n_items(), new_children)
         

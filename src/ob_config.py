@@ -23,6 +23,7 @@ from pathlib import Path
 from gi.repository import GObject, Gio, Gtk
 
 from .db_handler.obelisk_db_handler import ObeliskDBHandler
+from .widgets.ob_tree_list_model import ObTreeModel
 from .widgets.ob_list_store import ObListStore
 from .widgets.ob_tree_node import ObTreeNode
 
@@ -40,17 +41,20 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         self.config_type = 'obelisk'
         self.initialize_config_path()
 
-        # self.db_handler = ObeliskDBHandler(db_path=self.db_path)
         self.active_stores = {}
 
-        self.root_store = self.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
+        self.tree_model = ObTreeModel(active_stores=self.active_stores, conn=self.db_handler.conn)
 
-        self.tree_list_model = Gtk.TreeListModel.new(
-            self.root_store,
-            passthrough=False,
-            autoexpand=False,
-            create_func=self.create_child_model
-        )
+        self.tree_list_model = self.tree_model.tree_list_model
+
+        # self.root_store = self.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
+
+        # self.tree_list_model = Gtk.TreeListModel.new(
+        #     self.root_store,
+        #     passthrough=False,
+        #     autoexpand=False,
+        #     create_func=self.create_child_model
+        # )
         self.selection_model = Gtk.SingleSelection(model=self.tree_list_model)
 
     def save(self):
@@ -106,58 +110,58 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         cursor.execute('DELETE FROM connections WHERE uuid = ?', (node.uuid,))
         cursor.execute('DELETE FROM authentication WHERE auth_uuid = ?', (node.auth_uuid,))
 
-    def create_child_model(self, item):
-        """
-        The TreeModel create_func for working with an sqlite db.
-
-        :param item: The item to run the create_func on.
-        :type item: ObTreeNode
-        """
-        if item.is_folder:
-            store = self.get_children(parent_uuid=item.uuid)
-            self.active_stores[item.uuid] = store
-            return store
-        return None
-
-    def get_children(self, parent_uuid=None, uuid=None):
-        """
-        Fetch all Connections belonging to parent_uuid.
-        The uuid of the resulting Liststore can be passed.
-
-        :param parent_uuid: The UUID of the items parent
-        :type parent_uuid: str
-        :param uuid: The root ListStores UUID
-        :type uuid: str
-        :return: An ObListStore containing all child Nodes
-        :rtype: ObListStore
-        """
-        cursor = self.db_handler.conn.cursor()
-
-        parent_name = ''
-
-        if parent_uuid is not None:
-            cursor.execute('SELECT name FROM connections WHERE uuid = ?', (parent_uuid,))
-            parent_name = cursor.fetchone()[0]
-
-        if parent_uuid is None:
-            # Items directly in the root
-            cursor.execute('SELECT uuid, name, is_folder FROM connections WHERE parent_uuid IS NULL')
-        else:
-            cursor.execute(
-                'SELECT uuid, name, is_folder FROM connections WHERE parent_uuid = ?',
-                (parent_uuid,)
-            )
-
-        rows = cursor.fetchall()
-
-        if uuid is not None:
-            store = ObListStore(uuid=parent_uuid, name=parent_name)
-        else:
-            store = ObListStore(uuid=uuid, name=parent_name)
-
-        for row in rows:
-            store.append(ObTreeNode(uuid=row[0], name=row[1], is_folder=bool(row[2]), parent_uuid=parent_uuid))
-        return store
+#       def create_child_model(self, item):
+#         """
+#         The TreeModel create_func for working with an sqlite db.
+# 
+#         :param item: The item to run the create_func on.
+#         :type item: ObTreeNode
+#         """
+#         if item.is_folder:
+#             store = self.get_children(parent_uuid=item.uuid)
+#             self.active_stores[item.uuid] = store
+#             return store
+#         return None
+# 
+#     def get_children(self, parent_uuid=None, uuid=None):
+#         """
+#         Fetch all Connections belonging to parent_uuid.
+#         The uuid of the resulting Liststore can be passed.
+# 
+#         :param parent_uuid: The UUID of the items parent
+#         :type parent_uuid: str
+#         :param uuid: The root ListStores UUID
+#         :type uuid: str
+#         :return: An ObListStore containing all child Nodes
+#         :rtype: ObListStore
+#         """
+#         cursor = self.db_handler.conn.cursor()
+# 
+#         parent_name = ''
+# 
+#         if parent_uuid is not None:
+#             cursor.execute('SELECT name FROM connections WHERE uuid = ?', (parent_uuid,))
+#             parent_name = cursor.fetchone()[0]
+# 
+#         if parent_uuid is None:
+#             # Items directly in the root
+#             cursor.execute('SELECT uuid, name, is_folder FROM connections WHERE parent_uuid IS NULL')
+#         else:
+#             cursor.execute(
+#                 'SELECT uuid, name, is_folder FROM connections WHERE parent_uuid = ?',
+#                 (parent_uuid,)
+#             )
+# 
+#         rows = cursor.fetchall()
+# 
+#         if uuid is not None:
+#             store = ObListStore(uuid=parent_uuid, name=parent_name)
+#         else:
+#             store = ObListStore(uuid=uuid, name=parent_name)
+# 
+#         for row in rows:
+#             store.append(ObTreeNode(uuid=row[0], name=row[1], is_folder=bool(row[2]), parent_uuid=parent_uuid))
+#         return store
 
     def get_node_by_uuid(self, uuid:str = None):
         """

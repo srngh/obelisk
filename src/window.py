@@ -24,6 +24,8 @@ from gi.repository import GLib, Gio, Gtk
 
 from .ob_list_view import ObDBListView
 from .widgets.ob_term import ObTerm
+from .widgets.ob_tree_node import ObTreeNode
+from .widgets.ob_tree_list_model import ObTreeModel
 from .widgets.theme_switcher import ThemeSwitcher
 
 
@@ -100,13 +102,6 @@ class ObWindow(Adw.ApplicationWindow):
 
         self.obelisk_sidebar_viewstack.add_named(ob_list_view_bin, "tree")
 
-        self.search_list_box = Gtk.ListBox.new()
-        ob_search_list_box_bin = Adw.Bin()
-        ob_search_list_box_bin.set_child(Gtk.ScrolledWindow.new())
-        ob_search_list_box_bin.get_child().set_child(self.search_list_box)
-
-        self.obelisk_sidebar_viewstack.add_named(ob_search_list_box_bin, "search")
-
         self.obelisk_sidebar_viewstack.set_visible_child_name("tree")
 
         # Connecting the last couple signals
@@ -115,7 +110,9 @@ class ObWindow(Adw.ApplicationWindow):
 
         # Search related
         self._search_timeout_id = None
-        self.search_list_box.connect("row-activated", self.on_row_activated)
+
+        self.search_tree_model = ObTreeModel(conn=self.config.db_handler.conn)
+        self.search_selection_model = Gtk.SingleSelection(model=self.search_tree_model.tree_list_model)
 
         # Shortcut Things
         self.shortcut_controller = Gtk.ShortcutController.new()
@@ -158,21 +155,24 @@ class ObWindow(Adw.ApplicationWindow):
             250, self._perform_search, entry.get_text().strip()
         )
 
+    # just need to append items in a ObListStore instead
     def _perform_search(self, query):
         """
         Query database for matching names
         """
         self._search_timeout_id = None
 
+        store = self.search_tree_model.tree_list_model.get_model()
+
         if not query:
-            self._clear_list_box()
-            self.obelisk_sidebar_viewstack.set_visible_child_name("tree")
+            store.remove_all()
+            self.obelisk_list_view.set_model(self.config.selection_model)
             return False
 
-        self.obelisk_sidebar_viewstack.set_visible_child_name("search")
-        self._clear_list_box()
+        self.obelisk_list_view.set_model(self.search_selection_model)
+        store.remove_all()
 
-        # TODO: Perform consecutive searches, when there are more the x=100 results
+        # TODO: Perform consecutive searches, when there are more than x=100 results
         cursor = self.config.db_handler.conn.cursor()
         cursor.execute(
             "SELECT uuid, name, is_folder FROM connections WHERE name LIKE ?", (f"%{query}%",)
@@ -180,52 +180,8 @@ class ObWindow(Adw.ApplicationWindow):
         results = cursor.fetchall()
 
         for uuid, name, is_folder in results:
-            row = self._create_result_row(uuid, name, is_folder)
-            self.search_list_box.append(row)
-
-    def _create_result_row(self, uuid, name, is_folder):
-        """
-        Creates a ListBoxRow for the Search ListBox.
-        """
-        row = Gtk.ListBoxRow()
-        box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        row.set_child(box)
-
-        row.uuid = uuid
-        row.is_folder = is_folder
-
-        if not is_folder:
-            image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
-        else:
-            image = Gtk.Image.new_from_icon_name('folder-closed-symbolic')
-            image.add_css_class("folder")
-
-        box.append(image)
-
-        label = Gtk.Label(label=name, xalign=0)
-
-        box.append(label)
-        return row
-
-    def _clear_list_box(self):
-        """
-        Remove all rows from the Search ListBox.
-        """
-        while True:
-            row = self.search_list_box.get_row_at_index(0)
-            if row is None:
-                break
-            self.search_list_box.remove(row)
-
-    def on_row_activated(self, list_box, row):
-        """
-        Callback for the row-activated Signal of the search ListBox.
-        """
-        if row and not row.is_folder:
-            node = self.config.get_node_by_uuid(row.uuid)
-            term = ObTerm(db_handler=self.config.db_handler)
-            term.spawn_go_ssh_session(node, self.tab_view)
-            term.grab_focus()
+            store = self.search_tree_model.tree_list_model.get_model()
+            store.append(ObTreeNode(uuid=uuid, name=name, is_folder=is_folder))
 
 
     def _on_connect_activate(self, action, node_uuid):

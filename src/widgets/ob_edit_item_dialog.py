@@ -383,7 +383,7 @@ class ObEditItemDialog(Adw.Dialog):
             self.db_handler.save_node_to_db(node)
 
             if node.is_folder:
-                self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+                self.__recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
 
     def __validate_username(self) -> str:
         """
