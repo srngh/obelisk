@@ -17,6 +17,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import sqlite3
 from uuid import uuid4
 
 from gi.repository import Adw, GObject, Gio, Gtk
@@ -67,12 +68,13 @@ class ObEditItemDialog(Adw.Dialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
-    def __init__(self, parent_uuid=None, node_uuid=None, db_handler=None, dialog_mode='new_node', **kwargs):
+    def __init__(self, parent_uuid=None, node_uuid=None, db_handler=None, dialog_mode='new_node', config=None, **kwargs):
         super().__init__(**kwargs)
         self.dialog_mode = dialog_mode
         self.parent_uuid = parent_uuid
         self.node_uuid = node_uuid
         self.db_handler = db_handler
+        self.config = config
 
         if self.node_uuid is not None:
             self.node = self.db_handler.get_item_data(self.node_uuid)
@@ -164,7 +166,10 @@ class ObEditItemDialog(Adw.Dialog):
             auth = self.auth
             
             # Connection Settings
-            self.connection_name_input.set_text(node.name or '')
+            if self.dialog_mode == 'clone_node':
+                self.connection_name_input.set_text(f"{node.name or ''} - copy")
+            else:
+                self.connection_name_input.set_text(node.name or '')
 
             if not self.node.is_folder and self.node is not None:
                 self.hostname_input.set_text(node.address or '')
@@ -292,10 +297,7 @@ class ObEditItemDialog(Adw.Dialog):
 
             auth.ignost_host_key = True
 
-
-            # Write new Data to DB
-            if self.db_handler.save_auth_to_db(auth):
-                self.db_handler.save_node_to_db(node)
+            self.config.add_item(node=node, auth=auth)
 
         except netaddr.AddrFormatError as e:
             print(e)
@@ -324,9 +326,7 @@ class ObEditItemDialog(Adw.Dialog):
 
         auth.ignost_host_key = True
 
-
-        if self.db_handler.save_auth_to_db(auth):
-            self.db_handler.save_node_to_db(node)
+        self.config.add_item(node=node, auth=auth)
 
     def __clone_node(self):
         """
@@ -340,50 +340,16 @@ class ObEditItemDialog(Adw.Dialog):
 
         if node.is_folder:
             self.__edit_folder()
-            self.__recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+            self.db_handler.conn.execute("BEGIN TRANSACTION;")
+            self.config.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+            try:
+                self.db_handler.conn.commit()
+            except sqlite3.Error as e:
+                print("Could recursively populate copied folder:", e)
+                self.db_handler.conn.rollback()
         else:
             self.__edit_node()
 
-    def __recursive_copy_func(self, old_parent_uuid='', new_parent_uuid=''):
-        """
-        Iterates over all nodes which are children of the copied folder.
-        Creates a copy of all children and linked auth objects.
-
-        :param old_parent_uuid: The uuid of the copied node
-        :type old_parent_uuid: str
-        :param new_parent_uuid: The uuid of the newly created node
-        :type new_parent_uuid: str
-        """
-        con_list = self.db_handler.get_child_items(old_parent_uuid)
-
-        for child in con_list:
-            old_node_uuid = child[0]
-            node = Node(
-                uuid=child[0],
-                parent_uuid=new_parent_uuid,
-                name=child[2],
-                is_folder=child[3],
-                address=child[4],
-                port=child[5],
-                use_parent_auth=child[7],
-                auth_uuid=child[8],
-                is_jumphost=child[9],
-                use_jumphost=child[10],
-                use_parent_jumphost=child[11]
-            )
-
-            auth = self.db_handler.get_auth_data(node.auth_uuid)
-            auth.auth_uuid = str(uuid4())
-            self.db_handler.save_auth_to_db(auth)
-
-            # alter data of copied node
-            node.name = f'{node.name} - copy'
-            node.uuid = str(uuid4())
-
-            self.db_handler.save_node_to_db(node)
-
-            if node.is_folder:
-                self.__recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
 
     def __validate_username(self) -> str:
         """

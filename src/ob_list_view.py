@@ -80,6 +80,48 @@ class ObDBListView(Gtk.ListView):
 
         self.parent.insert_action_group('list_view', self.action_group)
 
+        self.shortcut_controller = Gtk.ShortcutController.new()
+        self.add_controller(self.shortcut_controller)
+
+        self._setup_keybinds()
+
+    def _setup_keybinds(self):
+        """
+        Helper Method for adding keyboard shortcuts.
+        """
+        self._add_shortcut("<Ctrl>c", self.__on_shortcut_copy)
+        self._add_shortcut("<Ctrl>v", self.__on_shortcut_paste)
+
+    def _add_shortcut(self, accel_string, callback):
+        """
+        Create a shortcut and add it to the window's shortcut controller.
+        """
+        trigger = Gtk.ShortcutTrigger.parse_string(accel_string)
+        action = Gtk.CallbackAction.new(callback)
+        shortcut = Gtk.Shortcut.new(trigger, action)
+
+        self.shortcut_controller.add_shortcut(shortcut)
+
+    def __on_shortcut_copy(self, widget, args):
+        """
+        Copy a Node.
+        """
+        if self.get_model().get_selected_item().props.item is not None:
+            selected_node = self.config.selection_model.get_selected_item().props.item
+            if isinstance(selected_node, ObTreeNode):
+                self.copied_node = selected_node
+
+
+    def __on_shortcut_paste(self, widget, args):
+        """
+        Paste a Node.
+        """
+        # - get selected_node uuid
+        # if selected_node.is_folder:
+        #   update copied_node's parent to selected_node
+        #   
+        pass
+
     def on_setup(self, factory, list_item):
         """
         Setup Method for Factory, this creates TreeWidgets when necessary.
@@ -267,11 +309,21 @@ class ObDBListView(Gtk.ListView):
             folder_uuid = string_list[1]
 
         if folder_uuid == '00000000-0000-0000-0000-000000000000':
-            self.item_dialog = ObEditItemDialog(parent_uuid=None, node_uuid=str(uuid4()), db_handler=self.config.db_handler, dialog_mode=f'new_{item_type}')
+            self.item_dialog = ObEditItemDialog(
+                parent_uuid=None,
+                node_uuid=str(uuid4()),
+                db_handler=self.config.db_handler,
+                dialog_mode=f'new_{item_type}',
+                config=self.config)
             self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
         elif folder_uuid != '':
-            self.item_dialog = ObEditItemDialog(parent_uuid=folder_uuid, node_uuid=str(uuid4()), db_handler=self.config.db_handler, dialog_mode=f'new_{item_type}')
+            self.item_dialog = ObEditItemDialog(
+                parent_uuid=folder_uuid,
+                node_uuid=str(uuid4()),
+                db_handler=self.config.db_handler,
+                dialog_mode=f'new_{item_type}',
+                config=self.config)
             self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
 
@@ -350,7 +402,12 @@ class ObDBListView(Gtk.ListView):
         node = self.config.get_node_by_uuid(node_uuid.get_string())
 
         if node is not None:
-            self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_uuid, node_uuid=node.uuid, db_handler=self.config.db_handler, dialog_mode='edit_node')
+            self.item_dialog = ObEditItemDialog(
+                parent_uuid=node.parent_uuid,
+                node_uuid=node.uuid,
+                db_handler=self.config.db_handler,
+                dialog_mode='edit_node',
+                config=self.config)
             self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
 
@@ -442,7 +499,12 @@ class ObDBListView(Gtk.ListView):
         node = self.config.get_node_by_uuid(node_uuid.get_string())
 
         if node is not None:
-            self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_uuid, node_uuid=node.uuid, db_handler=self.config.db_handler, dialog_mode='clone_node')
+            self.item_dialog = ObEditItemDialog(
+                parent_uuid=node.parent_uuid,
+                node_uuid=node.uuid,
+                db_handler=self.config.db_handler,
+                dialog_mode='clone_node',
+                config=self.config)
             self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
 
@@ -469,7 +531,7 @@ class ObDBListView(Gtk.ListView):
         if target_node == dragged_node:
             return False
 
-        self.config.add_item(dragged_node, target_node)
+        self.config.drop_item(dragged_node, target_node)
         self.__refresh_folder(dialog=None, parent_uuid=target_node.uuid)
         self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
         return True
