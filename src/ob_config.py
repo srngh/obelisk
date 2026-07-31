@@ -50,15 +50,8 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
 
         self.tree_list_model = self.tree_model.tree_list_model
 
-        # self.root_store = self.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
-
-        # self.tree_list_model = Gtk.TreeListModel.new(
-        #     self.root_store,
-        #     passthrough=False,
-        #     autoexpand=False,
-        #     create_func=self.create_child_model
-        # )
         self.selection_model = Gtk.SingleSelection(model=self.tree_list_model)
+
 
     def save(self):
         """
@@ -96,14 +89,20 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
             node.parent_uuid = folder.uuid
             self.db_handler.save_node_to_db(node)
 
+        try:
+            self.db_handler.conn.commit()
+        except sqlite3.Error as e:
+            print("Could not finish database update on drop action:", e)
+            self.db_handler.conn.rollback()
+
     def add_item(self, node, auth):
         """
         Add a node and auth object to the database.
 
-        :param node: The node to add to the model
-        :type node: ObTreeNode
-        :param folder: The folder node where the new node will be appended to
-        :type folder: ObTreeNode
+        :param node: The node to add to the database
+        :type node: Node
+        :param auth: The matching auth object to add to the database
+        :type auth: Auth
         """
 
         self.db_handler.conn.execute("BEGIN TRANSACTION;")
@@ -130,8 +129,8 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         node = self.db_handler.get_item_data(tree_node.uuid)
 
         self.db_handler.conn.execute("BEGIN TRANSACTION;")
-        cursor.execute('DELETE FROM connections WHERE uuid = ?', (node.uuid,))
         cursor.execute('DELETE FROM authentication WHERE auth_uuid = ?', (node.auth_uuid,))
+        cursor.execute('DELETE FROM connections WHERE uuid = ?', (node.uuid,))
 
         try:
             self.db_handler.conn.commit()
@@ -139,11 +138,40 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
             print("Could not remove node and auth:", e)
             self.db_handler.conn.rollback()
 
-    def clone_item(self, tree_node):
+    def clone_item(self, node_uuid, new_parent_uuid) -> bool:
         """
         Callback for <Ctrl>c shortcut
+
+        :param node_uuid: The UUID of the node which should be copied
+        :type node_uuid: str
         """
-        pass
+
+        node = self.db_handler.get_item_data(node_uuid)
+        auth = self.db_handler.get_auth_data(node.auth_uuid)
+        old_node_uuid=node.uuid
+
+        auth.auth_uuid = str(uuid4())
+
+        node.uuid = str(uuid4())
+        node.name = f"{node.name} - copy"
+        node.auth_uuid = auth.auth_uuid
+        node.parent_uuid = new_parent_uuid
+
+        self.db_handler.conn.execute("BEGIN TRANSACTION;")
+        self.db_handler.save_node_to_db(node)
+        self.db_handler.save_auth_to_db(auth)
+
+
+        if node.is_folder:
+            self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+
+        try:
+            self.db_handler.conn.commit()
+        except sqlite3.Error as e:
+            print("Could not save node and auth:", e)
+            self.db_handler.conn.rollback()
+        return True
+
 
     def recursive_copy_func(self, old_parent_uuid='', new_parent_uuid=''):
         """
@@ -173,23 +201,25 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
                 use_parent_jumphost=child[11]
             )
 
+            #print(f"old parent uuid: {old_parent_uuid}, new_parent_uuid: {new_parent_uuid}")
+            # print(f"copying {node.name}")
+
             auth = self.db_handler.get_auth_data(node.auth_uuid)
             auth.auth_uuid = str(uuid4())
-            self.db_handler.save_auth_to_db(auth)
 
-            # alter data of copied node
             node.name = f'{node.name} - copy'
             node.uuid = str(uuid4())
+            node.auth_uuid = auth.auth_uuid
 
-            self.db_handler.save_node_to_db(node)
+            self.db_handler.save_auth_to_db(auth=auth)
+            self.db_handler.save_node_to_db(node=node)
 
             if node.is_folder:
-                self.__recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+                self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
 
     def get_node_by_uuid(self, uuid:str = None):
         """
         Get an item by its UUID.
-        The item may be an ObTreeNode.
 
         :param uuid: The UUID of the item
         :type uuid: str

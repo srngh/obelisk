@@ -89,10 +89,12 @@ class ObEditItemDialog(Adw.Dialog):
 
         match self.dialog_mode:
             case 'new_folder':
-                list_box = self.hostname_input.props.parent
-                list_box.remove(self.hostname_input)
-                list_box.remove(self.port_input)
-                list_box.remove(self.is_jumphost)
+                settings_box = self.hostname_input.props.parent
+                settings_box.remove(self.hostname_input)
+                settings_box.remove(self.port_input)
+
+                jumphost_box = self.is_jumphost.props.parent
+                jumphost_box.remove(self.is_jumphost)
                 self.connection_name_input.set_title('Folder Name')
                 super().set_title('Add a new Folder')
             case 'edit_node':                
@@ -176,10 +178,12 @@ class ObEditItemDialog(Adw.Dialog):
                 self.port_input.set_value(node.port or 22.0 )
                 self.is_jumphost.set_active(bool(node.is_jumphost))
             else:
-                list_box = self.hostname_input.props.parent
-                list_box.remove(self.hostname_input)
-                list_box.remove(self.port_input)
-                list_box.remove(self.is_jumphost)
+                settings_box = self.hostname_input.props.parent
+                settings_box.remove(self.hostname_input)
+                settings_box.remove(self.port_input)
+
+                jumphost_box = self.is_jumphost.props.parent
+                jumphost_box.remove(self.is_jumphost)
 
             self.setup_jumphost_comborow()
 
@@ -337,6 +341,7 @@ class ObEditItemDialog(Adw.Dialog):
         old_node_uuid = node.uuid
         node.uuid = str(uuid4())
         auth.auth_uuid = str(uuid4())
+        node.auth_uuid = auth.auth_uuid
 
         if node.is_folder:
             self.__edit_folder()

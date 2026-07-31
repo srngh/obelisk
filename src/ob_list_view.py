@@ -44,6 +44,7 @@ class ObDBListView(Gtk.ListView):
         super().__init__(**kwargs)
         self.config = config
         self.parent = parent
+        self.copied_node_uuid = None
 
         # Factory to populate the ListView
         factory = Gtk.SignalListItemFactory()
@@ -109,18 +110,39 @@ class ObDBListView(Gtk.ListView):
         if self.get_model().get_selected_item().props.item is not None:
             selected_node = self.config.selection_model.get_selected_item().props.item
             if isinstance(selected_node, ObTreeNode):
-                self.copied_node = selected_node
+                self.copied_node_uuid = selected_node.uuid
+                return True
+        return False
 
 
     def __on_shortcut_paste(self, widget, args):
         """
         Paste a Node.
         """
-        # - get selected_node uuid
-        # if selected_node.is_folder:
-        #   update copied_node's parent to selected_node
-        #   
-        pass
+        selected_node = None
+        new_parent_uuid = None
+
+        if self.get_model().get_selected_item().props.item is not None:
+            selected_node = self.config.selection_model.get_selected_item().props.item
+
+        print(self.copied_node_uuid)
+        print(selected_node.uuid)
+
+        if not selected_node.is_folder:
+            new_parent_uuid = selected_node.parent_uuid
+        elif self.copied_node_uuid == selected_node.uuid:
+            # Can't copy a folder into itself
+            new_parent_uuid = selected_node.parent_uuid
+        else:
+            new_parent_uuid = selected_node.uuid
+
+        if isinstance(selected_node, ObTreeNode) and self.copied_node_uuid is not None:
+            print(f"copied uuid is {self.copied_node_uuid}")
+            copied = self.config.clone_item(node_uuid=self.copied_node_uuid, new_parent_uuid=new_parent_uuid)
+        if copied:
+            self.__refresh_folder(dialog=None, parent_uuid=new_parent_uuid)
+            return True
+        return False
 
     def on_setup(self, factory, list_item):
         """
@@ -434,7 +456,9 @@ class ObDBListView(Gtk.ListView):
         if parent_uuid not in self.config.active_stores:
              if parent_uuid is None:
                  new_children = self.config.tree_model.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
-                 self.config.root_store.splice(0, self.config.root_store.get_n_items(), new_children)
+                 self.config.tree_model.root_store.splice(
+                     0,
+                     self.config.tree_model.root_store.get_n_items(), new_children)
                  self.__re_expand_folders(expanded_folders=expanded_folders)
              return
 
