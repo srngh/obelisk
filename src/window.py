@@ -19,18 +19,13 @@
 
 # from pprint import pprint
 
-import os
-import uuid
-from pathlib import Path
-
 from gi.repository import Adw
-from gi.repository import GLib, Gio, Gtk, Vte
+from gi.repository import GLib, Gio, Gtk
 
-from .ob_db_list_view import ObDBListView
-from .widgets.ob_edit_item_dialog import ObEditItemDialog
+from .ob_list_view import ObDBListView
 from .widgets.ob_term import ObTerm
 from .widgets.ob_tree_node import ObTreeNode
-from .widgets.ob_rename_item_dialog import ObRenameItemDialog
+from .widgets.ob_tree_list_model import ObTreeModel
 from .widgets.theme_switcher import ThemeSwitcher
 
 
@@ -40,10 +35,8 @@ class ObWindow(Adw.ApplicationWindow):
 
     # Template Elements
     ob_paned = Gtk.Template.Child()
-    # show_search_btn = Gtk.Template.Child() # needed?
-    # fav_btn = Gtk.Template.Child() # needed?
-    fav_stack = Gtk.Template.Child()
-    search_bar = Gtk.Template.Child()
+    show_search_btn = Gtk.Template.Child()
+    search_entry = Gtk.Template.Child()
 
     menu_btn = Gtk.Template.Child()
     tab_view = Gtk.Template.Child()
@@ -53,6 +46,7 @@ class ObWindow(Adw.ApplicationWindow):
     # Sidebar related Widgets
     toggle_sidebar_btn = Gtk.Template.Child()
     obelisk_sidebar = Gtk.Template.Child()
+    obelisk_sidebar_viewstack = Gtk.Template.Child()
 
 
     # GSettings
@@ -63,7 +57,7 @@ class ObWindow(Adw.ApplicationWindow):
 
         self.config = config
 
-        # Sidebar stuff
+        # Sidebar dimensions
         self.obelisk_sidebar.set_size_request(230, -1)
         self.ob_paned.set_shrink_start_child(False)
         self.ob_paned.set_resize_start_child(False)
@@ -73,6 +67,8 @@ class ObWindow(Adw.ApplicationWindow):
         self.ob_paned.connect('notify::position', self.on_paned_position_changed)
         self._saved_sidebar_width = self.ob_paned.get_position()
         self.toggle_sidebar_btn.connect('toggled', self.on_toggle_sidebar_clicked)
+
+        self.search_entry.connect('search-changed', self.on_search_changed)
 
         # Actions
         self.actions = {}
@@ -97,17 +93,96 @@ class ObWindow(Adw.ApplicationWindow):
                             'maximized', Gio.SettingsBindFlags.DEFAULT)
 
         # Wrapping the ListView in a Bin makes the ContextMenu a better size
-        adw_bin = Adw.Bin()
+        ob_list_view_bin = Adw.Bin()
         scrolled_window = Gtk.ScrolledWindow.new()
-        adw_bin.set_child(scrolled_window)
-        scrolled_window.set_child(ObDBListView(config=self.config, parent=adw_bin))
-        self.obelisk_list_view = scrolled_window.get_child()
-        self.obelisk_sidebar.set_content(adw_bin)
+        ob_list_view_bin.set_child(scrolled_window)
+        self.obelisk_list_view = ObDBListView(config=self.config, parent=ob_list_view_bin)
         self.obelisk_list_view.connect('activate', self.on_sidebar_item_activated)
+        scrolled_window.set_child(self.obelisk_list_view)
+
+        self.obelisk_sidebar_viewstack.add_named(ob_list_view_bin, "tree")
+
+        self.obelisk_sidebar_viewstack.set_visible_child_name("tree")
 
         # Connecting the last couple signals
         self.add_tab_btn.connect('clicked', self.on_add_tab_btn_clicked)
         self.save_btn.connect('clicked', self.on_save_btn_clicked)
+
+        # Search related
+        self._search_timeout_id = None
+
+        self.search_tree_model = ObTreeModel(conn=self.config.db_handler.conn)
+        self.search_selection_model = Gtk.SingleSelection(model=self.search_tree_model.tree_list_model)
+
+        # Shortcut Things
+        self.shortcut_controller = Gtk.ShortcutController.new()
+        self.shortcut_controller.set_scope(Gtk.ShortcutScope.GLOBAL)
+        self.add_controller(self.shortcut_controller)
+
+        self._setup_keybinds()
+
+    def _setup_keybinds(self):
+        """
+        Helper Method for adding all global keyboard shortcuts.
+        """
+        self._add_shortcut("<Ctrl>f", self.__on_shortcut_focus_search)
+
+    def _add_shortcut(self, accel_string, callback):
+        """
+        Create a shortcut and add it to the window's shortcut controller.
+        """
+        trigger = Gtk.ShortcutTrigger.parse_string(accel_string)
+        action = Gtk.CallbackAction.new(callback)
+        shortcut = Gtk.Shortcut.new(trigger, action)
+
+        self.shortcut_controller.add_shortcut(shortcut)
+
+    def __on_shortcut_focus_search(self, widget, args):
+        """
+        Callback for <Ctrl>f shortcut. Toggles the show_search_btns active state.
+        The SearchBars search-mode-enabled is bound to the show_search_btns active state.
+        """
+        active = self.show_search_btn.get_active()
+        self.show_search_btn.set_active(not active)
+        return True
+
+
+    def on_search_changed(self, entry):
+        if self._search_timeout_id:
+            GLib.source_remove(self._search_timeout_id)
+
+        self._search_timeout_id = GLib.timeout_add(
+            250, self._perform_search, entry.get_text().strip()
+        )
+
+    # just need to append items in a ObListStore instead
+    def _perform_search(self, query):
+        """
+        Query database for matching names
+        """
+        self._search_timeout_id = None
+
+        store = self.search_tree_model.tree_list_model.get_model()
+
+        if not query:
+            store.remove_all()
+            self.obelisk_list_view.set_model(self.config.selection_model)
+            return False
+
+        self.obelisk_list_view.set_model(self.search_selection_model)
+        store.remove_all()
+
+        # TODO: Perform consecutive searches, when there are more than x=100 results
+        cursor = self.config.db_handler.conn.cursor()
+        cursor.execute(
+            "SELECT uuid, name, is_folder FROM connections WHERE name LIKE ?", (f"%{query}%",)
+        )
+        results = cursor.fetchall()
+
+        for uuid, name, is_folder in results:
+            store = self.search_tree_model.tree_list_model.get_model()
+            store.append(ObTreeNode(uuid=uuid, name=name, is_folder=is_folder))
+
 
     def _on_connect_activate(self, action, node_uuid):
         """
@@ -127,7 +202,7 @@ class ObWindow(Adw.ApplicationWindow):
 
         if not node.is_folder:
             term = ObTerm(db_handler=self.config.db_handler)
-            term.spawn_go_ssh_session(item, self.tab_view)
+            term.spawn_go_ssh_session(node, self.tab_view)
             term.grab_focus()
 
     def on_sidebar_item_activated(self, list_view, index):

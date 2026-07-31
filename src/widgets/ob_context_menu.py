@@ -30,6 +30,7 @@ class ObContextMenu(Gtk.PopoverMenu):
         self.node_uuid = node_uuid
 
         # TO DO: Improve logic for when Actions should connect, and when they shouldn't
+        # - dont add connect_item to folder nodes
 
         model = Gio.Menu.new()
 
@@ -47,10 +48,10 @@ class ObContextMenu(Gtk.PopoverMenu):
 
         if self.folder_uuid != '00000000-0000-0000-0000-000000000000' or self.node_uuid != '':
             menu_edit_item = Gio.MenuItem.new('_Edit Item', 'list_view.edit_item')
-            menu_edit_item.set_action_and_target_value('list_view.edit_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
+            menu_edit_item.set_action_and_target_value('list_view.edit_item', GLib.Variant.new_string(self.node_uuid))
 
             menu_clone_item = Gio.MenuItem.new('_Clone Item', 'list_view.clone_item')
-            menu_clone_item.set_action_and_target_value('list_view.clone_item', GLib.Variant.new_strv([self.folder_uuid, self.node_uuid]))
+            menu_clone_item.set_action_and_target_value('list_view.clone_item', GLib.Variant.new_string(self.node_uuid))
 
             menu_rename_item = Gio.MenuItem.new('_Rename', 'list_view.rename_item')
             menu_rename_item.set_action_and_target_value('list_view.rename_item', GLib.Variant.new_string(self.node_uuid))

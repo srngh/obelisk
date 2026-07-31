@@ -1,0 +1,150 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ObEditItemDialog: Adw.Dialog {
+  child: Adw.ToolbarView {
+    content: Adw.ViewStack ob_vstk {
+      Adw.ViewStackPage {
+        child: Box {
+          margin-bottom: 25;
+          margin-end: 50;
+          margin-start: 50;
+          margin-top: 25;
+          orientation: vertical;
+
+          Adw.PreferencesGroup {
+            hexpand: true;
+            margin-bottom: 25;
+            title: "Connection Settings";
+
+            Adw.EntryRow connection_name_input {
+              title: "Connection Title";
+            }
+
+            Adw.EntryRow hostname_input {
+              title: "Hostname";
+            }
+
+            Adw.SpinRow port_input {
+              adjustment: Adjustment {
+                lower: 1;
+                page-increment: 10;
+                step-increment: 1;
+                upper: 65535;
+                value: 22;
+              };
+
+              numeric: true;
+              title: _("Port");
+            }
+          }
+
+          Adw.PreferencesGroup {
+            margin-bottom: 25;
+
+            Adw.SwitchRow is_jumphost {
+              subtitle: "Can be used as jumphost by other connections";
+              title: "Is Jumphost";
+            }
+
+            Adw.ComboRow use_jumphost {
+              subtitle: "Select a jumphost";
+              title: "Use jumphost";
+            }
+
+            Adw.SwitchRow inherit_jumphost {
+              subtitle: "Use the parent folders jumphost settings";
+              title: "Inherit Jumphost";
+            }
+          }
+        };
+
+        icon-name: "network-transmit-receive-symbolic";
+        name: "con_page";
+        title: "Connection";
+      }
+
+      Adw.ViewStackPage {
+        child: Box {
+          margin-bottom: 25;
+          margin-end: 50;
+          margin-start: 50;
+          margin-top: 25;
+          orientation: vertical;
+
+          Adw.PreferencesGroup {
+            margin-bottom: 25;
+            title: "Authentication";
+
+            Adw.ComboRow auth_method {
+              halign: baseline;
+              height-request: -1;
+              hexpand: false;
+              hexpand-set: false;
+              subtitle: "How to Authenticate";
+              title: "Authentication";
+              valign: fill;
+            }
+
+            Adw.EntryRow username_input {
+              title: "Username";
+            }
+
+            Adw.PasswordEntryRow password_input {
+              title: "Password";
+            }
+
+            Adw.EntryRow priv_key_input {
+              title: "Private Key Path";
+            }
+          }
+
+          Adw.PreferencesGroup {
+            Adw.SwitchRow use_parent_auth {
+              subtitle: "From parent folder";
+              title: "Inherit Auth Settings";
+            }
+          }
+        };
+
+        icon-name: "gtk-authentication-symbolic";
+        title: "Authentication";
+      }
+    };
+
+    [top]
+    Adw.HeaderBar {
+      title-widget: Adw.ViewSwitcherTitle {
+        stack: ob_vstk;
+      };
+    }
+
+    [bottom]
+    ActionBar {
+      margin-bottom: 25;
+
+      [start]
+      Button cancel_button {
+        css-classes: [
+          "destructive-action",
+        ];
+
+        label: "Cancel";
+        margin-start: 50;
+      }
+
+      [end]
+      Button confirm_button {
+        css-classes: [
+          "suggested-action",
+        ];
+
+        label: "Confirm";
+        margin-end: 50;
+      }
+    }
+  };
+
+  content-height: 500;
+  content-width: 600;
+}

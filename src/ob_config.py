@@ -18,11 +18,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
+import sqlite3
 from pathlib import Path
+from uuid import uuid4
 
 from gi.repository import GObject, Gio, Gtk
 
 from .db_handler.obelisk_db_handler import ObeliskDBHandler
+from .db_handler.generic_node import Node
+from .widgets.ob_tree_list_model import ObTreeModel
 from .widgets.ob_list_store import ObListStore
 from .widgets.ob_tree_node import ObTreeNode
 
@@ -40,18 +44,14 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         self.config_type = 'obelisk'
         self.initialize_config_path()
 
-        # self.db_handler = ObeliskDBHandler(db_path=self.db_path)
         self.active_stores = {}
 
-        self.root_store = self.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
+        self.tree_model = ObTreeModel(active_stores=self.active_stores, conn=self.db_handler.conn)
 
-        self.tree_list_model = Gtk.TreeListModel.new(
-            self.root_store,
-            passthrough=False,
-            autoexpand=False,
-            create_func=self.create_child_model
-        )
+        self.tree_list_model = self.tree_model.tree_list_model
+
         self.selection_model = Gtk.SingleSelection(model=self.tree_list_model)
+
 
     def save(self):
         """
@@ -70,10 +70,9 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         connections = self.prepare_sub_tree(list_store)
         self.default_handler.connections = connections
 
-    def add_item(self, tree_node, folder):
+    def drop_item(self, tree_node, folder):
         """
-        Add a node to a folder.
-        If the node alread exist, it will be reassigned to the specified folder.
+        Callback for drag and drop.
 
         :param node: The node to add to the model
         :type node: ObTreeNode
@@ -81,7 +80,6 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         :type folder: ObTreeNode
         """
         node = self.db_handler.get_item_data(node_uuid=tree_node.uuid)
-        auth = self.db_handler.get_auth_data(auth_uuid=node.auth_uuid)
 
         if folder.uuid == '00000000-0000-0000-0000-000000000000':
             self.ob_list_store_model.append(tree_node)
@@ -90,6 +88,33 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         else:
             node.parent_uuid = folder.uuid
             self.db_handler.save_node_to_db(node)
+
+        try:
+            self.db_handler.conn.commit()
+        except sqlite3.Error as e:
+            print("Could not finish database update on drop action:", e)
+            self.db_handler.conn.rollback()
+
+    def add_item(self, node, auth):
+        """
+        Add a node and auth object to the database.
+
+        :param node: The node to add to the database
+        :type node: Node
+        :param auth: The matching auth object to add to the database
+        :type auth: Auth
+        """
+
+        self.db_handler.conn.execute("BEGIN TRANSACTION;")
+        self.db_handler.save_node_to_db(node)
+        self.db_handler.save_auth_to_db(auth)
+
+        try:
+            self.db_handler.conn.commit()
+        except sqlite3.Error as e:
+            print("Could not save node and auth:", e)
+            self.db_handler.conn.rollback()
+
 
     def remove_item(self, tree_node):
         """
@@ -102,67 +127,99 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         cursor = self.db_handler.conn.cursor()
 
         node = self.db_handler.get_item_data(tree_node.uuid)
-        auth = self.db_handler.get_auth_data(node.auth_uuid)
-        cursor.execute('DELETE FROM connections WHERE uuid = ?', (node.uuid,))
+
+        self.db_handler.conn.execute("BEGIN TRANSACTION;")
         cursor.execute('DELETE FROM authentication WHERE auth_uuid = ?', (node.auth_uuid,))
+        cursor.execute('DELETE FROM connections WHERE uuid = ?', (node.uuid,))
 
-    def create_child_model(self, item):
+        try:
+            self.db_handler.conn.commit()
+        except sqlite3.Error as e:
+            print("Could not remove node and auth:", e)
+            self.db_handler.conn.rollback()
+
+    def clone_item(self, node_uuid, new_parent_uuid) -> bool:
         """
-        The TreeModel create_func for working with an sqlite db.
+        Callback for <Ctrl>c shortcut
 
-        :param item: The item to run the create_func on.
-        :type item: ObTreeNode
+        :param node_uuid: The UUID of the node which should be copied
+        :type node_uuid: str
         """
-        if item.is_folder:
-            store = self.get_children(parent_uuid=item.uuid)
-            self.active_stores[item.uuid] = store
-            return store
-        return None
 
-    def get_children(self, parent_uuid=None, uuid=None):
+        node = self.db_handler.get_item_data(node_uuid)
+        auth = self.db_handler.get_auth_data(node.auth_uuid)
+        old_node_uuid=node.uuid
+
+        auth.auth_uuid = str(uuid4())
+
+        node.uuid = str(uuid4())
+        node.name = f"{node.name} - copy"
+        node.auth_uuid = auth.auth_uuid
+        node.parent_uuid = new_parent_uuid
+
+        self.db_handler.conn.execute("BEGIN TRANSACTION;")
+        self.db_handler.save_node_to_db(node)
+        self.db_handler.save_auth_to_db(auth)
+
+
+        if node.is_folder:
+            self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+
+        try:
+            self.db_handler.conn.commit()
+        except sqlite3.Error as e:
+            print("Could not save node and auth:", e)
+            self.db_handler.conn.rollback()
+        return True
+
+
+    def recursive_copy_func(self, old_parent_uuid='', new_parent_uuid=''):
         """
-        Fetch all Connections belonging to parent_uuid.
-        The uuid of the resulting Liststore can be passed.
+        Iterates over all nodes which are children of the copied folder.
+        Creates a copy of all children and linked auth objects.
 
-        :param parent_uuid: The UUID of the items parent
-        :type parent_uuid: str
-        :param uuid: The root ListStores UUID
-        :type uuid: str
-        :return: An ObListStore containing all child Nodes
-        :rtype: ObListStore
+        :param old_parent_uuid: The uuid of the copied node
+        :type old_parent_uuid: str
+        :param new_parent_uuid: The uuid of the newly created node
+        :type new_parent_uuid: str
         """
-        cursor = self.db_handler.conn.cursor()
+        con_list = self.db_handler.get_child_items(old_parent_uuid)
 
-        parent_name = ''
-
-        if parent_uuid is not None:
-            cursor.execute('SELECT name FROM connections WHERE uuid = ?', (parent_uuid,))
-            parent_name = cursor.fetchone()[0]
-
-        if parent_uuid is None:
-            # Items directly in the root
-            cursor.execute('SELECT uuid, name, is_folder FROM connections WHERE parent_uuid IS NULL')
-        else:
-            cursor.execute(
-                'SELECT uuid, name, is_folder FROM connections WHERE parent_uuid = ?',
-                (parent_uuid,)
+        for child in con_list:
+            old_node_uuid = child[0]
+            node = Node(
+                uuid=child[0],
+                parent_uuid=new_parent_uuid,
+                name=child[2],
+                is_folder=child[3],
+                address=child[4],
+                port=child[5],
+                use_parent_auth=child[7],
+                auth_uuid=child[8],
+                is_jumphost=child[9],
+                use_jumphost=child[10],
+                use_parent_jumphost=child[11]
             )
 
-        rows = cursor.fetchall()
+            #print(f"old parent uuid: {old_parent_uuid}, new_parent_uuid: {new_parent_uuid}")
+            # print(f"copying {node.name}")
 
-        if uuid is not None:
-            store = ObListStore(uuid=parent_uuid, name=parent_name)
-        else:
-            store = ObListStore(uuid=uuid, name=parent_name)
+            auth = self.db_handler.get_auth_data(node.auth_uuid)
+            auth.auth_uuid = str(uuid4())
 
-        for row in rows:
-            store.append(ObTreeNode(uuid=row[0], name=row[1], is_folder=bool(row[2]), parent_uuid=parent_uuid))
-        return store
+            node.name = f'{node.name} - copy'
+            node.uuid = str(uuid4())
+            node.auth_uuid = auth.auth_uuid
+
+            self.db_handler.save_auth_to_db(auth=auth)
+            self.db_handler.save_node_to_db(node=node)
+
+            if node.is_folder:
+                self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
 
     def get_node_by_uuid(self, uuid:str = None):
         """
         Get an item by its UUID.
-        The item may be an ObTreeNode.
 
         :param uuid: The UUID of the item
         :type uuid: str

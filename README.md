@@ -6,36 +6,36 @@
 
 ## Introduction
 Obelisk is a GTK4 / Adwaita application for managing SSH connections.
-Similar to other applications it will allow creating and managing SSH connections. Emphasis is on a scalable and intuitive UI. In it's current scope the primary target audience for this is myself. I find other linux applications in this category are either:
+Similar to other applications it allows creating and managing SSH connections. Emphasis is on a scalable and intuitive UI. In it's current scope the primary target audience for this is myself. I find other linux applications in this category are either:
 
-- largely unmaintaned (asbru-cm)
-- lacking in features
-  - grouping connections
-  - variable inheritance
-- coded to a large extend by AI
+- Largely unmaintaned (asbru-cm)
+- Stuck on GTK3 (again, asbru-cm)
+- Lacking in features, such as
+  - Grouping connections
+  - Variable inheritance
+- Confusing hodge-podge of GTK4/Adwaita widgets (probably due being coded by LLMs)
 
 ## Target Features
 These are the features I need or want.
 
 ### Important
-~~- [x] Use yaml config files, so they can be modified in a text editor as well~~
 - [x] Use an sqlite database, so the application scales well
-- [x] consistent dark/light mode
-- [ ] Config backups and rotation on write
+- [x] Consistent dark/light mode
 - [x] Load a large amount of connections with little performance impact (>10k)
 - [x] SSH Auth via Public Key, Password Auth
 - [x] SSH Jumphost Support
 - [x] Inherit variables from folders
 - [x] Store encrypted passwords
+- [x] System Keyring for storing encryption key
+- [ ] Config backups
 - [ ] Different Config Backends to import / export connections
 - [ ] Convert Configs from other backends to the obelisk format (sqlite)
 - [ ] Loading Several Configs at the same time without conflicts
-- [x] System Keyring for storing encryption key
 - [ ] Password backends (password managers)
 
 ### Nice to have
 - [ ] Split View Terminals
-- [ ] Color highlighting of terminal output based on pattern matching (intended for working with switches an routers which don't use color codes in their CLI)
+- [ ] Color highlighting of terminal output based on pattern matching (intended for working with switches, routers, etc which don't use color codes in their CLI)
 
 ## Build Instructions
 This projects is built in Gnome Builder.

@@ -1,4 +1,4 @@
-# obelisk_file_list_view.py
+# obelisk_tree_list_view.py
 #
 # Copyright 2026 simhof
 #
@@ -17,21 +17,26 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import GLib, GObject, Gdk, Gtk, Gio
+import logging
+from uuid import uuid4
+from gi.repository import GLib, GObject, Gdk, Gio, Gtk
 
+
+from .widgets.ob_context_menu import ObContextMenu
 from .widgets.ob_edit_item_dialog import ObEditItemDialog
 from .widgets.ob_rename_item_dialog import ObRenameItemDialog
-from .widgets.ob_context_menu import ObContextMenu
 from .widgets.ob_tree_expander import ObTreeExpander
 from .widgets.ob_tree_node import ObTreeNode
 
+logger = logging.getLogger(__name__)
 
-class ObFileListView(Gtk.ListView):
+
+class ObDBListView(Gtk.ListView):
     """
     ObListView Class, which presents a dynamic List of nested Items.
-    A ObConfig must be passed, to retrieve the fully built Data Model to present.
+    An ObConfig must be passed, to retrieve the fully built Data Model to present.
     """
-    __gtype_name__ = 'ObeliskFileListView'
+    __gtype_name__ = 'ObeliskDBListView'
 
     model = Gtk.SingleSelection()
 
@@ -39,6 +44,7 @@ class ObFileListView(Gtk.ListView):
         super().__init__(**kwargs)
         self.config = config
         self.parent = parent
+        self.copied_node_uuid = None
 
         # Factory to populate the ListView
         factory = Gtk.SignalListItemFactory()
@@ -59,6 +65,8 @@ class ObFileListView(Gtk.ListView):
         for action in [
             'rename_item',
             'remove_item',
+            'edit_item',
+            'clone_item',
         ]:
             gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('s'))
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
@@ -66,14 +74,75 @@ class ObFileListView(Gtk.ListView):
 
         for action in [
             'new_item',
-            'edit_item',
-            'clone_item',
         ]:
             gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('as'))
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
             self.action_group.add_action(gaction)
 
         self.parent.insert_action_group('list_view', self.action_group)
+
+        self.shortcut_controller = Gtk.ShortcutController.new()
+        self.add_controller(self.shortcut_controller)
+
+        self._setup_keybinds()
+
+    def _setup_keybinds(self):
+        """
+        Helper Method for adding keyboard shortcuts.
+        """
+        self._add_shortcut("<Ctrl>c", self.__on_shortcut_copy)
+        self._add_shortcut("<Ctrl>v", self.__on_shortcut_paste)
+
+    def _add_shortcut(self, accel_string, callback):
+        """
+        Create a shortcut and add it to the window's shortcut controller.
+        """
+        trigger = Gtk.ShortcutTrigger.parse_string(accel_string)
+        action = Gtk.CallbackAction.new(callback)
+        shortcut = Gtk.Shortcut.new(trigger, action)
+
+        self.shortcut_controller.add_shortcut(shortcut)
+
+    def __on_shortcut_copy(self, widget, args):
+        """
+        Copy a Node.
+        """
+        if self.get_model().get_selected_item().props.item is not None:
+            selected_node = self.config.selection_model.get_selected_item().props.item
+            if isinstance(selected_node, ObTreeNode):
+                self.copied_node_uuid = selected_node.uuid
+                return True
+        return False
+
+
+    def __on_shortcut_paste(self, widget, args):
+        """
+        Paste a Node.
+        """
+        selected_node = None
+        new_parent_uuid = None
+
+        if self.get_model().get_selected_item().props.item is not None:
+            selected_node = self.config.selection_model.get_selected_item().props.item
+
+        print(self.copied_node_uuid)
+        print(selected_node.uuid)
+
+        if not selected_node.is_folder:
+            new_parent_uuid = selected_node.parent_uuid
+        elif self.copied_node_uuid == selected_node.uuid:
+            # Can't copy a folder into itself
+            new_parent_uuid = selected_node.parent_uuid
+        else:
+            new_parent_uuid = selected_node.uuid
+
+        if isinstance(selected_node, ObTreeNode) and self.copied_node_uuid is not None:
+            print(f"copied uuid is {self.copied_node_uuid}")
+            copied = self.config.clone_item(node_uuid=self.copied_node_uuid, new_parent_uuid=new_parent_uuid)
+        if copied:
+            self.__refresh_folder(dialog=None, parent_uuid=new_parent_uuid)
+            return True
+        return False
 
     def on_setup(self, factory, list_item):
         """
@@ -147,8 +216,8 @@ class ObFileListView(Gtk.ListView):
     def __on_button_press(self, gesture, npress, x, y):
         """
         Opens a Context Menu pointing to the referenced Item in the ListView.
-        If a folder is clicked, its' UUID will be passed to the context menu.
-        If a node is clicked, the parent folders' UUID will be passed to the context menu.
+        If a folder is clicked, its UUID will be passed to the context menu.
+        If a node is clicked, the parent folders UUID will be passed to the context menu.
         If the empty part is clicked, the parent is assumed to be the root of the ListView.
 
         :param gesture: The released gesture invoking this function
@@ -161,7 +230,6 @@ class ObFileListView(Gtk.ListView):
         :type y: float
         :rtype: bool
         """
-        # TO DO: Pass the full item to the ContextMenu, so edit and clone methods can work with the same dialog
         tree_widget = self.__get_tree_widget(x, y)
         if hasattr(tree_widget, 'expander'):
             expander = tree_widget.expander
@@ -176,27 +244,28 @@ class ObFileListView(Gtk.ListView):
             return False
         elif expander is None:
             # When clicking on any empty part of the ListView
-            folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
-            context_menu = ObContextMenu(folder.uuid)
-            context_menu.set_parent(self.parent)
-            context_menu.popup_at(x, y)
+            folder_id = '00000000-0000-0000-0000-000000000000'
+            self.context_menu = ObContextMenu(folder_id)
+            self.context_menu.set_parent(self.parent)
+            self.context_menu.popup_at(x, y)
             return True
         else:
             # When clicking on any item or folder of the ListView
             item = expander.props.item
-            folder = None
+            folder_id = None
             if not item.is_folder:
-                folder = self.config.get_folder_by_child_uuid(item.uuid)
-                if folder is None:
-                    folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
+                # Try to lookup
+                folder_id = item.parent_uuid
+                if folder_id is None:
+                    folder_id = '00000000-0000-0000-0000-000000000000'
             elif item.is_folder:
-                folder = item
+                folder_id = item.uuid
 
-            if folder is not None:
-                self.context_menu = ObContextMenu(folder.uuid, node_uuid=item.uuid)
+            if folder_id is not None:
+                self.context_menu = ObContextMenu(folder_id, node_uuid=item.uuid)
 
                 # not exactly elegant, but this binds the popover to the Adw.Bin which contains the Sidebar
-                # otherwise the popover is really small an comes with an annoying scrollbar
+                # otherwise the popover is really small and comes with an annoying scrollbar
                 self.context_menu.set_parent(self.parent)
                 list_row = expander.get_list_row()
                 self.model.set_selected(list_row.get_position())
@@ -261,32 +330,24 @@ class ObFileListView(Gtk.ListView):
             item_type = string_list[0]
             folder_uuid = string_list[1]
 
-        if param_array is not None:
-            # TO DO: don't use the root list store anymore
-            uuid = folder_uuid
-            if uuid != '00000000-0000-0000-0000-000000000000':
-                folder = self.config.get_node_by_uuid(uuid)
-            else:
-                folder = ObTreeNode(name='root', uuid=uuid)
-
-            if folder is not None:
-                self.item_dialog = ObEditItemDialog(folder=folder, dialog_mode=f'new_{item_type}')
-                self.item_dialog.connect('node_submitted', self.__on_new_item_create)
-                self.item_dialog.present(self)
-
-    def __on_new_item_create(self, dialog, node, folder):
-        """
-        Callback for the node_submitted Signal from ObEditItemDialog.
-
-        :param dialog: Dialog which sends the signal
-        :type dialog: ObEditItemDialog
-        :param node: Node returned by the Dialog
-        :type node: ObTreeNode
-        :param folder: Parent Folder / ListStore of the new Node
-        :type folder: ObListStore
-        """
-        del dialog
-        self.config.add_item(node, folder)
+        if folder_uuid == '00000000-0000-0000-0000-000000000000':
+            self.item_dialog = ObEditItemDialog(
+                parent_uuid=None,
+                node_uuid=str(uuid4()),
+                db_handler=self.config.db_handler,
+                dialog_mode=f'new_{item_type}',
+                config=self.config)
+            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
+            self.item_dialog.present(self)
+        elif folder_uuid != '':
+            self.item_dialog = ObEditItemDialog(
+                parent_uuid=folder_uuid,
+                node_uuid=str(uuid4()),
+                db_handler=self.config.db_handler,
+                dialog_mode=f'new_{item_type}',
+                config=self.config)
+            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
+            self.item_dialog.present(self)
 
     def _on_rename_item_activate(self, action, node_uuid):
         """
@@ -309,8 +370,6 @@ class ObFileListView(Gtk.ListView):
 
         dialog.present(self.get_root())
 
-        print('renaming item')
-
     def __on_item_renamed(self, dialog, node, name):
         """
         Convenience function for renaming an item from a dialog.
@@ -322,7 +381,10 @@ class ObFileListView(Gtk.ListView):
         :param name: New name for the node
         :type name: str
         """
-        node.name = name
+        cursor = self.config.db_handler.conn.cursor()
+
+        cursor.execute('UPDATE connections SET name = ? WHERE uuid = ?', (name, node.uuid))
+        self.__refresh_folder(None, node.parent_uuid)
 
     def _on_remove_item_activate(self, action, node_uuid):
         """
@@ -340,8 +402,9 @@ class ObFileListView(Gtk.ListView):
 
         node = self.config.get_node_by_uuid(node_uuid.get_string())
         self.config.remove_item(node)
+        self.__refresh_folder(None, node.parent_uuid)
 
-    def _on_edit_item_activate(self, action, uuid_array):
+    def _on_edit_item_activate(self, action, node_uuid):
         """
         Callback for the list_view.edit_item action.
         Folder Lookup has been performed in ObListView already.
@@ -356,27 +419,91 @@ class ObFileListView(Gtk.ListView):
         except AttributeError:
             pass
 
-        folder = None
         node = None
-        if uuid_array is not None:
-            string_list = uuid_array.get_strv()
-            folder_uuid = string_list[0]
-            node_uuid = string_list[1]
 
-        if folder_uuid != '00000000-0000-0000-0000-000000000000':
-            folder = self.config.get_node_by_uuid(folder_uuid)
-        else:
-            folder = ObTreeNode(name='root', uuid='00000000-0000-0000-0000-000000000000')
+        node = self.config.get_node_by_uuid(node_uuid.get_string())
 
-        if node_uuid != '':
-            node = self.config.get_node_by_uuid(node_uuid)
-
-        # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None:
-            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='edit_node')
+        if node is not None:
+            self.item_dialog = ObEditItemDialog(
+                parent_uuid=node.parent_uuid,
+                node_uuid=node.uuid,
+                db_handler=self.config.db_handler,
+                dialog_mode='edit_node',
+                config=self.config)
+            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
 
-    def _on_clone_item_activate(self, action, uuid_array):
+    def __refresh_folder(self, dialog, parent_uuid):
+        """
+        Callback for ObEditItemDialog.
+        Refreshes a folder, so the UI represents the state of the database.
+        May also be called from different places than a dialog.
+        parent_uuid may be omitted to refresh all folders.
+
+        :param dialog: The dialog calling this method
+        :type dialog: Adw.Dialog
+        :param parent_uuid: The UUID of the folder that should be refreshed
+        :type parent_uuid: str
+        """
+        if dialog is not None:
+            del dialog
+
+        win = self.get_root()
+        win.on_search_changed(win.search_entry)
+
+        expanded_folders = self.__capture_expanded_states()
+      
+        if parent_uuid not in self.config.active_stores:
+             if parent_uuid is None:
+                 new_children = self.config.tree_model.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
+                 self.config.tree_model.root_store.splice(
+                     0,
+                     self.config.tree_model.root_store.get_n_items(), new_children)
+                 self.__re_expand_folders(expanded_folders=expanded_folders)
+             return
+
+        store = self.config.active_stores[parent_uuid]
+
+        new_children = self.config.tree_model.get_children(parent_uuid)
+
+        store.splice(0, store.get_n_items(), new_children)
+        
+        self.__re_expand_folders(expanded_folders=expanded_folders)
+
+    def __capture_expanded_states(self) -> set:
+        """
+        Capture the currently opened folders and return their UUIDs in a set
+        """
+        expanded_folders = set()
+        for i in range(self.config.tree_list_model.get_n_items()):
+            row = self.config.tree_list_model.get_row(i)
+            if row:
+                node = row.get_item()
+                if node and node.is_folder and row.get_expanded():
+                    expanded_folders.add(node.uuid)
+        return expanded_folders
+
+
+    def __re_expand_folders(self, expanded_folders: set):
+        """
+        This function should only be called from self.__refresh_folder.
+        It makes sure to re-expand folders after a UI refresh.
+
+        :param expanded_folders: The folder which have been in expanded state.
+        :type expanded_folders: Set
+        """
+        tree_model_len = self.config.tree_list_model.get_n_items()
+        for i in range(tree_model_len - 1, -1, -1):
+            row = self.config.tree_list_model.get_row(i)
+            if row:
+                node = row.get_item()
+                if node and node.uuid in expanded_folders and not row.get_expanded():
+                    row.set_expanded(True)
+        
+        if self.config.tree_list_model.get_n_items() != tree_model_len:
+            self.__re_expand_folders(expanded_folders=expanded_folders)
+
+    def _on_clone_item_activate(self, action, node_uuid):
         """
         Callback for the list_view.clone_item action.
         Folder Lookup has been performed in ObListView already.
@@ -391,31 +518,23 @@ class ObFileListView(Gtk.ListView):
         except AttributeError:
             pass
 
-        folder = None
         node = None
-        if uuid_array is not None:
-            string_list = uuid_array.get_strv()
-            folder_uuid = string_list[0]
-            node_uuid = string_list[1]
 
-        print(f'{node_uuid} has parent: {folder_uuid}')
+        node = self.config.get_node_by_uuid(node_uuid.get_string())
 
-        if folder_uuid != '00000000-0000-0000-0000-000000000000':
-            folder = self.config.get_node_by_uuid(folder_uuid)
-        else:
-            folder = ObTreeNode(name='root', uuid=uuid)
-
-        if node_uuid != '':
-            node = self.config.get_node_by_uuid(node_uuid)
-
-        # Folders are not editable for now, until inheritance of parameters is implemented
-        if folder is not None and node is not None:
-            self.item_dialog = ObEditItemDialog(folder=folder, node=node, dialog_mode='clone_node')
-            self.item_dialog.connect('node_submitted', self.__on_new_item_create)
+        if node is not None:
+            self.item_dialog = ObEditItemDialog(
+                parent_uuid=node.parent_uuid,
+                node_uuid=node.uuid,
+                db_handler=self.config.db_handler,
+                dialog_mode='clone_node',
+                config=self.config)
+            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
             self.item_dialog.present(self)
 
     # Drag and Drop Methods
     def on_drag_prepare(self, drag_source, x, y, list_item):
+        logger.debug(list_item)
         widget = list_item.get_child()
         dragged_node = widget._bound_node
 
@@ -431,15 +550,14 @@ class ObFileListView(Gtk.ListView):
     def on_drop(self, drop_target, dragged_value, x, y, list_item):
         target_node = list_item.get_child()._bound_node
         dragged_node = dragged_value
+        old_parent_uuid = dragged_node.parent_uuid
 
         if target_node == dragged_node:
             return False
 
-        print(f'{dragged_node.name} to be dropped into {target_node.name}')
-
-        self.config.remove_item(dragged_node)
-        self.config.add_item(dragged_node, target_node)
-
+        self.config.drop_item(dragged_node, target_node)
+        self.__refresh_folder(dialog=None, parent_uuid=target_node.uuid)
+        self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
         return True
 
 
@@ -466,8 +584,3 @@ class ObTreeWidget(Gtk.Box):
         item = self.expander.props.item
         item.disconnect_by_func(self.expander.on_item_n_items_notify)
 
-
-#if not node.is_folder:
-#    image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
-#    image.set_icon_size(1)
-#    widget.insert_child_after(image, widget.expander)

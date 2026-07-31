@@ -17,9 +17,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import os
 import sqlite3
-from dataclasses import dataclass
 from uuid import uuid4
 
 from gi.repository import Adw, GObject, Gio, Gtk
@@ -28,25 +26,25 @@ import netaddr
 
 from .ob_tree_node import ObTreeNode
 from ..db_handler.generic_node import Node
-from ..db_handler.generic_auth import Auth
 
 
-@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_new_item_dialog.ui')
-class ObEditItemDialog(Adw.PreferencesDialog):
+@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_edit_item_dialog.ui')
+class ObEditItemDialog(Adw.Dialog):
     """
     A Dialog to create and edit Items.
-    A Folder UUID must be passed, so it is clear where to insert a new Item later on.
-    An Item may be passed, if it should be edited.
 
-    :param folder: The folder where the returned item should be attached to
-    :type folder: ObListStore
-    :param item: The item that will be edited
-    :type item: ObTreeNode
+    :param parent_uuid: Parent UUID of the item
+    :type parent_uuid: str
+    :param node_uuid: The item to edit
+    :type node_uuid: str
+    :param db_handler: The database handler which takes care of transactions
+    :type db_handler: ObeliskDBHandler
+    :param dialog_mode: The mode of this dialog, can be "new_node", "new_folder", "edit_node" or "clone_node"
+    :type dialog_mode: str
     """
-    __gtype_name__ = 'ObNewItemDialog'
+    __gtype_name__ = 'ObEditItemDialog'
 
     __gsignals__ = {
-        'node_submitted': (GObject.SignalFlags.RUN_LAST, None, (ObTreeNode, ObTreeNode)),
         'refresh_folder': (GObject.SignalFlags.RUN_LAST, None, (str,)),
     }
 
@@ -69,38 +67,34 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     ## Buttons
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
-    cancel_button_2 = Gtk.Template.Child()
-    confirm_button_2 = Gtk.Template.Child()
 
-    def __init__(self, parent_uuid=None, node_uuid=None, db_handler=None, dialog_mode='new_node', **kwargs):
+    def __init__(self, parent_uuid=None, node_uuid=None, db_handler=None, dialog_mode='new_node', config=None, **kwargs):
         super().__init__(**kwargs)
         self.dialog_mode = dialog_mode
         self.parent_uuid = parent_uuid
         self.node_uuid = node_uuid
         self.db_handler = db_handler
+        self.config = config
 
         if self.node_uuid is not None:
             self.node = self.db_handler.get_item_data(self.node_uuid)
             if hasattr(self.node, 'auth_uuid'):
                 self.auth = self.db_handler.get_auth_data(self.node.auth_uuid)
-            else:
-                # What the hell is this?
-                self.auth = self.db_handler.get_auth_data()
             self.load_data_into_dialog()
         else:
             self.close()
 
         self.confirm_button.connect('clicked', self.on_confirm)
         self.cancel_button.connect('clicked', self.on_cancel)
-        self.confirm_button_2.connect('clicked', self.on_confirm)
-        self.cancel_button_2.connect('clicked', self.on_cancel)
 
         match self.dialog_mode:
             case 'new_folder':
-                list_box = self.hostname_input.props.parent
-                list_box.remove(self.hostname_input)
-                list_box.remove(self.port_input)
-                list_box.remove(self.is_jumphost)
+                settings_box = self.hostname_input.props.parent
+                settings_box.remove(self.hostname_input)
+                settings_box.remove(self.port_input)
+
+                jumphost_box = self.is_jumphost.props.parent
+                jumphost_box.remove(self.is_jumphost)
                 self.connection_name_input.set_title('Folder Name')
                 super().set_title('Add a new Folder')
             case 'edit_node':                
@@ -122,7 +116,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         """
         Create a new item or raise a toast (soon) informing the user which input is missing / wrong.
 
-        :param Button: The Button which is connected to this function.
+        :param Button: The Button calling this function.
         :type Button: Gtk.Button
         """
         # TODO replace finally blocks and display an error toast upon input errors
@@ -174,17 +168,22 @@ class ObEditItemDialog(Adw.PreferencesDialog):
             auth = self.auth
             
             # Connection Settings
-            self.connection_name_input.set_text(node.name or '')
+            if self.dialog_mode == 'clone_node':
+                self.connection_name_input.set_text(f"{node.name or ''} - copy")
+            else:
+                self.connection_name_input.set_text(node.name or '')
 
             if not self.node.is_folder and self.node is not None:
                 self.hostname_input.set_text(node.address or '')
                 self.port_input.set_value(node.port or 22.0 )
                 self.is_jumphost.set_active(bool(node.is_jumphost))
             else:
-                list_box = self.hostname_input.props.parent
-                list_box.remove(self.hostname_input)
-                list_box.remove(self.port_input)
-                list_box.remove(self.is_jumphost)
+                settings_box = self.hostname_input.props.parent
+                settings_box.remove(self.hostname_input)
+                settings_box.remove(self.port_input)
+
+                jumphost_box = self.is_jumphost.props.parent
+                jumphost_box.remove(self.is_jumphost)
 
             self.setup_jumphost_comborow()
 
@@ -203,7 +202,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
     
     def setup_jumphost_comborow(self):
         """
-        Setup the factory for the jumphost comborow.
+        Setup function for the jumphost comborow.
         """
         j = self.db_handler.get_jumphosts()
         empty_jump = ObTreeNode(uuid=None, name="No Jumphost")
@@ -221,6 +220,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         self.use_jumphost.set_model(store)
         self.use_jumphost.set_factory(factory)
 
+        # Clear jumphost selection
         if self.node.use_jumphost is not None:
             jump_node = ObTreeNode(uuid=self.node.use_jumphost, name='')
         else:
@@ -238,15 +238,24 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         self.use_jumphost.set_selected(pos)
 
     def on_comborow_setup(self, factory, list_item):
+        """
+        Setup function for the comborow factory.
+        """
         label = Gtk.Label()
         list_item.set_child(label)
 
     def on_comborow_bind(self, factory, list_item):
+        """
+        Bind function for the comborow factory.
+        """
         node = list_item.get_item()
         label = list_item.get_child()
         label.set_label(node.name)
 
     def eq_func(self, jump_node, tree_node) -> bool:
+        """
+        Custom equal function for comparing a selected jumphost to all available jumphosts.
+        """
         if jump_node.uuid == tree_node.uuid:
             return True
         return False
@@ -292,10 +301,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
             auth.ignost_host_key = True
 
-
-            # Write new Data to DB
-            if self.db_handler.save_auth_to_db(auth):
-                self.db_handler.save_node_to_db(node)
+            self.config.add_item(node=node, auth=auth)
 
         except netaddr.AddrFormatError as e:
             print(e)
@@ -324,9 +330,7 @@ class ObEditItemDialog(Adw.PreferencesDialog):
 
         auth.ignost_host_key = True
 
-
-        if self.db_handler.save_auth_to_db(auth):
-            self.db_handler.save_node_to_db(node)
+        self.config.add_item(node=node, auth=auth)
 
     def __clone_node(self):
         """
@@ -337,53 +341,20 @@ class ObEditItemDialog(Adw.PreferencesDialog):
         old_node_uuid = node.uuid
         node.uuid = str(uuid4())
         auth.auth_uuid = str(uuid4())
+        node.auth_uuid = auth.auth_uuid
 
         if node.is_folder:
             self.__edit_folder()
-            self.__recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+            self.db_handler.conn.execute("BEGIN TRANSACTION;")
+            self.config.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+            try:
+                self.db_handler.conn.commit()
+            except sqlite3.Error as e:
+                print("Could recursively populate copied folder:", e)
+                self.db_handler.conn.rollback()
         else:
             self.__edit_node()
 
-    def __recursive_copy_func(self, old_parent_uuid='', new_parent_uuid=''):
-        """
-        Iterates over all node which are children of the copied folder.
-        Creates a copy of all children and linked auth objects.
-
-        :param old_parent_uuid: The uuid of the copied node
-        :type old_parent_uuid: str
-        :param new_parent_uuid: The uuid of the newly created node
-        :type new_parent_uuid: str
-        """
-        con_list = self.db_handler.get_child_items(old_parent_uuid)
-
-        for child in con_list:
-            old_node_uuid = child[0]
-            node = Node(
-                uuid=child[0],
-                parent_uuid=new_parent_uuid,
-                name=child[2],
-                is_folder=child[3],
-                address=child[4],
-                port=child[5],
-                use_parent_auth=child[7],
-                auth_uuid=child[8],
-                is_jumphost=child[9],
-                use_jumphost=child[10],
-                use_parent_jumphost=child[11]
-            )
-
-            auth = self.db_handler.get_auth_data(node.auth_uuid)
-            auth.auth_uuid = str(uuid4())
-            self.db_handler.save_auth_to_db(auth)
-
-            # alter data of copied node
-            node.name = f'{node.name} - copy'
-            node.uuid = str(uuid4())
-
-            self.db_handler.save_node_to_db(node)
-
-            if node.is_folder:
-                self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
 
     def __validate_username(self) -> str:
         """

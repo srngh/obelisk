@@ -15,7 +15,8 @@ sources = [
   'theme_switcher.py',
   'ob_tree_node.py',
   'ob_list_store.py',
-  'ob_rename_item_dialog.py'
+  'ob_rename_item_dialog.py',
+  'ob_tree_list_model.py',
 ]
 
 install_data(sources, install_dir: widgetsdir)
