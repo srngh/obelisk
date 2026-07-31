@@ -64,6 +64,8 @@ class ObDBListView(Gtk.ListView):
         for action in [
             'rename_item',
             'remove_item',
+            'edit_item',
+            'clone_item',
         ]:
             gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('s'))
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
@@ -71,8 +73,6 @@ class ObDBListView(Gtk.ListView):
 
         for action in [
             'new_item',
-            'edit_item',
-            'clone_item',
         ]:
             gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('as'))
             gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
@@ -330,7 +330,7 @@ class ObDBListView(Gtk.ListView):
         self.config.remove_item(node)
         self.__refresh_folder(None, node.parent_uuid)
 
-    def _on_edit_item_activate(self, action, uuid_array):
+    def _on_edit_item_activate(self, action, node_uuid):
         """
         Callback for the list_view.edit_item action.
         Folder Lookup has been performed in ObListView already.
@@ -346,15 +346,9 @@ class ObDBListView(Gtk.ListView):
             pass
 
         node = None
-        if uuid_array is not None:
-            string_list = uuid_array.get_strv()
-            folder_uuid = string_list[0]
-            node_uuid = string_list[1]
 
-        if node_uuid != '':
-            node = self.config.get_node_by_uuid(node_uuid)
+        node = self.config.get_node_by_uuid(node_uuid.get_string())
 
-        # Folders are not editable for now, until inheritance of parameters is implemented
         if node is not None:
             self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_uuid, node_uuid=node.uuid, db_handler=self.config.db_handler, dialog_mode='edit_node')
             self.item_dialog.connect('refresh_folder', self.__refresh_folder)
@@ -428,7 +422,7 @@ class ObDBListView(Gtk.ListView):
         if self.config.tree_list_model.get_n_items() != tree_model_len:
             self.__re_expand_folders(expanded_folders=expanded_folders)
 
-    def _on_clone_item_activate(self, action, uuid_array):
+    def _on_clone_item_activate(self, action, node_uuid):
         """
         Callback for the list_view.clone_item action.
         Folder Lookup has been performed in ObListView already.
@@ -444,13 +438,8 @@ class ObDBListView(Gtk.ListView):
             pass
 
         node = None
-        if uuid_array is not None:
-            string_list = uuid_array.get_strv()
-            folder_uuid = string_list[0]
-            node_uuid = string_list[1]
 
-        if node_uuid != '':
-            node = self.config.get_node_by_uuid(node_uuid)
+        node = self.config.get_node_by_uuid(node_uuid.get_string())
 
         if node is not None:
             self.item_dialog = ObEditItemDialog(parent_uuid=node.parent_uuid, node_uuid=node.uuid, db_handler=self.config.db_handler, dialog_mode='clone_node')
