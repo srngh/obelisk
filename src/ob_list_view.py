@@ -92,6 +92,7 @@ class ObDBListView(Gtk.ListView):
         """
         self._add_shortcut("<Ctrl>c", self.__on_shortcut_copy)
         self._add_shortcut("<Ctrl>v", self.__on_shortcut_paste)
+        self._add_shortcut("<Ctrl>e", self.__on_shortcut_edit)
 
     def _add_shortcut(self, accel_string, callback):
         """
@@ -114,7 +115,6 @@ class ObDBListView(Gtk.ListView):
                 return True
         return False
 
-
     def __on_shortcut_paste(self, widget, args):
         """
         Paste a Node.
@@ -124,9 +124,6 @@ class ObDBListView(Gtk.ListView):
 
         if self.get_model().get_selected_item().props.item is not None:
             selected_node = self.config.selection_model.get_selected_item().props.item
-
-        print(self.copied_node_uuid)
-        print(selected_node.uuid)
 
         if not selected_node.is_folder:
             new_parent_uuid = selected_node.parent_uuid
@@ -143,6 +140,23 @@ class ObDBListView(Gtk.ListView):
             self.__refresh_folder(dialog=None, parent_uuid=new_parent_uuid)
             return True
         return False
+
+    def __on_shortcut_edit(self, widget, args):
+        selected_node = None
+
+        if self.get_model().get_selected_item().props.item is not None:
+            selected_node = self.config.selection_model.get_selected_item().props.item
+
+        if selected_node is not None:
+            self.item_dialog = ObEditItemDialog(
+                parent_uuid=selected_node.parent_uuid,
+                node_uuid=selected_node.uuid,
+                db_handler=self.config.db_handler,
+                dialog_mode='edit_node',
+                config=self.config)
+            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
+            self.item_dialog.present(self)
+        pass
 
     def on_setup(self, factory, list_item):
         """
