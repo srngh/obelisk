@@ -84,6 +84,13 @@ class ObDBListView(Gtk.ListView):
         self.shortcut_controller = Gtk.ShortcutController.new()
         self.add_controller(self.shortcut_controller)
 
+        # Drag and Drop
+        drop_target = Gtk.DropTarget.new(ObTreeNode.__gtype__, Gdk.DragAction.MOVE)
+        drop_target.connect('drop', self.on_background_drop)
+        self.add_controller(drop_target)
+
+
+
         self._setup_keybinds()
 
     def _setup_keybinds(self):
@@ -466,21 +473,22 @@ class ObDBListView(Gtk.ListView):
         win.on_search_changed(win.search_entry)
 
         expanded_folders = self.__capture_expanded_states()
-      
-        if parent_uuid not in self.config.active_stores:
-             if parent_uuid is None:
-                 new_children = self.config.tree_model.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
-                 self.config.tree_model.root_store.splice(
-                     0,
-                     self.config.tree_model.root_store.get_n_items(), new_children)
-                 self.__re_expand_folders(expanded_folders=expanded_folders)
-             return
 
-        store = self.config.active_stores[parent_uuid]
+        ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 
-        new_children = self.config.tree_model.get_children(parent_uuid)
+        is_root = parent_uuid is None or parent_uuid == ROOT_UUID
 
-        store.splice(0, store.get_n_items(), new_children)
+        if is_root:
+            new_children = new_children = self.config.tree_model.get_children(parent_uuid=None, uuid=ROOT_UUID)
+            self.config.tree_model.root_store.splice(
+                    0,
+                    self.config.tree_model.root_store.get_n_items(),
+                    new_children)
+        else:
+            if parent_uuid in self.config.active_stores:
+                store = self.config.active_stores[parent_uuid]
+                new_children = self.config.tree_model.get_children(parent_uuid)
+                store.splice(0, store.get_n_items(), new_children)
         
         self.__re_expand_folders(expanded_folders=expanded_folders)
 
@@ -548,13 +556,19 @@ class ObDBListView(Gtk.ListView):
 
     # Drag and Drop Methods
     def on_drag_prepare(self, drag_source, x, y, list_item):
-        logger.debug(list_item)
+        """
+        Prepare callback for SignalListItemFactory.
+        """
         widget = list_item.get_child()
         dragged_node = widget._bound_node
 
         return Gdk.ContentProvider.new_for_value(dragged_node)
 
     def on_drop_accept(self, drop_target, drop, list_item):
+        """
+        Accept callback for the SignalListItemFactory.
+        Check if dropping a list_item into another list_item is supported.
+        """
         target_node = list_item.get_child()._bound_node
 
         if not target_node.is_folder:
@@ -562,6 +576,9 @@ class ObDBListView(Gtk.ListView):
         return True
 
     def on_drop(self, drop_target, dragged_value, x, y, list_item):
+        """
+        Drop callback for the SignalListItemFactory.
+        """
         target_node = list_item.get_child()._bound_node
         dragged_node = dragged_value
         old_parent_uuid = dragged_node.parent_uuid
@@ -571,6 +588,21 @@ class ObDBListView(Gtk.ListView):
 
         self.config.drop_item(dragged_node, target_node)
         self.__refresh_folder(dialog=None, parent_uuid=target_node.uuid)
+        self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
+        return True
+
+    def on_background_drop(self, drop_target, dragged_value, x, y):
+        """
+        Drop callback for the ListView.
+        This is necessary for dropping an item into the empty space of the ListView.
+        """
+        dragged_node = dragged_value
+        old_parent_uuid = dragged_node.parent_uuid
+
+        root_store = self.config.tree_model.get_root_store()
+
+        self.config.drop_item(dragged_node, root_store)
+        self.__refresh_folder(dialog=None, parent_uuid=root_store.uuid)
         self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
         return True
 
