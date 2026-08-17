@@ -36,12 +36,22 @@ class ObTreeModel:
 
         self.root_store = self.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
 
+        self.name_sorter = Gtk.StringSorter.new()
+        self.name_sorter.set_expression(Gtk.PropertyExpression.new(ObTreeNode, None, 'name'))
+        self.name_sorter.set_ignore_case(True)
+
+        self.sorted_model = Gtk.SortListModel.new(
+            model=self.root_store,
+            sorter=self.name_sorter
+        )
+
         self.tree_list_model = Gtk.TreeListModel.new(
-            self.root_store,
+            self.sorted_model,
             passthrough=False,
             autoexpand=False,
             create_func=self.create_child_model
         )
+
 
     def create_child_model(self, item):
         """
@@ -54,8 +64,15 @@ class ObTreeModel:
             store = self.get_children(parent_uuid=item.uuid)
             if self.active_stores is not None:
                 self.active_stores[item.uuid] = store
-            return store
+
+            return Gtk.SortListModel.new(model=store, sorter=self.name_sorter)
         return None
+
+    def get_root_store(self):
+        """
+        Get the root store.
+        """
+        return self.root_store
 
     def get_children(self, parent_uuid=None, uuid=None):
         """
