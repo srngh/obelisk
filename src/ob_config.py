@@ -307,54 +307,6 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         else:
             return None
 
-    # probably obsolete
-    def run_tests(self):
-        """
-        Runs some test cases, to verify if lookup methods for the model work correctly.
-        Pretty ugly and hacky.
-        """
-        # These are tests and will be removed once the datamodel functions properly
-        # Tests if a ObTreeNode can be accessed via its UUID
-        # Should return item server-3
-        print('===== Test 1 =====')
-        print('Test Case: Node Lookup')
-        uuid_1 = '4283d28d-f301-4935-9112-e42f3819d53e'
-        print(f'Node UUID: {uuid_1}, Expected Result: {uuid_1}')
-        test_node_1 = self.get_node_by_uuid(uuid_1)
-        print(f'Result Node: {test_node_1.name} with UUID: {test_node_1.uuid}')
-
-        # Tests if a ObListStore can be accessed via a child nodes UUID
-        # Should return folder us-east-3a, child uuid is of item router-us-east-3a
-        print('===== Test 2 =====')
-        print('Test Case: Folder by Child UUID Lookup')
-        uuid_2 = '4283d28d-f301-4935-9112-e42f3819d53e'
-        print(f'Node UUID: {uuid_2}, Expected Result: us-east-3a - 3e8639e7-abc6-4012-8500-32a8c61eb42f')
-        test_list_store_2 = self.get_folder_by_child_uuid(uuid_2)
-        print(f'Result Folder: {test_list_store_2.name} with UUID {test_list_store_2.uuid}')
-
-        # Tests if a ObListStores UUID can be resolved from a child nodes UUID
-        # Should return folder us-east-3, child uuid is of folder us-east-3a
-        print('===== Test 3 =====')
-        print('Test Case: Folder UUID by Child UUID Lookup')
-        uuid_3 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
-        print(f'Node UUID: {uuid_3}, Expected Result: be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
-        test_list_store_uuid = self.get_folder_uuid_by_child_uuid(uuid_3)
-        print(f'Result: Folder UUID {test_list_store_uuid}')
-
-        print('===== Test 4 =====')
-        print('Test Case: Folder by Child UUID Lookup, Folder should be config file representer')
-        uuid_4 = '0b7fd8c4-1bdd-456e-960f-5838b56d215b'
-        print(f'Node UUID: {uuid_4}, Expected Result: {os.path.basename(self.filename)}')
-        test_list_store_4 = self.get_folder_by_child_uuid(uuid_4)
-        print(f'Result Folder: {test_list_store_4.name} with UUID {test_list_store_4.uuid}')
-
-        print('===== Test 5 =====')
-        print('Test Case: Folder by Child Folder UUID Lookup')
-        uuid_5 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
-        print(f'Node UUID: {uuid_5}, Expected Result: be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
-        test_list_store_5 = self.get_folder_by_child_uuid(uuid_5)
-        print(f'Result Folder: {test_list_store_5.name} with UUID {test_list_store_5.uuid}')
-
     def initialize_config_path(self):
         home_dir = Path.home()
         ob_conf_dir = f"{home_dir}/.config/obelisk"
