@@ -569,10 +569,6 @@ class ObDBListView(Gtk.ListView):
         Accept callback for the SignalListItemFactory.
         Check if dropping a list_item into another list_item is supported.
         """
-        target_node = list_item.get_child()._bound_node
-
-        if not target_node.is_folder:
-            return False
         return True
 
     def on_drop(self, drop_target, dragged_value, x, y, list_item):
@@ -583,12 +579,20 @@ class ObDBListView(Gtk.ListView):
         dragged_node = dragged_value
         old_parent_uuid = dragged_node.parent_uuid
 
+        print(target_node, type(target_node))
+        print(target_node.parent_uuid)
+
         if target_node == dragged_node:
             return False
 
-        self.config.drop_item(dragged_node, target_node)
-        self.__refresh_folder(dialog=None, parent_uuid=target_node.uuid)
-        self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
+        if target_node.is_folder:
+            self.config.drop_item(dragged_node, target_node.uuid)
+            self.__refresh_folder(dialog=None, parent_uuid=target_node.uuid)
+            self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
+        else:
+            self.config.drop_item(dragged_node, target_node.parent_uuid)
+            self.__refresh_folder(dialog=None, parent_uuid=target_node.parent_uuid)
+            self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
         return True
 
     def on_background_drop(self, drop_target, dragged_value, x, y):
@@ -599,10 +603,10 @@ class ObDBListView(Gtk.ListView):
         dragged_node = dragged_value
         old_parent_uuid = dragged_node.parent_uuid
 
-        root_store = self.config.tree_model.get_root_store()
+        ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 
-        self.config.drop_item(dragged_node, root_store)
-        self.__refresh_folder(dialog=None, parent_uuid=root_store.uuid)
+        self.config.drop_item(dragged_node, ROOT_UUID)
+        self.__refresh_folder(dialog=None, parent_uuid=ROOT_UUID)
         self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
         return True
 

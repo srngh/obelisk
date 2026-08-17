@@ -70,7 +70,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         connections = self.prepare_sub_tree(list_store)
         self.default_handler.connections = connections
 
-    def drop_item(self, tree_node, folder):
+    def drop_item(self, tree_node, folder_uuid):
         """
         Callback for drag and drop.
 
@@ -81,12 +81,15 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         """
         node = self.db_handler.get_item_data(node_uuid=tree_node.uuid)
 
-        if folder.uuid == '00000000-0000-0000-0000-000000000000':
-            self.ob_list_store_model.append(tree_node)
+        ROOT_UUID = '00000000-0000-0000-0000-000000000000'
+
+        if folder_uuid == ROOT_UUID:
+            root_store = self.tree_model.get_root_store()
+            root_store.append(tree_node)
             node.parent_uuid = None
             self.db_handler.save_node_to_db(node)
         else:
-            node.parent_uuid = folder.uuid
+            node.parent_uuid = folder_uuid
             self.db_handler.save_node_to_db(node)
 
         try:
