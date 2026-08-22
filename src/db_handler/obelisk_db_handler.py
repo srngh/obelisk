@@ -413,12 +413,6 @@ class ObeliskDBHandler:
         else:
             return False
 
-    def test_query(self):
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "SELECT uuid, name, is_folder FROM connections WHERE parent_uuid IS NULL"
-        )
-
     def get_child_items(self, node_uuid) -> list:
         """
         Get all child items of a folder.
