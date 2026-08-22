@@ -12,6 +12,7 @@ sources = [
   '0004_add_col_ignore_host_key_to_authentication.sql',
   '0005_rename_col_key_file.sql',
   '0006_add_col_us_parent_jumphost_to_connections.sql',
+  '0007_rename_use_jumohost_to_jumhost_uuid.sql',
 ]
 
 install_data(sources, install_dir: migrations_dir)

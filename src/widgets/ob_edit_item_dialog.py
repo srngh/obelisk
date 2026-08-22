@@ -28,7 +28,7 @@ from .ob_tree_node import ObTreeNode
 from ..db_handler.generic_node import Node
 
 
-@Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/ob_edit_item_dialog.ui')
+@Gtk.Template(resource_path="/io/github/srngh/obelisk/gtk/ob_edit_item_dialog.ui")
 class ObEditItemDialog(Adw.Dialog):
     """
     A Dialog to create and edit Items.
@@ -42,10 +42,11 @@ class ObEditItemDialog(Adw.Dialog):
     :param dialog_mode: The mode of this dialog, can be "new_node", "new_folder", "edit_node" or "clone_node"
     :type dialog_mode: str
     """
-    __gtype_name__ = 'ObEditItemDialog'
+
+    __gtype_name__ = "ObEditItemDialog"
 
     __gsignals__ = {
-        'refresh_folder': (GObject.SignalFlags.RUN_LAST, None, (str,)),
+        "refresh_folder": (GObject.SignalFlags.RUN_LAST, None, (str,)),
     }
 
     # Template Elements
@@ -68,7 +69,15 @@ class ObEditItemDialog(Adw.Dialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
-    def __init__(self, parent_uuid=None, node_uuid=None, db_handler=None, dialog_mode='new_node', config=None, **kwargs):
+    def __init__(
+        self,
+        parent_uuid=None,
+        node_uuid=None,
+        db_handler=None,
+        dialog_mode="new_node",
+        config=None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.dialog_mode = dialog_mode
         self.parent_uuid = parent_uuid
@@ -78,39 +87,37 @@ class ObEditItemDialog(Adw.Dialog):
 
         if self.node_uuid is not None:
             self.node = self.db_handler.get_item_data(self.node_uuid)
-            if hasattr(self.node, 'auth_uuid'):
+            if hasattr(self.node, "auth_uuid"):
                 self.auth = self.db_handler.get_auth_data(self.node.auth_uuid)
             self.load_data_into_dialog()
         else:
             self.close()
 
-        self.confirm_button.connect('clicked', self.on_confirm)
-        self.cancel_button.connect('clicked', self.on_cancel)
+        self.confirm_button.connect("clicked", self.on_confirm)
+        self.cancel_button.connect("clicked", self.on_cancel)
 
         match self.dialog_mode:
-            case 'new_folder':
+            case "new_folder":
                 settings_box = self.hostname_input.props.parent
                 settings_box.remove(self.hostname_input)
                 settings_box.remove(self.port_input)
 
                 jumphost_box = self.is_jumphost.props.parent
                 jumphost_box.remove(self.is_jumphost)
-                self.connection_name_input.set_title('Folder Name')
-                super().set_title('Add a new Folder')
-            case 'edit_node':                
+                self.connection_name_input.set_title("Folder Name")
+                super().set_title("Add a new Folder")
+            case "edit_node":
                 match self.node.is_folder:
                     case True:
-                        super().set_title('Edit Folder')
+                        super().set_title("Edit Folder")
                     case False:
-                        super().set_title('Edit Connection')
-            case 'clone_node':
+                        super().set_title("Edit Connection")
+            case "clone_node":
                 match self.node.is_folder:
                     case True:
-                        super().set_title('Clone Folder')
+                        super().set_title("Clone Folder")
                     case False:
-                        super().set_title('Clone Connection')
-
-
+                        super().set_title("Clone Connection")
 
     def on_confirm(self, Button):
         """
@@ -121,31 +128,31 @@ class ObEditItemDialog(Adw.Dialog):
         """
         # TODO replace finally blocks and display an error toast upon input errors
         match self.dialog_mode:
-            case 'new_item':
+            case "new_item":
                 try:
                     self.__edit_node()
-                    self.emit('refresh_folder', self.parent_uuid)
+                    self.emit("refresh_folder", self.parent_uuid)
                 finally:
                     self.close()
-            case 'edit_node':
+            case "edit_node":
                 try:
                     if self.node.is_folder:
                         self.__edit_folder()
                     else:
                         self.__edit_node()
                 finally:
-                    self.emit('refresh_folder', self.parent_uuid)
+                    self.emit("refresh_folder", self.parent_uuid)
                     self.close()
-            case 'clone_node':
+            case "clone_node":
                 try:
                     self.__clone_node()
-                    self.emit('refresh_folder', self.parent_uuid)
+                    self.emit("refresh_folder", self.parent_uuid)
                 finally:
                     self.close()
-            case 'new_folder':
+            case "new_folder":
                 try:
                     self.__edit_folder()
-                    self.emit('refresh_folder', self.parent_uuid)
+                    self.emit("refresh_folder", self.parent_uuid)
                 finally:
                     self.close()
 
@@ -163,19 +170,19 @@ class ObEditItemDialog(Adw.Dialog):
         Perform a database lookup of the items data and load everything into the dialog.
         """
 
-        if hasattr(self, 'node'):
+        if hasattr(self, "node"):
             node = self.node
             auth = self.auth
-            
+
             # Connection Settings
-            if self.dialog_mode == 'clone_node':
+            if self.dialog_mode == "clone_node":
                 self.connection_name_input.set_text(f"{node.name or ''} - copy")
             else:
-                self.connection_name_input.set_text(node.name or '')
+                self.connection_name_input.set_text(node.name or "")
 
             if not self.node.is_folder and self.node is not None:
-                self.hostname_input.set_text(node.address or '')
-                self.port_input.set_value(node.port or 22.0 )
+                self.hostname_input.set_text(node.address or "")
+                self.port_input.set_value(node.port or 22.0)
                 self.is_jumphost.set_active(bool(node.is_jumphost))
             else:
                 settings_box = self.hostname_input.props.parent
@@ -194,12 +201,12 @@ class ObEditItemDialog(Adw.Dialog):
 
             # pref_method choose appropriate method from model
 
-            self.username_input.set_text(auth.username or '')
+            self.username_input.set_text(auth.username or "")
 
-            self.password_input.set_text(auth.password or '')
+            self.password_input.set_text(auth.password or "")
 
-            self.priv_key_input.set_text(auth.priv_key_file or '')
-    
+            self.priv_key_input.set_text(auth.priv_key_file or "")
+
     def setup_jumphost_comborow(self):
         """
         Setup function for the jumphost comborow.
@@ -212,17 +219,17 @@ class ObEditItemDialog(Adw.Dialog):
         for row in j:
             node = ObTreeNode(uuid=row[0], name=row[1])
             store.append(node)
-        
+
         factory = Gtk.SignalListItemFactory()
-        factory.connect('setup', self.on_comborow_setup)
-        factory.connect('bind', self.on_comborow_bind)
+        factory.connect("setup", self.on_comborow_setup)
+        factory.connect("bind", self.on_comborow_bind)
 
         self.use_jumphost.set_model(store)
         self.use_jumphost.set_factory(factory)
 
         # Clear jumphost selection
-        if self.node.use_jumphost is not None:
-            jump_node = ObTreeNode(uuid=self.node.use_jumphost, name='')
+        if self.node.jumphost_uuid is not None:
+            jump_node = ObTreeNode(uuid=self.node.jumphost_uuid, name="")
         else:
             jump_node = empty_jump
 
@@ -234,7 +241,7 @@ class ObEditItemDialog(Adw.Dialog):
         else:
             # e.g. jumphost is referenced which no longer exists in list of jumphosts
             pos = 0
-    
+
         self.use_jumphost.set_selected(pos)
 
     def on_comborow_setup(self, factory, list_item):
@@ -262,7 +269,7 @@ class ObEditItemDialog(Adw.Dialog):
 
     def __edit_node(self):
         """
-        Take user input, validate and sanitize it and write it to the database. 
+        Take user input, validate and sanitize it and write it to the database.
         """
         try:
             # DB Lookup
@@ -273,7 +280,7 @@ class ObEditItemDialog(Adw.Dialog):
             node.auth_uuid = auth.auth_uuid
 
             if not node.is_folder:
-                node.protocol = 'ssh'
+                node.protocol = "ssh"
             else:
                 node.protocol = None
 
@@ -288,7 +295,7 @@ class ObEditItemDialog(Adw.Dialog):
             node.port = int(self.port_input.get_value())
 
             node.is_jumphost = self.is_jumphost.get_active()
-            node.use_jumphost = self.__validate_use_jumphost()
+            node.jumphost_uuid = self.__validate_use_jumphost()
 
             node.use_parent_jumphost = self.inherit_jumphost.get_active()
 
@@ -319,11 +326,11 @@ class ObEditItemDialog(Adw.Dialog):
         node.name = self.connection_name_input.get_text()
         node.is_folder = True
         node.is_jumphost = False
-        node.use_jumphost = self.__validate_use_jumphost()
+        node.jumphost_uuid = self.__validate_use_jumphost()
         node.use_parent_jumphost = self.inherit_jumphost.get_active()
 
         node.use_parent_auth = self.use_parent_auth.get_active()
-        
+
         auth.username = self.__validate_username()
         auth.password = self.__validate_password()
         auth.priv_key_file = self.__validate_priv_key()
@@ -346,7 +353,9 @@ class ObEditItemDialog(Adw.Dialog):
         if node.is_folder:
             self.__edit_folder()
             self.db_handler.conn.execute("BEGIN TRANSACTION;")
-            self.config.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+            self.config.recursive_copy_func(
+                old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid
+            )
             try:
                 self.db_handler.conn.commit()
             except sqlite3.Error as e:
@@ -355,13 +364,12 @@ class ObEditItemDialog(Adw.Dialog):
         else:
             self.__edit_node()
 
-
     def __validate_username(self) -> str:
         """
         Helper function to standardize types of input fields.
         """
         var = self.username_input.get_text()
-        if var != '':
+        if var != "":
             return var
         else:
             return None
@@ -371,7 +379,7 @@ class ObEditItemDialog(Adw.Dialog):
         Helper function to standardize types of input fields.
         """
         var = self.password_input.get_text()
-        if var != '':
+        if var != "":
             return var
         else:
             return None
@@ -381,11 +389,11 @@ class ObEditItemDialog(Adw.Dialog):
         Helper function to standardize types of input fields.
         """
         var = self.priv_key_input.get_text()
-        if var != '':
+        if var != "":
             return var
         else:
             return None
-    
+
     def __validate_use_jumphost(self) -> str:
         """
         Helper function to standardize types of input fields.
