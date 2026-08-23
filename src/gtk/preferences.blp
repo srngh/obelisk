@@ -91,5 +91,21 @@ template $PreferencesDialog: Adw.PreferencesDialog {
     icon-name: "org.gnome.Terminal-symbolic";
     name: "terminal";
     title: "Terminal";
+
+    Adw.PreferencesGroup {
+      title: "Terminal Settings";
+
+      Adw.SpinRow term_scrollback_lines {
+        numeric: true;
+        title: _("Terminal Scrollback Lines");
+        adjustment: Adjustment {
+          lower: 1;
+          page-increment: 10;
+          step-increment: 1;
+          upper: 100000;
+          value: 1000;
+        };
+      }
+    }
   }
 }
