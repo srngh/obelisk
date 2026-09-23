@@ -25,11 +25,13 @@ import gi
 
 gi.require_version("Vte", "3.91")
 
-from gi.repository import Adw, GLib, Gdk, Gtk, Vte
+from gi.repository import Adw, GLib, Gdk, Gtk, Vte, Gio
 
 
 class ObTerm(Vte.Terminal):
     __gtype_name__ = "ObTerm"
+
+    _settings = Gio.Settings(schema_id='io.github.srngh.obelisk')
 
     def __init__(self, db_handler=None, **kwargs):
         super().__init__(**kwargs)
@@ -45,6 +47,8 @@ class ObTerm(Vte.Terminal):
         key_controller = Gtk.EventControllerKey.new()
         key_controller.connect("key-pressed", self._on_key_press)
         self.add_controller(key_controller)
+
+        self._settings.connect("changed::terminal-scrollback-lines", self.on_scrollback_lines_changed)
 
     def __on_theme_changed(self, manager, param):
         self.update_colors()
@@ -104,6 +108,10 @@ class ObTerm(Vte.Terminal):
         rgba = Gdk.RGBA()
         rgba.parse(hex_color)
         return rgba
+
+    def on_scrollback_lines_changed(self, settings, key):
+        new_val = settings.get_int(key)
+        self.set_scrollback_lines(new_val)
 
     def _on_key_press(self, controller, keyval, keycode, state):
         has_ctrl = state & Gdk.ModifierType.CONTROL_MASK

@@ -96,8 +96,6 @@ template $PreferencesDialog: Adw.PreferencesDialog {
       title: "Terminal Settings";
 
       Adw.SpinRow term_scrollback_lines {
-        numeric: true;
-        title: _("Terminal Scrollback Lines");
         adjustment: Adjustment {
           lower: 1;
           page-increment: 10;
@@ -105,6 +103,9 @@ template $PreferencesDialog: Adw.PreferencesDialog {
           upper: 100000;
           value: 1000;
         };
+
+        numeric: true;
+        title: _("Scrollback Lines");
       }
     }
   }

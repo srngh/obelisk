@@ -14,5 +14,8 @@
 	  <key name="style-scheme" type="s">
 	    <default>"auto"</default>
 	  </key>
+    <key name="terminal-scrollback-lines" type="i">
+	    <default>10000</default>
+	  </key>
 	</schema>
 </schemalist>
