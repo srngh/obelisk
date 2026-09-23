@@ -34,7 +34,7 @@ from .widgets.ob_tree_node import ObTreeNode
 class ObDBConfig(GObject.Object, Gio.ListModel):
     __gtype_name__ = "ObDBConfig"
     """
-    This class holds the configuration of a loaded config file.
+    This class holds Database handling logic.
     """
 
     def __init__(self, db_handler: ObeliskDBHandler = None, **kwargs):
