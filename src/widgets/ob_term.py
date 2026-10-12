@@ -26,12 +26,13 @@ import gi
 gi.require_version("Vte", "3.91")
 
 from gi.repository import Adw, GLib, Gdk, Gtk, Vte, Gio
+from gi.repository import Pango
 
 
 class ObTerm(Vte.Terminal):
     __gtype_name__ = "ObTerm"
 
-    _settings = Gio.Settings(schema_id='io.github.srngh.obelisk')
+    _settings = Gio.Settings(schema_id="io.github.srngh.obelisk")
 
     def __init__(self, db_handler=None, **kwargs):
         super().__init__(**kwargs)
@@ -48,7 +49,13 @@ class ObTerm(Vte.Terminal):
         key_controller.connect("key-pressed", self._on_key_press)
         self.add_controller(key_controller)
 
-        self._settings.connect("changed::terminal-scrollback-lines", self.on_scrollback_lines_changed)
+        self._settings.connect(
+            "changed::terminal-scrollback-lines", self.on_scrollback_lines_changed
+        )
+
+        font = Pango.FontDescription()
+        font.set_size(11 * Pango.SCALE)
+        self.set_font(font)
 
     def __on_theme_changed(self, manager, param):
         self.update_colors()
@@ -127,6 +134,20 @@ class ObTerm(Vte.Terminal):
             ]
         ):
             self.paste_clipboard()
+            return True
+        elif has_ctrl and keyval in [Gdk.KEY_plus]:
+            font = self.get_font()
+            font_size = font.get_size() / Pango.SCALE
+            font_size += 1
+            font.set_size(font_size * Pango.SCALE)
+            self.set_font(font)
+            return True
+        elif has_ctrl and keyval in [Gdk.KEY_minus]:
+            font = self.get_font()
+            font_size = font.get_size() / Pango.SCALE
+            font_size -= 1
+            font.set_size(font_size * Pango.SCALE)
+            self.set_font(font)
             return True
         return False
 
