@@ -1,0 +1,1 @@
+ALTER TABLE connections RENAME use_jumphost to jumphost_uuid;

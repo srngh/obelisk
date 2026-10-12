@@ -25,6 +25,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('Vte', '3.91')
 gi.require_version('GLib', '2.0')
+gi.require_version('Pango', '1.0')
 
 from gi.repository import Adw, Gio
 

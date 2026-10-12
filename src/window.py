@@ -162,7 +162,7 @@ class ObWindow(Adw.ApplicationWindow):
         """
         self._search_timeout_id = None
 
-        store = self.search_tree_model.tree_list_model.get_model()
+        store = self.search_tree_model.get_root_store()
 
         if not query:
             store.remove_all()

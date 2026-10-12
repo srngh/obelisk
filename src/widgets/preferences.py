@@ -19,6 +19,7 @@
 
 from gi.repository import Adw
 from gi.repository import Gtk
+from gi.repository import Gio
 
 
 @Gtk.Template(resource_path='/io/github/srngh/obelisk/gtk/preferences.ui')
@@ -27,7 +28,28 @@ class Preferences(Adw.PreferencesDialog):
     general_settings_page = Gtk.Template.Child()
     ssh_settings_page = Gtk.Template.Child()
     regex_settings_page = Gtk.Template.Child()
+    term_scrollback_lines = Gtk.Template.Child()
+    term_font_size = Gtk.Template.Child()
+
+    _settings = Gio.Settings(schema_id='io.github.srngh.obelisk')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+        self._settings.bind(
+            "terminal-scrollback-lines",
+            self.term_scrollback_lines,
+            "value",
+            Gio.SettingsBindFlags.DEFAULT
+        )
+
+        self._settings.bind(
+            "terminal-font-size",
+            self.term_font_size,
+            "value",
+            Gio.SettingsBindFlags.DEFAULT
+        )
+
+
 

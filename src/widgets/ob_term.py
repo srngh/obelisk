@@ -23,26 +23,43 @@ import tempfile
 
 import gi
 
-gi.require_version('Vte', '3.91')
+gi.require_version("Vte", "3.91")
 
-from gi.repository import Adw, GLib, Gdk, Gtk, Vte
+from gi.repository import Adw, GLib, Gdk, Gtk, Vte, Gio
+from gi.repository import Pango
 
 
 class ObTerm(Vte.Terminal):
-    __gtype_name__ = 'ObTerm'
+    __gtype_name__ = "ObTerm"
+
+    _settings = Gio.Settings(schema_id="io.github.srngh.obelisk")
 
     def __init__(self, db_handler=None, **kwargs):
         super().__init__(**kwargs)
         self.db_handler = db_handler
         # print(self.db_handler.db_path)
         self.style_manager = Adw.StyleManager.get_default()
-        self._theme_signal_id = self.style_manager.connect('notify::dark', self.__on_theme_changed)
+        self._theme_signal_id = self.style_manager.connect(
+            "notify::dark", self.__on_theme_changed
+        )
         self.update_colors()
-        self.connect('destroy', self.__on_destroy)
+        self.connect("destroy", self.__on_destroy)
 
         key_controller = Gtk.EventControllerKey.new()
-        key_controller.connect('key-pressed', self._on_key_press)
+        key_controller.connect("key-pressed", self._on_key_press)
         self.add_controller(key_controller)
+
+        self._settings.connect(
+            "changed::terminal-scrollback-lines", self.on_scrollback_lines_changed
+        )
+
+        self._settings.connect(
+            "changed::terminal-font-size", self.on_font_size_changed
+        )
+
+        font = Pango.FontDescription()
+        font.set_size(11 * Pango.SCALE)
+        self.set_font(font)
 
     def __on_theme_changed(self, manager, param):
         self.update_colors()
@@ -50,22 +67,46 @@ class ObTerm(Vte.Terminal):
     def update_colors(self):
         is_dark = self.style_manager.get_dark()
         if is_dark:
-            bg = self._hex_to_rgba('#1d1d20')
-            fg = self._hex_to_rgba('#ffffff')
+            bg = self._hex_to_rgba("#1d1d20")
+            fg = self._hex_to_rgba("#ffffff")
             palette = [
-                '#241f31', '#c01c28', '#2ec27e', '#f5c211',
-                '#51a1ff', '#9841bb', '#0ab9dc', '#c0bfbc',
-                '#5e5c64', '#ed333b', '#57e389', '#f8e45c',
-                '#51a1ff', '#c061cb', '#4fd2fd', '#f6f5f4'
+                "#241f31",
+                "#c01c28",
+                "#2ec27e",
+                "#f5c211",
+                "#51a1ff",
+                "#9841bb",
+                "#0ab9dc",
+                "#c0bfbc",
+                "#5e5c64",
+                "#ed333b",
+                "#57e389",
+                "#f8e45c",
+                "#51a1ff",
+                "#c061cb",
+                "#4fd2fd",
+                "#f6f5f4",
             ]
         else:
-            bg = self._hex_to_rgba('#ffffff')
-            fg = self._hex_to_rgba('#171421')
+            bg = self._hex_to_rgba("#ffffff")
+            fg = self._hex_to_rgba("#171421")
             palette = [
-                '#241f31', '#c01c28', '#2ec27e', '#e8b504',
-                '#1e78e4', '#9841bb', '#0ab9dc', '#c0bfbc',
-                '#5e5c64', '#ed333b', '#4ad67c', '#d2be36',
-                '#51a1ff', '#c061cb', '#4fd2fd', '#f6f5f4'
+                "#241f31",
+                "#c01c28",
+                "#2ec27e",
+                "#e8b504",
+                "#1e78e4",
+                "#9841bb",
+                "#0ab9dc",
+                "#c0bfbc",
+                "#5e5c64",
+                "#ed333b",
+                "#4ad67c",
+                "#d2be36",
+                "#51a1ff",
+                "#c061cb",
+                "#4fd2fd",
+                "#f6f5f4",
             ]
         palette_rgba = [self._hex_to_rgba(hex_color) for hex_color in palette]
         self.set_colors(foreground=fg, background=bg, palette=palette_rgba)
@@ -79,12 +120,44 @@ class ObTerm(Vte.Terminal):
         rgba.parse(hex_color)
         return rgba
 
+    def on_scrollback_lines_changed(self, settings, key):
+        new_val = settings.get_int(key)
+        self.set_scrollback_lines(new_val)
+
+    def on_font_size_changed(self, settings, key):
+        font = self.get_font()
+        font_size = settings.get_int(key)
+        font.set_size(font_size * Pango.SCALE)
+        self.set_font(font)
+
     def _on_key_press(self, controller, keyval, keycode, state):
         has_ctrl = state & Gdk.ModifierType.CONTROL_MASK
         has_shift = state & Gdk.ModifierType.SHIFT_MASK
 
-        if has_ctrl and has_shift and keyval in [Gdk.KEY_V, Gdk.KEY_v,]:
+        if (
+            has_ctrl
+            and has_shift
+            and keyval
+            in [
+                Gdk.KEY_V,
+                Gdk.KEY_v,
+            ]
+        ):
             self.paste_clipboard()
+            return True
+        elif has_ctrl and keyval in [Gdk.KEY_plus]:
+            font = self.get_font()
+            font_size = font.get_size() / Pango.SCALE
+            font_size += 1
+            font.set_size(font_size * Pango.SCALE)
+            self.set_font(font)
+            return True
+        elif has_ctrl and keyval in [Gdk.KEY_minus]:
+            font = self.get_font()
+            font_size = font.get_size() / Pango.SCALE
+            font_size -= 1
+            font.set_size(font_size * Pango.SCALE)
+            self.set_font(font)
             return True
         return False
 
@@ -96,14 +169,14 @@ class ObTerm(Vte.Terminal):
         :type tab_view: Adw.TabView
         """
         page = tab_view.add_page(self)
-        page.set_title('local shell')
+        page.set_title("local shell")
         self._page = page
         self._tab_view = tab_view
 
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
-            os.environ['HOME'],
-            ['/app/bin/host-spawn', 'bash'],
+            os.environ["HOME"],
+            ["/app/bin/host-spawn", "bash"],
             None,
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
@@ -111,7 +184,7 @@ class ObTerm(Vte.Terminal):
             -1,
             None,
             self.on_terminal_spawn,
-            None
+            None,
         )
 
     def spawn_sh(self, tab_view):
@@ -122,14 +195,14 @@ class ObTerm(Vte.Terminal):
         :type tab_view: Adw.TabView
         """
         page = tab_view.add_page(self)
-        page.set_title('local shell')
+        page.set_title("local shell")
         self._page = page
         self._tab_view = tab_view
 
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
-            os.environ['HOME'],
-            ['/bin/sh'],
+            os.environ["HOME"],
+            ["/bin/sh"],
             None,
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
@@ -137,7 +210,7 @@ class ObTerm(Vte.Terminal):
             -1,
             None,
             self.on_terminal_spawn,
-            None
+            None,
         )
 
     def spawn_go_ssh_session(self, item, tab_view):
@@ -159,19 +232,19 @@ class ObTerm(Vte.Terminal):
         runtime_dir = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
 
         fd, temp_path = tempfile.mkstemp(dir=runtime_dir, prefix="ssh_cfg_")
-        
-        with os.fdopen(fd, 'w') as f:
+
+        with os.fdopen(fd, "w") as f:
             json.dump(config, f)
 
         env = GLib.get_environ()
         env.append(f"SSH_CONFIG_PATH={temp_path}")
 
-        combined_flags = GLib.SpawnFlags.DO_NOT_REAP_CHILD 
+        combined_flags = GLib.SpawnFlags.DO_NOT_REAP_CHILD
 
         self.spawn_async(
             Vte.PtyFlags.DEFAULT,
             None,
-            ['/app/bin/ssh-client'],
+            ["/app/bin/ssh-client"],
             env,
             combined_flags,
             None,
@@ -179,7 +252,7 @@ class ObTerm(Vte.Terminal):
             -1,
             None,
             self.on_terminal_spawn,
-            None
+            None,
         )
 
     def on_terminal_spawn(self, terminal, pid, error, *args):
@@ -187,23 +260,21 @@ class ObTerm(Vte.Terminal):
         Triggered on Terminal spawn.
         """
         if error:
-            print(f'error: {error.message}')
+            print(f"error: {error.message}")
         else:
-            terminal.connect('child-exited', self.on_command_exited)
-
+            terminal.connect("child-exited", self.on_command_exited)
 
     def on_command_exited(self, terminal, exit_code):
         """
         Callback for when the child process exits.
         Closes the tab page where the terminal was spawnd, thus cleaning up the terminal as well.
-        
+
         :param terminal: The terminal widget calling this method.
         :type terminal: ObTerm
         :param exit_code: Exit Code of the child process
         :type exit_code: int
         """
         self._tab_view.close_page(self._page)
-
 
     def build_config(self, item_uuid):
         """
@@ -218,9 +289,9 @@ class ObTerm(Vte.Terminal):
         jump_config = None
 
         # skips jumphost lookup, if parent inherit is checked
-        if node.use_jumphost is not None and not node.use_parent_jumphost:
-            jump_config = self.build_config(item_uuid=node.use_jumphost)
-        
+        if node.jumphost_uuid is not None and not node.use_parent_jumphost:
+            jump_config = self.build_config(item_uuid=node.jumphost_uuid)
+
         if node.use_parent_jumphost:
             jump_config = self.build_config(item_uuid=node.parent_uuid)
 
@@ -230,7 +301,7 @@ class ObTerm(Vte.Terminal):
                 "address": f"{node.address}:{str(node.port)}",
                 "password": auth.password,
                 "private_key_path": auth.priv_key_file,
-                "jump_host": jump_config
+                "jump_host": jump_config,
             }
             return config
         else:

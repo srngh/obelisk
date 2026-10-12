@@ -36,7 +36,8 @@ class ObDBListView(Gtk.ListView):
     ObListView Class, which presents a dynamic List of nested Items.
     An ObConfig must be passed, to retrieve the fully built Data Model to present.
     """
-    __gtype_name__ = 'ObeliskDBListView'
+
+    __gtype_name__ = "ObeliskDBListView"
 
     model = Gtk.SingleSelection()
 
@@ -48,14 +49,14 @@ class ObDBListView(Gtk.ListView):
 
         # Factory to populate the ListView
         factory = Gtk.SignalListItemFactory()
-        factory.connect('setup', self.on_setup)
-        factory.connect('bind', self.on_bind)
-        factory.connect('unbind', self.on_unbind)
+        factory.connect("setup", self.on_setup)
+        factory.connect("bind", self.on_bind)
+        factory.connect("unbind", self.on_unbind)
         self.set_factory(factory)
 
         # Right click
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
-        gesture.connect('released', self.__on_button_press)
+        gesture.connect("released", self.__on_button_press)
         self.add_controller(gesture)
         self.set_model(self.config.selection_model)
 
@@ -63,26 +64,31 @@ class ObDBListView(Gtk.ListView):
         self.action_group = Gio.SimpleActionGroup.new()
 
         for action in [
-            'rename_item',
-            'remove_item',
-            'edit_item',
-            'clone_item',
+            "rename_item",
+            "remove_item",
+            "edit_item",
+            "clone_item",
         ]:
-            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('s'))
-            gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
+            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new("s"))
+            gaction.connect("activate", getattr(self, f"_on_{action}_activate"))
             self.action_group.add_action(gaction)
 
         for action in [
-            'new_item',
+            "new_item",
         ]:
-            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new('as'))
-            gaction.connect('activate', getattr(self, f'_on_{action}_activate'))
+            gaction = Gio.SimpleAction.new(action, GLib.VariantType.new("as"))
+            gaction.connect("activate", getattr(self, f"_on_{action}_activate"))
             self.action_group.add_action(gaction)
 
-        self.parent.insert_action_group('list_view', self.action_group)
+        self.parent.insert_action_group("list_view", self.action_group)
 
         self.shortcut_controller = Gtk.ShortcutController.new()
         self.add_controller(self.shortcut_controller)
+
+        # Drag and Drop
+        drop_target = Gtk.DropTarget.new(ObTreeNode.__gtype__, Gdk.DragAction.MOVE)
+        drop_target.connect("drop", self.on_background_drop)
+        self.add_controller(drop_target)
 
         self._setup_keybinds()
 
@@ -135,7 +141,9 @@ class ObDBListView(Gtk.ListView):
 
         if isinstance(selected_node, ObTreeNode) and self.copied_node_uuid is not None:
             print(f"copied uuid is {self.copied_node_uuid}")
-            copied = self.config.clone_item(node_uuid=self.copied_node_uuid, new_parent_uuid=new_parent_uuid)
+            copied = self.config.clone_item(
+                node_uuid=self.copied_node_uuid, new_parent_uuid=new_parent_uuid
+            )
         if copied:
             self.__refresh_folder(dialog=None, parent_uuid=new_parent_uuid)
             return True
@@ -152,9 +160,10 @@ class ObDBListView(Gtk.ListView):
                 parent_uuid=selected_node.parent_uuid,
                 node_uuid=selected_node.uuid,
                 db_handler=self.config.db_handler,
-                dialog_mode='edit_node',
-                config=self.config)
-            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
+                dialog_mode="edit_node",
+                config=self.config,
+            )
+            self.item_dialog.connect("refresh_folder", self.__refresh_folder)
             self.item_dialog.present(self)
         pass
 
@@ -172,12 +181,12 @@ class ObDBListView(Gtk.ListView):
 
         drag_source = Gtk.DragSource()
         drag_source.set_actions(Gdk.DragAction.MOVE)
-        drag_source.connect('prepare', self.on_drag_prepare, list_item)
+        drag_source.connect("prepare", self.on_drag_prepare, list_item)
         widget.add_controller(drag_source)
 
         drop_target = Gtk.DropTarget.new(ObTreeNode.__gtype__, Gdk.DragAction.MOVE)
-        drop_target.connect('accept', self.on_drop_accept, list_item)
-        drop_target.connect('drop', self.on_drop, list_item)
+        drop_target.connect("accept", self.on_drop_accept, list_item)
+        drop_target.connect("drop", self.on_drop, list_item)
         widget.add_controller(drop_target)
 
         list_item.set_child(widget)
@@ -205,10 +214,7 @@ class ObDBListView(Gtk.ListView):
             widget.image.set_visible(True)
 
         binding = node.bind_property(
-            'name',
-            widget.label,
-            'label',
-            GObject.BindingFlags.SYNC_CREATE
+            "name", widget.label, "label", GObject.BindingFlags.SYNC_CREATE
         )
         list_item._name_binding = binding
 
@@ -222,7 +228,7 @@ class ObDBListView(Gtk.ListView):
         :type list_item: Gtk.ListItem
         """
         widget = list_item.get_child()
-        if hasattr(list_item, '_name_binding') and list_item._name_binding:
+        if hasattr(list_item, "_name_binding") and list_item._name_binding:
             list_item._name_binding.unbind()
             list_item._name_binding = None
         widget.image.set_visible(False)
@@ -245,20 +251,20 @@ class ObDBListView(Gtk.ListView):
         :rtype: bool
         """
         tree_widget = self.__get_tree_widget(x, y)
-        if hasattr(tree_widget, 'expander'):
+        if hasattr(tree_widget, "expander"):
             expander = tree_widget.expander
         else:
             expander = None
 
         # Cleanup context menus, if they haven't been properly dereferenced before
-        if hasattr(self, 'context_menu'):
+        if hasattr(self, "context_menu"):
             self.context_menu.unparent(self.context_menu)
 
         if npress != 1:
             return False
         elif expander is None:
             # When clicking on any empty part of the ListView
-            folder_id = '00000000-0000-0000-0000-000000000000'
+            folder_id = "00000000-0000-0000-0000-000000000000"
             self.context_menu = ObContextMenu(folder_id)
             self.context_menu.set_parent(self.parent)
             self.context_menu.popup_at(x, y)
@@ -271,7 +277,7 @@ class ObDBListView(Gtk.ListView):
                 # Try to lookup
                 folder_id = item.parent_uuid
                 if folder_id is None:
-                    folder_id = '00000000-0000-0000-0000-000000000000'
+                    folder_id = "00000000-0000-0000-0000-000000000000"
             elif item.is_folder:
                 folder_id = item.uuid
 
@@ -344,23 +350,25 @@ class ObDBListView(Gtk.ListView):
             item_type = string_list[0]
             folder_uuid = string_list[1]
 
-        if folder_uuid == '00000000-0000-0000-0000-000000000000':
+        if folder_uuid == "00000000-0000-0000-0000-000000000000":
             self.item_dialog = ObEditItemDialog(
                 parent_uuid=None,
                 node_uuid=str(uuid4()),
                 db_handler=self.config.db_handler,
-                dialog_mode=f'new_{item_type}',
-                config=self.config)
-            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
+                dialog_mode=f"new_{item_type}",
+                config=self.config,
+            )
+            self.item_dialog.connect("refresh_folder", self.__refresh_folder)
             self.item_dialog.present(self)
-        elif folder_uuid != '':
+        elif folder_uuid != "":
             self.item_dialog = ObEditItemDialog(
                 parent_uuid=folder_uuid,
                 node_uuid=str(uuid4()),
                 db_handler=self.config.db_handler,
-                dialog_mode=f'new_{item_type}',
-                config=self.config)
-            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
+                dialog_mode=f"new_{item_type}",
+                config=self.config,
+            )
+            self.item_dialog.connect("refresh_folder", self.__refresh_folder)
             self.item_dialog.present(self)
 
     def _on_rename_item_activate(self, action, node_uuid):
@@ -380,7 +388,7 @@ class ObDBListView(Gtk.ListView):
         node = self.config.get_node_by_uuid(node_uuid.get_string())
         dialog = ObRenameItemDialog(node)
 
-        dialog.connect('renamed', self.__on_item_renamed)
+        dialog.connect("renamed", self.__on_item_renamed)
 
         dialog.present(self.get_root())
 
@@ -395,9 +403,7 @@ class ObDBListView(Gtk.ListView):
         :param name: New name for the node
         :type name: str
         """
-        cursor = self.config.db_handler.conn.cursor()
-
-        cursor.execute('UPDATE connections SET name = ? WHERE uuid = ?', (name, node.uuid))
+        self.config.rename_item(node=node, new_name=name)
         self.__refresh_folder(None, node.parent_uuid)
 
     def _on_remove_item_activate(self, action, node_uuid):
@@ -442,9 +448,10 @@ class ObDBListView(Gtk.ListView):
                 parent_uuid=node.parent_uuid,
                 node_uuid=node.uuid,
                 db_handler=self.config.db_handler,
-                dialog_mode='edit_node',
-                config=self.config)
-            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
+                dialog_mode="edit_node",
+                config=self.config,
+            )
+            self.item_dialog.connect("refresh_folder", self.__refresh_folder)
             self.item_dialog.present(self)
 
     def __refresh_folder(self, dialog, parent_uuid):
@@ -466,22 +473,24 @@ class ObDBListView(Gtk.ListView):
         win.on_search_changed(win.search_entry)
 
         expanded_folders = self.__capture_expanded_states()
-      
-        if parent_uuid not in self.config.active_stores:
-             if parent_uuid is None:
-                 new_children = self.config.tree_model.get_children(parent_uuid=None, uuid='00000000-0000-0000-0000-000000000000')
-                 self.config.tree_model.root_store.splice(
-                     0,
-                     self.config.tree_model.root_store.get_n_items(), new_children)
-                 self.__re_expand_folders(expanded_folders=expanded_folders)
-             return
 
-        store = self.config.active_stores[parent_uuid]
+        ROOT_UUID = "00000000-0000-0000-0000-000000000000"
 
-        new_children = self.config.tree_model.get_children(parent_uuid)
+        is_root = parent_uuid is None or parent_uuid == ROOT_UUID
 
-        store.splice(0, store.get_n_items(), new_children)
-        
+        if is_root:
+            new_children = new_children = self.config.tree_model.get_children(
+                parent_uuid=None, uuid=ROOT_UUID
+            )
+            self.config.tree_model.root_store.splice(
+                0, self.config.tree_model.root_store.get_n_items(), new_children
+            )
+        else:
+            if parent_uuid in self.config.active_stores:
+                store = self.config.active_stores[parent_uuid]
+                new_children = self.config.tree_model.get_children(parent_uuid)
+                store.splice(0, store.get_n_items(), new_children)
+
         self.__re_expand_folders(expanded_folders=expanded_folders)
 
     def __capture_expanded_states(self) -> set:
@@ -496,7 +505,6 @@ class ObDBListView(Gtk.ListView):
                 if node and node.is_folder and row.get_expanded():
                     expanded_folders.add(node.uuid)
         return expanded_folders
-
 
     def __re_expand_folders(self, expanded_folders: set):
         """
@@ -513,7 +521,7 @@ class ObDBListView(Gtk.ListView):
                 node = row.get_item()
                 if node and node.uuid in expanded_folders and not row.get_expanded():
                     row.set_expanded(True)
-        
+
         if self.config.tree_list_model.get_n_items() != tree_model_len:
             self.__re_expand_folders(expanded_folders=expanded_folders)
 
@@ -541,49 +549,76 @@ class ObDBListView(Gtk.ListView):
                 parent_uuid=node.parent_uuid,
                 node_uuid=node.uuid,
                 db_handler=self.config.db_handler,
-                dialog_mode='clone_node',
-                config=self.config)
-            self.item_dialog.connect('refresh_folder', self.__refresh_folder)
+                dialog_mode="clone_node",
+                config=self.config,
+            )
+            self.item_dialog.connect("refresh_folder", self.__refresh_folder)
             self.item_dialog.present(self)
 
     # Drag and Drop Methods
     def on_drag_prepare(self, drag_source, x, y, list_item):
-        logger.debug(list_item)
+        """
+        Prepare callback for SignalListItemFactory.
+        """
         widget = list_item.get_child()
         dragged_node = widget._bound_node
 
         return Gdk.ContentProvider.new_for_value(dragged_node)
 
     def on_drop_accept(self, drop_target, drop, list_item):
-        target_node = list_item.get_child()._bound_node
-
-        if not target_node.is_folder:
-            return False
+        """
+        Accept callback for the SignalListItemFactory.
+        Check if dropping a list_item into another list_item is supported.
+        """
         return True
 
     def on_drop(self, drop_target, dragged_value, x, y, list_item):
+        """
+        Drop callback for the SignalListItemFactory.
+        """
         target_node = list_item.get_child()._bound_node
         dragged_node = dragged_value
         old_parent_uuid = dragged_node.parent_uuid
 
+        print(target_node, type(target_node))
+        print(target_node.parent_uuid)
+
         if target_node == dragged_node:
             return False
 
-        self.config.drop_item(dragged_node, target_node)
-        self.__refresh_folder(dialog=None, parent_uuid=target_node.uuid)
+        if target_node.is_folder:
+            self.config.drop_item(dragged_node, target_node.uuid)
+            self.__refresh_folder(dialog=None, parent_uuid=target_node.uuid)
+            self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
+        else:
+            self.config.drop_item(dragged_node, target_node.parent_uuid)
+            self.__refresh_folder(dialog=None, parent_uuid=target_node.parent_uuid)
+            self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
+        return True
+
+    def on_background_drop(self, drop_target, dragged_value, x, y):
+        """
+        Drop callback for the ListView.
+        This is necessary for dropping an item into the empty space of the ListView.
+        """
+        dragged_node = dragged_value
+        old_parent_uuid = dragged_node.parent_uuid
+
+        ROOT_UUID = "00000000-0000-0000-0000-000000000000"
+
+        self.config.drop_item(dragged_node, ROOT_UUID)
+        self.__refresh_folder(dialog=None, parent_uuid=ROOT_UUID)
         self.__refresh_folder(dialog=None, parent_uuid=old_parent_uuid)
         return True
 
 
 class ObTreeWidget(Gtk.Box):
-    __gtype_name__ = 'ObTreeWidget'
+    __gtype_name__ = "ObTreeWidget"
 
     def __init__(self):
-        super().__init__(
-            spacing=6
-        )
+        super().__init__(spacing=6)
         self.expander = ObTreeExpander()
-        self.image = Gtk.Image.new_from_icon_name('org.gnome.Terminal-symbolic')
+        self.image = Gtk.Image.new_from_icon_name("org.gnome.Terminal-symbolic")
         self.label = Gtk.Label(halign=Gtk.Align.START)
 
         self.append(self.expander)
@@ -592,9 +627,8 @@ class ObTreeWidget(Gtk.Box):
 
     def update_bind(self):
         item = self.expander.props.item
-        item.connect('notify::n-items', self.expander.on_item_n_items_notify)
+        item.connect("notify::n-items", self.expander.on_item_n_items_notify)
 
     def clear_bind(self):
         item = self.expander.props.item
         item.disconnect_by_func(self.expander.on_item_n_items_notify)
-

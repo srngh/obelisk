@@ -32,26 +32,27 @@ from .widgets.ob_tree_node import ObTreeNode
 
 
 class ObDBConfig(GObject.Object, Gio.ListModel):
-    __gtype_name__ = 'ObDBConfig'
+    __gtype_name__ = "ObDBConfig"
     """
-    This class holds the configuration of a loaded config file.
+    This class holds Database handling logic.
     """
 
     def __init__(self, db_handler: ObeliskDBHandler = None, **kwargs):
         super().__init__(**kwargs)
         self.autosave = False
         self.db_handler = db_handler
-        self.config_type = 'obelisk'
+        self.config_type = "obelisk"
         self.initialize_config_path()
 
         self.active_stores = {}
 
-        self.tree_model = ObTreeModel(active_stores=self.active_stores, conn=self.db_handler.conn)
+        self.tree_model = ObTreeModel(
+            active_stores=self.active_stores, conn=self.db_handler.conn
+        )
 
         self.tree_list_model = self.tree_model.tree_list_model
 
         self.selection_model = Gtk.SingleSelection(model=self.tree_list_model)
-
 
     def save(self):
         """
@@ -70,7 +71,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         connections = self.prepare_sub_tree(list_store)
         self.default_handler.connections = connections
 
-    def drop_item(self, tree_node, folder):
+    def drop_item(self, tree_node, folder_uuid):
         """
         Callback for drag and drop.
 
@@ -81,12 +82,15 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         """
         node = self.db_handler.get_item_data(node_uuid=tree_node.uuid)
 
-        if folder.uuid == '00000000-0000-0000-0000-000000000000':
-            self.ob_list_store_model.append(tree_node)
+        ROOT_UUID = "00000000-0000-0000-0000-000000000000"
+
+        if folder_uuid == ROOT_UUID:
+            root_store = self.tree_model.get_root_store()
+            root_store.append(tree_node)
             node.parent_uuid = None
             self.db_handler.save_node_to_db(node)
         else:
-            node.parent_uuid = folder.uuid
+            node.parent_uuid = folder_uuid
             self.db_handler.save_node_to_db(node)
 
         try:
@@ -115,6 +119,24 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
             print("Could not save node and auth:", e)
             self.db_handler.conn.rollback()
 
+    def rename_item(self, node, new_name):
+        """
+        Rename a node object in the database.
+
+        :param node: The node to change the name of
+        :type node: Node
+        :param new_name: The new name
+        :type new_name: str
+        """
+        self.db_handler.conn.execute("BEGIN TRANSACTION;")
+
+        self.db_handler.rename_item(node_uuid=node.uuid, new_name=new_name)
+
+        try:
+            self.db_handler.conn.commit()
+        except sqlite3.Error as e:
+            print("Could not rename node:", e)
+            self.db_handler.conn.rollback()
 
     def remove_item(self, tree_node):
         """
@@ -129,8 +151,10 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         node = self.db_handler.get_item_data(tree_node.uuid)
 
         self.db_handler.conn.execute("BEGIN TRANSACTION;")
-        cursor.execute('DELETE FROM authentication WHERE auth_uuid = ?', (node.auth_uuid,))
-        cursor.execute('DELETE FROM connections WHERE uuid = ?', (node.uuid,))
+        cursor.execute(
+            "DELETE FROM authentication WHERE auth_uuid = ?", (node.auth_uuid,)
+        )
+        cursor.execute("DELETE FROM connections WHERE uuid = ?", (node.uuid,))
 
         try:
             self.db_handler.conn.commit()
@@ -148,7 +172,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
 
         node = self.db_handler.get_item_data(node_uuid)
         auth = self.db_handler.get_auth_data(node.auth_uuid)
-        old_node_uuid=node.uuid
+        old_node_uuid = node.uuid
 
         auth.auth_uuid = str(uuid4())
 
@@ -161,9 +185,10 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
         self.db_handler.save_node_to_db(node)
         self.db_handler.save_auth_to_db(auth)
 
-
         if node.is_folder:
-            self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+            self.recursive_copy_func(
+                old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid
+            )
 
         try:
             self.db_handler.conn.commit()
@@ -172,8 +197,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
             self.db_handler.conn.rollback()
         return True
 
-
-    def recursive_copy_func(self, old_parent_uuid='', new_parent_uuid=''):
+    def recursive_copy_func(self, old_parent_uuid="", new_parent_uuid=""):
         """
         Iterates over all nodes which are children of the copied folder.
         Creates a copy of all children and linked auth objects.
@@ -197,17 +221,17 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
                 use_parent_auth=child[7],
                 auth_uuid=child[8],
                 is_jumphost=child[9],
-                use_jumphost=child[10],
-                use_parent_jumphost=child[11]
+                jumphost_uuid=child[10],
+                use_parent_jumphost=child[11],
             )
 
-            #print(f"old parent uuid: {old_parent_uuid}, new_parent_uuid: {new_parent_uuid}")
+            # print(f"old parent uuid: {old_parent_uuid}, new_parent_uuid: {new_parent_uuid}")
             # print(f"copying {node.name}")
 
             auth = self.db_handler.get_auth_data(node.auth_uuid)
             auth.auth_uuid = str(uuid4())
 
-            node.name = f'{node.name} - copy'
+            node.name = f"{node.name} - copy"
             node.uuid = str(uuid4())
             node.auth_uuid = auth.auth_uuid
 
@@ -215,9 +239,11 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
             self.db_handler.save_node_to_db(node=node)
 
             if node.is_folder:
-                self.recursive_copy_func(old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid)
+                self.recursive_copy_func(
+                    old_parent_uuid=old_node_uuid, new_parent_uuid=node.uuid
+                )
 
-    def get_node_by_uuid(self, uuid:str = None):
+    def get_node_by_uuid(self, uuid: str = None):
         """
         Get an item by its UUID.
 
@@ -231,8 +257,8 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
 
         if uuid is not None:
             cursor.execute(
-                'SELECT name, is_folder, parent_uuid, auth_uuid FROM connections WHERE uuid IS ?',
-                (uuid,)
+                "SELECT name, is_folder, parent_uuid, auth_uuid FROM connections WHERE uuid IS ?",
+                (uuid,),
             )
             result = cursor.fetchone()
 
@@ -242,8 +268,8 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
                 name=result[0],
                 is_folder=bool(result[1]),
                 parent_uuid=result[2],
-                auth_uuid=result[3]
-                )
+                auth_uuid=result[3],
+            )
             return node
         else:
             return None
@@ -264,20 +290,15 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
 
         if parent_uuid is not None:
             cursor.execute(
-                'SELECT name FROM connections WHERE uuid IS ?',
-                (parent_uuid)
+                "SELECT name FROM connections WHERE uuid IS ?", (parent_uuid)
             )
             result = cursor.fetchone()
 
         if result is not None:
-            store = ObListStore(
-                name=result[0],
-                uuid=parent_uuid
-            )
+            store = ObListStore(name=result[0], uuid=parent_uuid)
             return store
         else:
             return None
-
 
     def get_folder_uuid_by_child_uuid(self, uuid):
         """
@@ -294,8 +315,7 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
 
         if uuid is not None:
             cursor.execute(
-                'SELECT parent_uuid FROM connections WHERE uuid IS ?',
-                (uuid,)
+                "SELECT parent_uuid FROM connections WHERE uuid IS ?", (uuid,)
             )
             result = cursor.fetchone()
 
@@ -303,54 +323,6 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
             return result[0]
         else:
             return None
-
-    # probably obsolete
-    def run_tests(self):
-        """
-        Runs some test cases, to verify if lookup methods for the model work correctly.
-        Pretty ugly and hacky.
-        """
-        # These are tests and will be removed once the datamodel functions properly
-        # Tests if a ObTreeNode can be accessed via its UUID
-        # Should return item server-3
-        print('===== Test 1 =====')
-        print('Test Case: Node Lookup')
-        uuid_1 = '4283d28d-f301-4935-9112-e42f3819d53e'
-        print(f'Node UUID: {uuid_1}, Expected Result: {uuid_1}')
-        test_node_1 = self.get_node_by_uuid(uuid_1)
-        print(f'Result Node: {test_node_1.name} with UUID: {test_node_1.uuid}')
-
-        # Tests if a ObListStore can be accessed via a child nodes UUID
-        # Should return folder us-east-3a, child uuid is of item router-us-east-3a
-        print('===== Test 2 =====')
-        print('Test Case: Folder by Child UUID Lookup')
-        uuid_2 = '4283d28d-f301-4935-9112-e42f3819d53e'
-        print(f'Node UUID: {uuid_2}, Expected Result: us-east-3a - 3e8639e7-abc6-4012-8500-32a8c61eb42f')
-        test_list_store_2 = self.get_folder_by_child_uuid(uuid_2)
-        print(f'Result Folder: {test_list_store_2.name} with UUID {test_list_store_2.uuid}')
-
-        # Tests if a ObListStores UUID can be resolved from a child nodes UUID
-        # Should return folder us-east-3, child uuid is of folder us-east-3a
-        print('===== Test 3 =====')
-        print('Test Case: Folder UUID by Child UUID Lookup')
-        uuid_3 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
-        print(f'Node UUID: {uuid_3}, Expected Result: be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
-        test_list_store_uuid = self.get_folder_uuid_by_child_uuid(uuid_3)
-        print(f'Result: Folder UUID {test_list_store_uuid}')
-
-        print('===== Test 4 =====')
-        print('Test Case: Folder by Child UUID Lookup, Folder should be config file representer')
-        uuid_4 = '0b7fd8c4-1bdd-456e-960f-5838b56d215b'
-        print(f'Node UUID: {uuid_4}, Expected Result: {os.path.basename(self.filename)}')
-        test_list_store_4 = self.get_folder_by_child_uuid(uuid_4)
-        print(f'Result Folder: {test_list_store_4.name} with UUID {test_list_store_4.uuid}')
-
-        print('===== Test 5 =====')
-        print('Test Case: Folder by Child Folder UUID Lookup')
-        uuid_5 = '3e8639e7-abc6-4012-8500-32a8c61eb42f'
-        print(f'Node UUID: {uuid_5}, Expected Result: be50f325-4cd0-4f6c-bbc6-2ae43dd90eb5')
-        test_list_store_5 = self.get_folder_by_child_uuid(uuid_5)
-        print(f'Result Folder: {test_list_store_5.name} with UUID {test_list_store_5.uuid}')
 
     def initialize_config_path(self):
         home_dir = Path.home()

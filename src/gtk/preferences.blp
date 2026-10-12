@@ -91,5 +91,40 @@ template $PreferencesDialog: Adw.PreferencesDialog {
     icon-name: "org.gnome.Terminal-symbolic";
     name: "terminal";
     title: "Terminal";
+
+    Adw.PreferencesGroup {
+      title: "Terminal Settings";
+
+      Adw.SpinRow term_scrollback_lines {
+        adjustment: Adjustment {
+          lower: 1;
+          page-increment: 10;
+          step-increment: 1;
+          upper: 100000;
+          value: 1000;
+        };
+
+        numeric: true;
+        title: _("Scrollback Lines");
+      }
+    }
+
+    Adw.PreferencesGroup {
+      title: "Font";
+
+      Adw.SpinRow term_font_size {
+        adjustment: Adjustment {
+          lower: 0.1;
+          page-increment: 1.0;
+          step-increment: 0.1;
+          upper: 64.0;
+          value: 11.0;
+        };
+
+        climb-rate: 0.5;
+        digits: 1;
+        title: "Font Size";
+      }
+    }
   }
 }

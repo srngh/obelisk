@@ -14,5 +14,11 @@
 	  <key name="style-scheme" type="s">
 	    <default>"auto"</default>
 	  </key>
+    <key name="terminal-scrollback-lines" type="i">
+	    <default>10000</default>
+	  </key>
+    <key name="terminal-font-size" type="i">
+	    <default>11</default>
+	  </key>
 	</schema>
 </schemalist>
