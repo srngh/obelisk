@@ -29,6 +29,7 @@ class Preferences(Adw.PreferencesDialog):
     ssh_settings_page = Gtk.Template.Child()
     regex_settings_page = Gtk.Template.Child()
     term_scrollback_lines = Gtk.Template.Child()
+    term_font_size = Gtk.Template.Child()
 
     _settings = Gio.Settings(schema_id='io.github.srngh.obelisk')
 
@@ -39,6 +40,13 @@ class Preferences(Adw.PreferencesDialog):
         self._settings.bind(
             "terminal-scrollback-lines",
             self.term_scrollback_lines,
+            "value",
+            Gio.SettingsBindFlags.DEFAULT
+        )
+
+        self._settings.bind(
+            "terminal-font-size",
+            self.term_font_size,
             "value",
             Gio.SettingsBindFlags.DEFAULT
         )

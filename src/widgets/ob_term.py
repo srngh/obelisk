@@ -53,6 +53,10 @@ class ObTerm(Vte.Terminal):
             "changed::terminal-scrollback-lines", self.on_scrollback_lines_changed
         )
 
+        self._settings.connect(
+            "changed::terminal-font-size", self.on_font_size_changed
+        )
+
         font = Pango.FontDescription()
         font.set_size(11 * Pango.SCALE)
         self.set_font(font)
@@ -119,6 +123,12 @@ class ObTerm(Vte.Terminal):
     def on_scrollback_lines_changed(self, settings, key):
         new_val = settings.get_int(key)
         self.set_scrollback_lines(new_val)
+
+    def on_font_size_changed(self, settings, key):
+        font = self.get_font()
+        font_size = settings.get_int(key)
+        font.set_size(font_size * Pango.SCALE)
+        self.set_font(font)
 
     def _on_key_press(self, controller, keyval, keycode, state):
         has_ctrl = state & Gdk.ModifierType.CONTROL_MASK
