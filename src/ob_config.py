@@ -119,6 +119,25 @@ class ObDBConfig(GObject.Object, Gio.ListModel):
             print("Could not save node and auth:", e)
             self.db_handler.conn.rollback()
 
+    def rename_item(self, node, new_name):
+        """
+        Rename a node object in the database.
+
+        :param node: The node to change the name of
+        :type node: Node
+        :param new_name: The new name
+        :type new_name: str
+        """
+        self.db_handler.conn.execute("BEGIN TRANSACTION;")
+
+        self.db_handler.rename_item(node_uuid=node.uuid, new_name=new_name)
+
+        try:
+            self.db_handler.conn.commit()
+        except sqlite3.Error as e:
+            print("Could not rename node:", e)
+            self.db_handler.conn.rollback()
+
     def remove_item(self, tree_node):
         """
         Pass an ObTreeNode which should be removed from the config.
