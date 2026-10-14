@@ -4,11 +4,12 @@ from dataclasses import dataclass
 @dataclass
 class Node:
     """
-    This is an ephemeral dataclass.
-    Only used by the ObEditItemDialog structure.
+    Only really used by the ObEditItemDialog to shuffle data to the database.
+    This class is not used by any UI parts.
     """
 
     uuid: str
+    protocol: str = "ssh"
     name: str = None
     is_folder: bool = False
     parent_uuid: str = None
