@@ -17,14 +17,19 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+# pylint: disable=E1101
+
 import sqlite3
 from uuid import uuid4
 
 from gi.repository import Adw, GObject, Gio, Gtk
 
 import netaddr
+from fqdn import FQDN
 
 from .ob_tree_node import ObTreeNode
+from ..ob_config import ObDBConfig
+from ..db_handler.obelisk_db_handler import ObeliskDBHandler
 from ..db_handler.generic_node import Node
 
 
@@ -69,13 +74,16 @@ class ObEditItemDialog(Adw.Dialog):
     cancel_button = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
 
+    ##
+    err_banner = Gtk.Template.Child()
+
     def __init__(
         self,
-        parent_uuid=None,
-        node_uuid=None,
-        db_handler=None,
+        parent_uuid: str,
+        node_uuid: str,
+        db_handler: ObeliskDBHandler,
+        config: ObDBConfig,
         dialog_mode="new_node",
-        config=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -84,6 +92,8 @@ class ObEditItemDialog(Adw.Dialog):
         self.node_uuid = node_uuid
         self.db_handler = db_handler
         self.config = config
+
+        self.err_banner.connect("button-clicked", self.on_banner_clicked)
 
         if self.node_uuid is not None:
             self.node = self.db_handler.get_item_data(self.node_uuid)
@@ -119,6 +129,9 @@ class ObEditItemDialog(Adw.Dialog):
                     case False:
                         super().set_title("Clone Connection")
 
+    def on_banner_clicked(self, Banner):
+        self.err_banner.set_revealed(False)
+
     def on_confirm(self, Button):
         """
         Create a new item or raise a toast (soon) informing the user which input is missing / wrong.
@@ -126,35 +139,18 @@ class ObEditItemDialog(Adw.Dialog):
         :param Button: The Button calling this function.
         :type Button: Gtk.Button
         """
-        # TODO replace finally blocks and display an error toast upon input errors
         match self.dialog_mode:
             case "new_item":
-                try:
-                    self.__edit_node()
-                    self.emit("refresh_folder", self.parent_uuid)
-                finally:
-                    self.close()
+                self.__edit_node()
             case "edit_node":
-                try:
-                    if self.node.is_folder:
-                        self.__edit_folder()
-                    else:
-                        self.__edit_node()
-                finally:
-                    self.emit("refresh_folder", self.parent_uuid)
-                    self.close()
-            case "clone_node":
-                try:
-                    self.__clone_node()
-                    self.emit("refresh_folder", self.parent_uuid)
-                finally:
-                    self.close()
-            case "new_folder":
-                try:
+                if self.node.is_folder:
                     self.__edit_folder()
-                    self.emit("refresh_folder", self.parent_uuid)
-                finally:
-                    self.close()
+                else:
+                    self.__edit_node()
+            case "clone_node":
+                self.__clone_node()
+            case "new_folder":
+                self.__edit_folder()
 
     def on_cancel(self, Button):
         """
@@ -163,6 +159,7 @@ class ObEditItemDialog(Adw.Dialog):
         :param Button: The Button calling this function.
         :type Button: Gtk.Button
         """
+        self.set_can_close(True)
         self.close()
 
     def load_data_into_dialog(self):
@@ -284,31 +281,35 @@ class ObEditItemDialog(Adw.Dialog):
             else:
                 node.protocol = None
 
-            # Connection Settings
-            ip = netaddr.IPAddress(self.hostname_input.get_text())
-            if ip.version == 4 or ip.version == 6:
-                node.address = ip.format()
-            # TODO: validate fqdns
+            addr, err = self.__validate_address()
 
-            node.name = self.connection_name_input.get_text() or node.address
+            if err is False:
+                self.err_banner.set_revealed(True)
+            else:
+                node.address = addr
 
-            node.port = int(self.port_input.get_value())
+                node.name = self.connection_name_input.get_text() or node.address
 
-            node.is_jumphost = self.is_jumphost.get_active()
-            node.jumphost_uuid = self.__validate_use_jumphost()
+                node.port = int(self.port_input.get_value())
 
-            node.use_parent_jumphost = self.inherit_jumphost.get_active()
+                node.is_jumphost = self.is_jumphost.get_active()
+                node.jumphost_uuid = self.__validate_use_jumphost()
 
-            # Authentication Settings
-            node.use_parent_auth = self.use_parent_auth.get_active()
+                node.use_parent_jumphost = self.inherit_jumphost.get_active()
 
-            auth.username = self.__validate_username()
-            auth.password = self.__validate_password()
-            auth.priv_key_file = self.__validate_priv_key()
+                # Authentication Settings
+                node.use_parent_auth = self.use_parent_auth.get_active()
 
-            auth.ignost_host_key = True
+                auth.username = self.__validate_username()
+                auth.password = self.__validate_password()
+                auth.priv_key_file = self.__validate_priv_key()
 
-            self.config.add_item(node=node, auth=auth)
+                auth.ignost_host_key = True
+
+                self.config.add_item(node=node, auth=auth)
+
+                self.emit("refresh_folder", self.parent_uuid)
+                self.close()
 
         except netaddr.AddrFormatError as e:
             print(e)
@@ -339,6 +340,9 @@ class ObEditItemDialog(Adw.Dialog):
 
         self.config.add_item(node=node, auth=auth)
 
+        self.emit("refresh_folder", self.parent_uuid)
+        self.close()
+
     def __clone_node(self):
         """
         Sets a new uuid to the node and calls the appropriate edit method.
@@ -358,6 +362,8 @@ class ObEditItemDialog(Adw.Dialog):
             )
             try:
                 self.db_handler.conn.commit()
+                self.emit("refresh_folder", self.parent_uuid)
+                self.close()
             except sqlite3.Error as e:
                 print("Could recursively populate copied folder:", e)
                 self.db_handler.conn.rollback()
@@ -400,3 +406,26 @@ class ObEditItemDialog(Adw.Dialog):
         """
         item = self.use_jumphost.get_selected_item()
         return item.uuid
+
+    def __validate_address(self) -> tuple[str, bool]:
+        """
+        Helper function to validate hostname_input.
+        """
+        address = self.hostname_input.get_text()
+
+        address = address.strip()
+
+        addr = FQDN(address)
+
+        if addr.is_valid:
+            try:
+                ip = netaddr.IPAddress(address)
+                if ip.is_unicast():
+                    return address, True
+            except netaddr.core.AddrFormatError:
+                # don't really need to deal with the error
+                pass
+            return address, True
+        elif address.lower() in ["localhost"]:
+            return address, True
+        return "", False
