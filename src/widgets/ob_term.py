@@ -53,18 +53,16 @@ class ObTerm(Vte.Terminal):
             "changed::terminal-scrollback-lines", self.on_scrollback_lines_changed
         )
 
-        self._settings.connect(
-            "changed::terminal-font-size", self.on_font_size_changed
-        )
+        self._settings.connect("changed::terminal-font-size", self.on_font_size_changed)
 
-        font = Pango.FontDescription()
-        font.set_size(11 * Pango.SCALE)
-        self.set_font(font)
+        self.on_font_size_changed(self._settings, "terminal-font-size")
+        self.on_scrollback_lines_changed(self._settings, "terminal-scrollback-lines")
 
     def __on_theme_changed(self, manager, param):
         self.update_colors()
 
     def update_colors(self):
+        """callback for changing adwaita dark and light colors"""
         is_dark = self.style_manager.get_dark()
         if is_dark:
             bg = self._hex_to_rgba("#1d1d20")
@@ -121,11 +119,15 @@ class ObTerm(Vte.Terminal):
         return rgba
 
     def on_scrollback_lines_changed(self, settings, key):
+        """callback for changing terminal scrollback lines"""
         new_val = settings.get_int(key)
         self.set_scrollback_lines(new_val)
 
     def on_font_size_changed(self, settings, key):
+        """callback for changing terminal font size"""
         font = self.get_font()
+        if font is None:
+            font = Pango.FontDescription()
         font_size = settings.get_int(key)
         font.set_size(font_size * Pango.SCALE)
         self.set_font(font)
