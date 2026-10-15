@@ -375,6 +375,8 @@ class ObEditItemDialog(Adw.Dialog):
         Helper function to standardize types of input fields.
         """
         var = self.username_input.get_text()
+        var = var.strip()
+
         if var != "":
             return var
         else:
@@ -385,6 +387,8 @@ class ObEditItemDialog(Adw.Dialog):
         Helper function to standardize types of input fields.
         """
         var = self.password_input.get_text()
+        var = var.strip()
+
         if var != "":
             return var
         else:
@@ -395,6 +399,8 @@ class ObEditItemDialog(Adw.Dialog):
         Helper function to standardize types of input fields.
         """
         var = self.priv_key_input.get_text()
+        var = var.strip()
+
         if var != "":
             return var
         else:
