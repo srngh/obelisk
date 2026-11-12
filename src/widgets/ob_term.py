@@ -276,7 +276,20 @@ class ObTerm(Vte.Terminal):
         :param exit_code: Exit Code of the child process
         :type exit_code: int
         """
+        if exit_code != 0:
+            timeout = 5
+            self.feed(f"Closing Terminal in {timeout}s".encode())
+            GLib.timeout_add_seconds(timeout, self.close_parent_tab)
+        else:
+            self.close_parent_tab()
+
+    def close_parent_tab(self):
+        """
+        Destroy the parent tab.
+        Return false, as to not trigger the GLib timeout again.
+        """
         self._tab_view.close_page(self._page)
+        return False
 
     def build_config(self, item_uuid):
         """
