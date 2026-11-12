@@ -30,6 +30,10 @@ MIGRATIONS_DIR = "/app/share/obelisk/obelisk/db_handler/migrations"
 
 
 class ObeliskDBHandler:
+    """
+    This class holds a sqlite3 connection and cursor.
+    It also collects reusable sql statements.
+    """
 
     def __init__(self, db_path: str, secret_key: str):
         self.db_path = db_path
@@ -39,6 +43,7 @@ class ObeliskDBHandler:
         self.migrate()
 
     def init_db(self):
+        """Initialiaze the Database"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -71,6 +76,7 @@ class ObeliskDBHandler:
         return conn
 
     def get_applied_migrations(self):
+        """Get a list of already applied migrations from the database"""
         cursor = self.conn.cursor()
 
         cursor.execute("""
@@ -84,6 +90,7 @@ class ObeliskDBHandler:
         return {row[0] for row in cursor.fetchall()}
 
     def apply_migration(self, version, sql):
+        """Apply an outstanding sql migration"""
         conn = self.conn
         print(f"Applying migration {version}...")
         conn.executescript(sql)
@@ -92,10 +99,12 @@ class ObeliskDBHandler:
         print(f"Migration {version} applied.")
 
     def load_migration_file(self, filename):
+        """Load all migration files"""
         with open(os.path.join(MIGRATIONS_DIR, filename), "r") as f:
             return f.read()
 
     def migrate(self):
+        """Apply database migration, if any are outstanding"""
         applied = self.get_applied_migrations()
         migrations = sorted(f for f in os.listdir(MIGRATIONS_DIR) if f.endswith(".sql"))
 
@@ -108,6 +117,7 @@ class ObeliskDBHandler:
                 print(f"Migration {version} already applied")
 
     def save_nodes_to_db(self, node_list):
+        """Save a list of nodes to the database"""
         cursor = self.conn.cursor()
         data_insert = [
             (node.uuid, node.name, int(node.is_folder)) for node in node_list
@@ -146,7 +156,7 @@ class ObeliskDBHandler:
                         int(node.is_folder),
                         node.address,
                         node.port,
-                        "ssh",
+                        node.protocol,
                         int(node.use_parent_auth),
                         node.auth_uuid,
                         int(node.is_jumphost),
@@ -178,7 +188,7 @@ class ObeliskDBHandler:
                         int(node.is_folder),
                         node.address,
                         node.port,
-                        "ssh",
+                        node.protocol,
                         int(node.use_parent_auth),
                         node.auth_uuid,
                         int(node.is_jumphost),
@@ -189,11 +199,12 @@ class ObeliskDBHandler:
                 )
                 return True
         except sqlite3.DataError as e:
-            print(f"Encountered Error when trying to write data to database")
+            print("Encountered Error when trying to write data to database")
             print(e)
         except sqlite3.Error as e:
-            print(f"Encountered Sqlite Error")
+            print("Encountered Sqlite Error")
             print(e)
+        return False
 
     def save_auth_to_db(self, auth: Auth) -> bool:
         """
@@ -246,11 +257,12 @@ class ObeliskDBHandler:
                 )
                 return True
         except sqlite3.DataError as e:
-            print(f"Encountered Error when trying to write data to database")
+            print("Encountered Error when trying to write data to database")
             print(e)
         except sqlite3.Error as e:
-            print(f"Encountered Sqlite Error")
+            print("Encountered Sqlite Error")
             print(e)
+        return False
 
     def get_item_data(self, node_uuid: str) -> Node:
         """
@@ -261,6 +273,8 @@ class ObeliskDBHandler:
         :type node_uuid: str
         """
         cursor = self.conn.cursor()
+
+        result = None
 
         if node_uuid is not None:
             cursor.execute(
@@ -274,7 +288,8 @@ class ObeliskDBHandler:
                 use_parent_auth,
                 is_jumphost,
                 jumphost_uuid,
-                use_parent_jumphost
+                use_parent_jumphost,
+                protocol
                 FROM connections WHERE uuid IS ?
                 """,
                 (node_uuid,),
@@ -295,13 +310,14 @@ class ObeliskDBHandler:
                     is_jumphost=bool(result[7]),
                     jumphost_uuid=result[8],
                     use_parent_jumphost=result[9],
+                    protocol=result[10],
                 )
                 return node
             else:
                 # If the connection doesn't exist, return a bare Node
                 return Node(uuid=node_uuid)
         except sqlite3.Error as e:
-            print(f"Encountered Sqlite Error")
+            print("Encountered Sqlite Error")
             print(e)
 
     def get_auth_data(self, auth_uuid: str) -> Auth:
@@ -313,6 +329,8 @@ class ObeliskDBHandler:
         :type auth_uuid: str
         """
         cursor = self.conn.cursor()
+
+        result = None
 
         if auth_uuid is not None:
             cursor.execute(
@@ -343,7 +361,7 @@ class ObeliskDBHandler:
                 return auth
 
         except sqlite3.Error as e:
-            print(f"Encountered Sqlite Error")
+            print("Encountered Sqlite Error")
             print(e)
 
     def get_matching_auth_data(self, node_uuid: str) -> Auth:
@@ -364,6 +382,7 @@ class ObeliskDBHandler:
             return auth
 
     def get_jumphosts(self):
+        """Get all connections which are marked to be eligible jumphosts"""
         cursor = self.conn.cursor()
 
         result = cursor.execute("""
@@ -377,9 +396,9 @@ class ObeliskDBHandler:
         """
         encrypt sensitive fields
         """
-        if field is not None and type(field) is str:
+        if field is not None and isinstance(field, str):
             return self.Fernet.encrypt(field.encode()).decode()
-        elif field is not None and type(field) is bytes:
+        elif field is not None and isinstance(field, bytes):
             return self.Fernet.encrypt(field).decode()
         else:
             return None
@@ -388,9 +407,9 @@ class ObeliskDBHandler:
         """
         decrypt sensitive fields
         """
-        if field is not None and type(field) is str:
+        if field is not None and isinstance(field, str):
             return self.Fernet.decrypt(field.encode()).decode()
-        elif field is not None and type(field) is bytes:
+        elif field is not None and isinstance(field, bytes):
             return self.Fernet.decrypt(field).decode()
         else:
             return None

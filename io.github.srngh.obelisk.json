@@ -1,10 +1,10 @@
 {
-    "id" : "io.github.srngh.obelisk",
-    "runtime" : "org.gnome.Platform",
-    "runtime-version" : "50",
-    "sdk" : "org.gnome.Sdk",
-    "command" : "obelisk",
-    "finish-args" : [
+    "id": "io.github.srngh.obelisk",
+    "runtime": "org.gnome.Platform",
+    "runtime-version": "50",
+    "sdk": "org.gnome.Sdk",
+    "command": "obelisk",
+    "finish-args": [
         "--share=network",
         "--share=ipc",
         "--socket=fallback-x11",
@@ -14,7 +14,7 @@
         "--talk-name=org.freedesktop.Flatpak",
         "--talk-name=org.freedesktop.secrets"
     ],
-    "cleanup" : [
+    "cleanup": [
         "/include",
         "/lib/pkgconfig",
         "/man",
@@ -25,102 +25,103 @@
         "*.la",
         "*.a"
     ],
-    "modules" : [
+    "modules": [
         "python3-pyyaml.json",
         "python3-netaddr.json",
         "python3-keyring.json",
+        "python3-fqdn.json",
         {
-            "name" : "fast_float",
-            "buildsystem" : "cmake-ninja",
-            "sources" : [
+            "name": "fast_float",
+            "buildsystem": "cmake-ninja",
+            "sources": [
                 {
-                    "type" : "git",
-                    "url" : "https://github.com/fastfloat/fast_float.git",
-                    "branch" : "main"
+                    "type": "git",
+                    "url": "https://github.com/fastfloat/fast_float.git",
+                    "branch": "main"
                 }
             ]
         },
         {
-            "name" : "simdutf",
-            "buildsystem" : "cmake-ninja",
-            "config-opts" : [
+            "name": "simdutf",
+            "buildsystem": "cmake-ninja",
+            "config-opts": [
                 "-DCMAKE_CXX_VISIBILITY_PRESET=hidden",
                 "-DCMAKE_POSITION_INDEPENDENT_CODE=TRUE",
                 "-DCMAKE_VISIBILITY_INLINES_HIDDEN=TRUE"
             ],
-            "sources" : [
+            "sources": [
                 {
-                    "type" : "git",
-                    "url" : "https://github.com/simdutf/simdutf.git",
-                    "branch" : "master"
+                    "type": "git",
+                    "url": "https://github.com/simdutf/simdutf.git",
+                    "branch": "master"
                 }
             ]
         },
         {
-            "name" : "vte",
-            "buildsystem" : "meson",
-            "config-opts" : [
+            "name": "vte",
+            "buildsystem": "meson",
+            "config-opts": [
                 "-Dglade=false",
                 "-Dgtk3=false",
                 "-Dgtk4=true",
                 "-Dvapi=false"
             ],
-            "sources" : [
+            "sources": [
                 {
-                    "type" : "git",
-                    "url" : "https://gitlab.gnome.org/GNOME/vte.git",
+                    "type": "git",
+                    "url": "https://gitlab.gnome.org/GNOME/vte.git",
                     "tag": "0.82.3"
                 }
             ]
         },
         {
-            "name" : "host-spawn",
-            "buildsystem" : "simple",
-            "build-commands" : [
+            "name": "host-spawn",
+            "buildsystem": "simple",
+            "build-commands": [
                 "install -Dm0744 host-spawn -t ${FLATPAK_DEST}/bin/"
             ],
-            "sources" : [
+            "sources": [
                 {
-                    "type" : "file",
-                    "url" : "https://github.com/1player/host-spawn/releases/download/v1.6.2/host-spawn-x86_64",
-                    "sha256" : "077bc09a087292447ba17cfe2156a93f71bf56c4c6be8e38d3abe65c1240f34c",
-                    "dest-filename" : "host-spawn",
-                    "only-arches" : [
+                    "type": "file",
+                    "url": "https://github.com/1player/host-spawn/releases/download/v1.6.2/host-spawn-x86_64",
+                    "sha256": "077bc09a087292447ba17cfe2156a93f71bf56c4c6be8e38d3abe65c1240f34c",
+                    "dest-filename": "host-spawn",
+                    "only-arches": [
                         "x86_64"
                     ]
                 }
             ]
         },
         {
-            "name" : "ssh-client",
-            "buildsystem" : "simple",
-            "build-commands" : [
+            "name": "ssh-client",
+            "buildsystem": "simple",
+            "build-commands": [
                 "install -Dm0744 ssh-client -t ${FLATPAK_DEST}/bin/"
             ],
-            "sources" : [
+            "sources": [
                 {
-                    "type" : "file",
-                    "url" : "https://github.com/srngh/obelisk-ssh-client/releases/download/v0.0.1/ssh-client",
-                    "sha256" : "3928c944d7397c80ff7bd07fa8957e91970de35aa4cc585d4df195ba3b173693"
+                    "type": "file",
+                    "url": "https://github.com/srngh/obelisk-ssh-client/releases/download/v0.0.1/ssh-client",
+                    "sha256": "3928c944d7397c80ff7bd07fa8957e91970de35aa4cc585d4df195ba3b173693"
                 }
             ]
         },
         {
-            "name" : "obelisk",
-            "builddir" : true,
-            "buildsystem" : "meson",
-            "sources" : [
+            "name": "obelisk",
+            "builddir": true,
+            "buildsystem": "meson",
+            "sources": [
                 {
-                    "type" : "git",
-                    "url" : "file:///home/soeren/Projects"
+                    "type": "git",
+                    "url": "file:///home/soeren/Projects"
                 }
             ],
-            "config-opts" : [
+            "config-opts": [
                 "--libdir=lib"
             ]
         }
     ],
-    "build-options" : {
-        "env" : {        }
+    "build-options": {
+        "env": {}
     }
 }

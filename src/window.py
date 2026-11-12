@@ -180,8 +180,8 @@ class ObWindow(Adw.ApplicationWindow):
         results = cursor.fetchall()
 
         for uuid, name, is_folder in results:
-            store = self.search_tree_model.tree_list_model.get_model()
-            store.append(ObTreeNode(uuid=uuid, name=name, is_folder=is_folder))
+            root_store = self.search_tree_model.get_root_store()
+            root_store.append(ObTreeNode(uuid=uuid, name=name, is_folder=is_folder))
 
 
     def _on_connect_activate(self, action, node_uuid):
